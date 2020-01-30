@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Document</title>
+    <script src='../js/bin/nodom-2.0.js'></script>
+
+    <style>
+        img{
+            width:300px;
+        }
+
+        .imgct{
+            width:301px;
+            overflow-x:hidden;
+            overflow-y:auto;
+            height:400px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="view">
+        <button e-click='change'>change</button>
+        <div class='imgct' scrollX='{{x}}' scrollY='{{y}}'>
+            <img x-repeat='rows' src='{{img}}'/>
+        </div>
+    </div>
+</body>
+<script>
+    
+
+    let mod = new Module({
+        el: '.view',
+        root: true,
+        data: {
+            rows:[
+                {img:'imgs/1.jpg'},
+                {img:'imgs/2.jpg'},
+                {img:'imgs/3.jpg'},
+                {img:'imgs/4.jpg'},
+                {img:'imgs/5.jpg'},
+                {img:'imgs/6.jpg'},
+                {img:'imgs/7.jpg'},
+                {img:'imgs/8.jpg'},
+                {img:'imgs/1.jpg'},
+                {img:'imgs/2.jpg'},
+                {img:'imgs/3.jpg'},
+                {img:'imgs/4.jpg'},
+                {img:'imgs/5.jpg'},
+                {img:'imgs/6.jpg'},
+                {img:'imgs/7.jpg'},
+                {img:'imgs/8.jpg'}
+            ]
+        },
+        methods:{
+            change:function(){
+                let ct = document.querySelector('.imgct');
+                ct.scroll(0,300);
+            }
+        }
+    });
+
+</script>
+
+</html>

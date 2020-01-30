@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<title>Document</title>
+	<!-- <script src='../js/bin/nodom-2.0.js'></script> -->
+	<script src='../js/core/base.js'></script>
+  	<script src='../js/core/config.js'></script>
+  	<script src='../js/core/class.js'></script>
+  	<script src='../js/core/linker.js'></script>
+  	<script src='../js/core/factory.js'></script>
+  	<script src='../js/core/messagefactory.js'></script>
+  	<script src='../js/core/modulefactory.js'></script>
+  	<script src='../js/core/expressionfactory.js'></script>
+  	<script src='../js/core/directivefactory.js'></script>
+  	<script src='../js/core/compiler.js'></script>
+  	<script src='../js/core/renderer.js'></script>
+  	<script src='../js/core/scheduler.js'></script>
+  	<script src='../js/core/expression.js'></script>
+  	<script src='../js/core/element.js'></script>
+  	<script src='../js/core/event.js'></script>
+  	<script src='../js/core/locales/msg_zh.js'></script>
+  	<script src='../js/core/error.js'></script>
+  	<script src='../js/core/modelfactory.js'></script>
+  	<script src='../js/core/model.js'></script>
+  	<script src='../js/core/filter.js'></script>
+  	<script src='../js/core/directivemanager.js'></script>
+  	<script src='../js/core/directive.js'></script>
+  	<script src='../js/core/module.js'></script>
+  	<script src='../js/core/methodfactory.js'></script>
+  	<script src='../js/core/router.js'></script>
+  	<script src='../js/core/filtermanager.js'></script>
+  	<script src='../js/core/serializer.js'></script>
+  	<script src='../js/core/extend/directiveinit.js'></script>
+  	<script src='../js/core/extend/filterinit.js'></script>
+  	<script src='../js/core/extend/classinit.js'></script>
+  	<script src='../js/core/extend/exposemethods.js'></script>
+	
+
+	
+	
+	<style>
+		.label{
+			width:100px;
+			display:inline-block;
+		}
+		.tip{
+			color:red;
+			font-size:12px;
+		}
+	</style>
+</head>
+<body>
+	<div>
+		<button e-click='change'>change</button>
+		<button e-click='change1'>change1</button>
+		<button e-click='serialize'>serialize</button>
+		<div>
+			<div> 姓名:{{name}}</div>
+			<div> 性别:{{sexy}}</div>
+			<div> 已婚:{{married}}</div>
+			<div> 学历:{{edu}},hello world</div>
+			<div> 价格:{{price|number:3}}</div>
+		</div>
+		<div>
+			<div>姓名：<input type='text' x-field='name' value='{{name}}'></div>
+			<div>性别:<input type='radio' x-field='sexy' value='M'/>男 <input x-field='sexy' type='radio' value='F'/>女</div>
+			<div>已婚<input type='checkbox' x-field='married' value='{{married}}' yes-value='1' no-value='0'>是</div>
+			<div>学历：<select x-field='edu'><option x-repeat='edus' value='{{eduId}}'>{{eduName}}</option></select></div>
+		</div>
+	</div>
+</body>
+	<script>
+		nodom.config.appPath='';
+		let mod = new Module({
+			el:'div',
+			// compiledTemplate:'compile/mod1.json',
+			root:true,
+			data:{
+				name:'yanglei',
+				sexy:'M',
+				married:1,
+				edu:2,
+				price:12.3456,
+				edus:[
+					{eduId:1,eduName:'高中'},
+					{eduId:2,eduName:'本科'},
+					{eduId:3,eduName:'硕士研究生'},
+					{eduId:4,eduName:'博士研究生'}
+				]
+			},
+			methods:{
+				change:function(e,module){
+					this.data.married = 0;
+				},
+				change1:function(e,module){
+					this.data.name='yanglei123';
+				},
+				serialize:function(e,module){
+					console.log(Serializer.serialize(module));
+				}
+			}
+		});
+		
+	</script>
+</html>

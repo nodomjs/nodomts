@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>repeat</title>
+    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+
+    <style>
+        .code {
+            margin: 20px;
+        }
+
+        .tip {
+            color: darkorange;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="view">
+        <div class="tip">基本使用</div>
+        <div class="code">
+            菜单：
+            <div x-repeat="foods">
+                菜名：{{name}}，价格：{{price}}
+            </div>
+        </div>
+        <div class="tip">索引号的使用（编号从1开始）</div>
+        <div class="code">
+            菜单：
+            <div x-repeat="foods">
+                编号：{{$index}}，菜名：{{name}}，价格：{{price}}
+            </div>
+        </div>
+        <div class="tip">过滤器使用-显示奇数号的数据（编号从1开始）</div>
+        <div class="code">
+            菜单：
+            <div x-repeat="foods|select:odd">
+                菜名：{{name}}，价格：{{price}}
+            </div>
+        </div>
+        <div class="tip">过滤器使用-价格升序排序（编号从1开始）</div>
+        <div class="code">
+            菜单：
+            <div x-repeat="foods|orderby:price">
+                编号：{{$index}}，菜名：{{name}}，价格：{{price}}
+            </div>
+        </div>
+        <div class="tip">使用数组外的数据，直接引用</div>
+        <div class="code">
+            会员折扣：{{discount*10}}折
+            <div x-repeat="foods">
+                菜名：{{name}}，价格：{{price}}，会员价：{{price*discount}}
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    let mod = new Module({
+        el: '.view',
+        root: true,
+        data: {
+            discount: 0.9,
+            foods: [{
+                name: '夫妻肺片',
+                price: 25
+            }, {
+                name: '京酱肉丝',
+                price: 22
+            }, {
+                name: '糖醋里脊',
+                price: 20
+            }, {
+                name: '红烧茄子',
+                price: 12
+            }, {
+                name: '口水鸡',
+                price: 18
+            }, {
+                name: '水煮肉片',
+                price: 24
+            }]
+        }
+    });
+
+</script>
+
+</html>
