@@ -389,9 +389,8 @@ namespace nodom{
          * 把srcNode替换为nodes
          * @param srcNode       源dom
          * @param nodes         替换的dom或dom数组
-         * @param srcPropCopy   是否保留原有dom的扩展view参数，缺省false
          */
-        static replaceNode(srcNode,nodes,srcPropCopy){
+        static replaceNode(srcNode:Node,nodes:Node|Array<Node>){
             if(!this.isNode(srcNode)){
                 throw new NodomError('invoke','this.replaceNode','0','Node');
             }
@@ -408,22 +407,12 @@ namespace nodom{
                 return;
             }
             pnode.removeChild(srcNode);
-            if(!this.isArray(nodes)){
-                nodes = [nodes];
-            }
-            
-            nodes.forEach(function(node){
+            let nodeArr:Array<Node> = this.isArray(nodes)?<Node[]>nodes:[<Node>nodes];
+            nodeArr.forEach(function(node){
                 if(bnode === undefined || bnode === null){
                     pnode.appendChild(node);
                 }else{
                     pnode.insertBefore(node,bnode);
-                }
-                if(srcPropCopy !== false){
-                    srcPropCopy = true;
-                }
-                // 扩展node处理 参数复制
-                if(srcPropCopy && srcNode.$isView){
-                    this.copyProp(node,srcNode);
                 }
             });
         }
@@ -777,7 +766,7 @@ namespace nodom{
          * @param srcStr    带转换的字符串
          * @param quot      引号 " 或 ' 或 `
          */
-        static addStrQuot(srcStr,quot){
+        static addStrQuot(srcStr:string,quot?:string){
             srcStr = srcStr.replace(/\'/g,'\\\'');
             srcStr = srcStr.replace(/\"/g,'\\\"');
             srcStr = srcStr.replace(/\`/g,'\\\`');
@@ -792,7 +781,7 @@ namespace nodom{
          * @param obj   this指向
          * @param args  参数数组
          */
-        static apply(foo,obj,args){
+        static apply(foo:Function,obj:any,args?:Array<any>){
             return Reflect.apply(foo,obj,args);
         }
     }

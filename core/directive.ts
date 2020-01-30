@@ -1,35 +1,65 @@
-/**
- * 指令类
- */
-class Directive{
-	/**
-	 * 构造方法
-	 * @param type  	类型
-	 * @param value 	指令值
-	 * @param vdom 		虚拟dom
-	 * @param module 	模块	
-	 * @param el 		element
-	 */
-	constructor(type,value,vdom,module,el){
-		const me = this;
-		me.type = type;
-		if(nodom.isString(value)){
-			me.value = value.trim();
-		}
-		if(type !== undefined){
-			nodom.apply(DirectiveManager.init,DirectiveManager,[me,vdom,module,el]);
-		}
+namespace nodom {
+    /**
+     * 指令类
+     */
+    export class Directive {
+		/**
+		 * 指令id
+		 */
+		id:number;
 
-		me.id = nodom.genId();
-	}
+		/**
+		 * 指令类型，指令管理器中定义
+		 */
+		type:string;
 
-	/**
-	 * 执行
-	 * @param value 	待过滤值
-	 * @return 			过滤结果
-	 */
-	exec(value){
-		let args = [this.module,this.type,value].concat(this.params);
-		return nodom.apply(DirectiveManager.exec,DirectiveManager,args);
-	}
+		/**
+		 * 指令值
+		 */
+		value:string|Expression[];
+
+		/**
+		 * 指令对应模块
+		 */
+		module:Module;
+
+		/**
+		 * 编译时执行方法
+		 */
+		init:Function;
+
+		/**
+		 * 渲染时执行方法
+		 */
+		handler:Function;
+		
+        /**
+         * 构造方法
+         * @param type  	类型
+         * @param value 	指令值
+         * @param vdom 		指令所属虚拟dom
+         * @param module 	模块	
+         * @param el 		指令所属html element
+         */
+        constructor(type:string, value:string, vdom:Element, module:Module, el:HTMLElement) {
+			this.id = Util.genId();
+			this.type = type;
+            if (Util.isString(value)) {
+                this.value = value.trim();
+            }
+            if (type !== undefined) {
+                Util.apply(DirectiveManager.init, DirectiveManager, [this, vdom, module, el]);
+            }
+        }
+
+        /**
+         * 执行
+         * @param value 	指令值
+         * @returns 		指令结果
+         */
+        exec(value) {
+            let args:Array<any> = [this.module, this.type, value];
+            return Util.apply(DirectiveManager.exec, DirectiveManager, args);
+        }
+    }
 }

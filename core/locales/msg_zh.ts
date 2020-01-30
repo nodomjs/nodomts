@@ -11,6 +11,7 @@ namespace nodom{
 		moduleClass:'模块类',
 		model:"模型",
 		directive:"指令",
+		directiveType:"指令类型",
 		expression:"表达式",
 		event:"事件",
 		method:"方法",
