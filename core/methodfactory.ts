@@ -1,5 +1,3 @@
-import { Z_NO_COMPRESSION } from "zlib";
-
 namespace nodom {
 	/**
      * 方法工厂，每个模块一个
@@ -9,15 +7,14 @@ namespace nodom {
 		/**
          * 调用方法
          * @param name 		方法名
-         * @param params 	方法参数
+         * @param params 	方法参数数组
          */
-        invoke(name, params) {
-            const me = this;
-            let foo = me.get(name);
+        invoke(name:string, params:Array<any>) {
+            const foo = this.get(name);
             if (!Util.isFunction(foo)) {
-                throw new NodomError(nodom.ErrorMsgs.notexist1, nodom.words.method, name);
+                throw new NodomError(nodom.ErrorMsgs.notexist1, TipWords.method, name);
             }
-            return Util.apply(foo, me.module.model, params);
+            return Util.apply(foo, this.module.model, params);
         }
     }
 }

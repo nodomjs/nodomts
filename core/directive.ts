@@ -16,7 +16,7 @@ namespace nodom {
 		/**
 		 * 指令值
 		 */
-		value:string|Expression[];
+		value:any;
 
 		/**
 		 * 指令对应模块
@@ -32,7 +32,15 @@ namespace nodom {
 		 * 渲染时执行方法
 		 */
 		handler:Function;
-		
+        
+        /**
+         * 过滤器
+         */
+        filter:Filter;
+        /**
+         * 附加参数
+         */
+        params:any;
         /**
          * 构造方法
          * @param type  	类型
@@ -41,7 +49,7 @@ namespace nodom {
          * @param module 	模块	
          * @param el 		指令所属html element
          */
-        constructor(type:string, value:string, vdom:Element, module:Module, el:HTMLElement) {
+        constructor(type:string, value:string, vdom:Element, module:Module, el?:HTMLElement) {
 			this.id = Util.genId();
 			this.type = type;
             if (Util.isString(value)) {

@@ -25,7 +25,53 @@ namespace nodom {
 		 * 类型 0:常规属性 1:表达式属性
 		 */
 		type:number;
-	}
+    }
+    
+    /**
+     * 改变的dom类型
+     */
+    export class ChangedDom{
+        /**
+         * 改变方式
+         */
+        type: string;
+        /**
+         * 改变的节点
+         */
+        node: Element;
+        /**
+         * 父虚拟dom
+         */
+        parent: Element;
+        /**
+         * 在父节点中的位置
+         */
+        index:number;
+
+        /**
+         * 改变的属性数组
+         */
+        changeProps:Array<Property>;
+
+        /**
+         * 移除的属性数组
+         */
+        removeProps:Array<Property>;
+
+        /**
+         * 
+         * @param node      虚拟节点
+         * @param type      修改类型  add(添加节点),del(删除节点),upd(更新节点),rep(替换节点),text(修改文本内容)
+         * @param parent    父虚拟dom
+         * @param index     在父节点中的位置索引
+         */
+        constructor(node?:Element,type?:string,parent?:Element,index?:number){
+            this.node = node;
+            this.type = type;
+            this.parent = parent;
+            this.index = index;
+        }
+    }
     /**
      * 虚拟dom
      */
@@ -304,13 +350,12 @@ namespace nodom {
          * 克隆
          */
         clone() {
-            const me = this;
             let dst = new Element();
 
             //简单属性
-			Util.getOwnProps(me).forEach((p) => {
-                if (typeof me[p] !== 'object') {
-                    dst[p] = me[p];
+			Util.getOwnProps(this).forEach((p) => {
+                if (typeof this[p] !== 'object') {
+                    dst[p] = this[p];
                 }
             });
 
@@ -590,13 +635,12 @@ namespace nodom {
          * @returns	{type:类型 text/rep/add/upd,node:节点,parent:父节点, 
          * 			changeProps:改变属性,[prop1,prop2,...],removeProps:删除属性,[prop1,prop2,...]}
          */
-        compare(dst:Element, retArr:Array<any>, parentNode:Element) {
+        compare(dst:Element, retArr:Array<ChangedDom>, parentNode?:Element) {
             if (!dst) {
                 return;
             }
-            const me = this;
-            let re = Object.create(null);
-            let change = false;
+            let re:ChangedDom = new ChangedDom();
+            let change:boolean = false;
 
             if (this.tagName === undefined) { //文本节点
                 if (dst.tagName === undefined) {
@@ -642,7 +686,7 @@ namespace nodom {
             }
             //改变则加入数据
             if (change) {
-                re.node = me;
+                re.node = this;
                 if (parentNode) {
                     re.parent = parentNode;
                 }
@@ -654,21 +698,14 @@ namespace nodom {
                 // 旧节点的子节点全部删除
                 if (dst.children && dst.children.length > 0) {
                     dst.children.forEach((item) => {
-                        retArr.push({
-                            type: 'del',
-                            node: item
-                        });
+                        retArr.push(new ChangedDom(item,'del'));
                     });
                 }
             } else {
                 //全部新加节点
                 if (!dst.children || dst.children.length === 0) {
                     this.children.forEach((item) => {
-                        retArr.push({
-                            type: 'add',
-                            node: item,
-                            parent: me
-                        });
+                        retArr.push(new ChangedDom(item,'add',this));
                     });
                 } else { //都有子节点
                     this.children.forEach((dom1, ind) => {
@@ -686,17 +723,12 @@ namespace nodom {
                             }
                         }
                         if (dom2 !== undefined) {
-                            dom1.compare(dom2, retArr, me);
+                            dom1.compare(dom2, retArr, this);
                             //设置匹配标志，用于后面删除没有标志的节点
                             dom2.finded = true;
                         } else {
                             // dom1为新增节点
-                            retArr.push({
-                                type: 'add',
-                                node: dom1,
-                                parent: me,
-                                index: ind //在父节点中的位置
-                            });
+                            retArr.push(new ChangedDom(dom1,'add',this,ind));
                         }
                     });
 
@@ -704,16 +736,11 @@ namespace nodom {
                     if (dst.children && dst.children.length > 0) {
                         dst.children.forEach((item) => {
                             if (!item.finded) {
-                                retArr.push({
-                                    type: 'del',
-                                    node: item,
-                                    parent: dst
-                                });
+                                retArr.push(new ChangedDom(item,'del',dst));
                             }
                         });
                     }
                 }
-
             }
         }
     }

@@ -194,7 +194,7 @@ namespace nodom {
                         let s:string = exprStr.substring(i + 1, j);
                         if (s !== '') {
                             // 过滤器串处理
-                            let filterArr:Filter[] = FilterManager.explain(s);
+                            let filterArr:string[] = FilterManager.explain(s);
                             //过滤器
                             if (FilterManager.hasType(filterArr[0])) {
                                 this.addFilter(filterArr, stack);
@@ -230,7 +230,7 @@ namespace nodom {
          * @param modelId 	模型id（model为fieldObj时不能为空）
 		 * @returns 		计算结果
          */
-        val(model:Model, modelId:number) {
+        val(model:Model, modelId?:number) {
             if (!model) { 
 				return ''; 
 			}
@@ -327,7 +327,7 @@ namespace nodom {
          * @param vtype 	值类型 field字段 func函数 comp 组合 	
          * @param extra 	附加参数
          */
-        private addFilter(filterArr:Array<Filter>, stack:Array<IStatckItem>) {
+        private addFilter(filterArr:Array<string>, stack:Array<IStatckItem>) {
             let module:Module = ModuleFactory.get(this.moduleName);
             if (stack.length > 0) {
                 let filterStack:Array<IStatckItem> = []; //过滤器堆栈

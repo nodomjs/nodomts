@@ -28,7 +28,7 @@ namespace nodom {
 		 * @param name 	item name
 		 * @param item	item
          */
-        add(name:string, item:any) {
+        add(name:any, item:any) {
             this.items[name] = item;
         }
 
@@ -36,7 +36,7 @@ namespace nodom {
          * 获得item
 		 * @param name 	item name
          */
-        get(name:string) {
+        get(name:any) {
             return this.items[name];
         }
 
@@ -44,7 +44,7 @@ namespace nodom {
          * 从容器移除
 		 * @param name 	item name
          */
-        remove(name) {
+        remove(name:any) {
             delete this.items[name];
         }
     }

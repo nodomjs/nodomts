@@ -11,10 +11,7 @@ namespace nodom {
          * 是否静态，如果为静态模块，则不产生虚拟dom，只需要把该模块对应模版置入容器即可
          */
         static ? : boolean;
-        /**
-         * 是否主模块，一个app只有一个根模块
-         */
-        main ? : boolean;
+        
         /**
          * 父模块名
          */
@@ -46,6 +43,14 @@ namespace nodom {
          * ```
          */
         methods ? : object;
+        /**
+         * 延迟初始化，如果设置为true，则不会提前加载并初始化
+         */    
+        delayInit:boolean;
+        /**
+         * 先于模块初始化加载的文件[{type:'js'/'css',url:路径}
+         */
+        requires:Array<string|object>;
     }
     /**
      * 模块类
@@ -60,13 +65,15 @@ namespace nodom {
          */
         static ? : boolean;
         /**
-         * 是否主模块，一个app只有一个根模块
-         */
-        main ? : boolean;
-        /**
          * 模型
          */
         model ? : Model;
+
+        /**
+         * 是否主模块，一个app只有一个根模块
+         */
+        main ? : boolean;
+
         /**
          * 是否是首次渲染
          */
@@ -114,7 +121,12 @@ namespace nodom {
         /**
          * 数据url
          */
-        data: string;
+        dataUrl: string;
+        /**
+         * 正则初始化
+         */
+        initing:boolean;
+
         /**
          * 需要加载新数据
          */
@@ -138,7 +150,7 @@ namespace nodom {
         /**
          * 修改渲染的虚拟dom数组
          */
-        renderDoms: Array < Element >= [];
+        renderDoms: Array < ChangedDom >= [];
         /**
          * 初始配置
          */
@@ -149,15 +161,29 @@ namespace nodom {
         container: HTMLElement;
 
         /**
+         * 初始化链式处理器
+         */
+        initLinker:Promise<any>;
+
+        /**
+         * 模版串
+         */
+        template:string;
+
+        /**
+         * 路由容器key
+         */
+        routerKey:number;
+        /**
          * 构造器
          * @param config 
          */
-        constructor(config: IModuleCfg) {
+        constructor(config: IModuleCfg,main?:boolean) {
             // 模块名字
             if (config.name) {
                 this.name = config.name;
             } else {
-                this.name = 'Module' + nodom.Util.genId();
+                this.name = 'Module' + Util.genId();
             }
 
             // 把模块添加到工厂
@@ -188,22 +214,22 @@ namespace nodom {
                         this.methodFactory.add(item, config.methods[item]);
                     });
                 }
-                let templateStr: string = '';
+                
                 //清除container的内部内容
                 if (this.hasContainer()) {
-                    templateStr = this.container.innerHTML.trim();
+                    this.template = this.container.innerHTML.trim();
                     this.container.innerHTML = '';
                 }
 
                 //主模块
-                if (config.root) {
-                    this.isMain = true;
-                    ModuleFactory.setMain(me);
+                if (main) {
+                    this.main = true;
+                    ModuleFactory.setMain(this);
                     this.active();
                 }
 
                 //不延迟初始化或为主模块，需要立即初始化
-                if (!config.delayInit || this.isMain) {
+                if (!config.delayInit || this.main) {
                     this.init();
                 }
             }
@@ -213,8 +239,7 @@ namespace nodom {
          * 加载模块
          * @param callback  加载后的回调函数
          */
-        init() {
-            const me = this;
+        init():Promise<any> {
             //已初始化，不用再初始化
             if (this.state !== 0 || this.initing) {
                 return this.initLinker;
@@ -224,33 +249,36 @@ namespace nodom {
             let config = this.initConfig;
             let typeArr = []; //请求类型数组
             let urlArr = []; //请求url数组
-            //app页面路径
-            let appPath = nodom.config.appPath || '';
-            if (nodom.isArray(config.requires) && config.requires.length > 0) {
+            
+            //app页面根路径
+            let appPath:string = Application.templatePath || '';
+
+            if (Util.isArray(config.requires) && config.requires.length > 0) {
+                const head:HTMLHeadElement = document.head;
                 config.requires.forEach((item) => {
-                    let type;
-                    let url = '';
-                    if (nodom.isObject(item)) { //为对象，可能是css或js
-                        type = item.type || 'js';
-                        url += item.path;
+                    let type:string;
+                    let url:string = '';
+                    if (Util.isObject(item)) { //为对象，可能是css或js
+                        type = item['type'] || 'js';
+                        url += item['url'];
                     } else { //js文件
                         type = 'js';
                         url += item;
                     }
                     //如果已经加载，则不再加载
                     if (type === 'css') {
-                        let css: HTMLElement = nodom.get("link[href='" + url + "']");
+                        let css: HTMLLinkElement = <HTMLLinkElement>Util.get("link[href='" + url + "']");
                         if (css !== null) {
                             return;
                         }
-                        css = nodom.newEl('link');
+                        css = <HTMLLinkElement>Util.newEl('link');
                         css.type = 'text/css';
                         css.rel = 'stylesheet'; // 保留script标签的path属性
-                        css.href = path;
+                        css.href = url;
                         head.appendChild(css);
                         return;
                     } else if (type === 'js') {
-                        let cs = nodom.get("script[dsrc='" + url + "']");
+                        let cs = Util.get("script[dsrc='" + url + "']");
                         if (cs !== null) {
                             return;
                         }
@@ -260,42 +288,47 @@ namespace nodom {
                 });
             }
 
+            let templateStr:string; 
             //模版信息
-            if (config.template) { //模版串
-                //合并容器中的内容和template模版内容
-                this.templateStr += config.template.trim();
-            } else if (config.templateUrl) { //模版文件
-                typeArr.push('template');
-                urlArr.push(appPath + config.templateUrl);
-            } else if (config.compiledTemplate) { //编译后的json串
-                typeArr.push('compiled');
-                urlArr.push(appPath + config.compiledTemplate);
+            if(config.template){
+                config.template = config.template.trim();
+                let ch = config.template.substr(0,1);
+                if(ch==='<'){ //html模版串
+                    templateStr = config.template;
+                }else{  //文件
+                    if(config.template.lastIndexOf('.nd') !== config.template.length-3){ //nodom编译文件
+                        typeArr.push('compiled');
+                    }else{  //普通html文件
+                        typeArr.push('template');
+                    }
+                    urlArr.push(appPath + config.template);
+                }
             }
-
+            
             //如果已存在templateStr，则直接编译
-            if (!nodom.isEmpty(this.templateStr)) {
-                this.virtualDom = Compiler.compile(me, this.templateStr);
-                //用后删除
-                delete this.templateStr;
+            if (!Util.isEmpty(templateStr)) {
+                this.virtualDom = Compiler.compile(this, templateStr);
             }
 
             //数据信息
             if (config.data) { //数据
-                this.model = new Model(config.data, me);
-            } else if (config.dataUrl) { //数据文件url
-                typeArr.push('data');
-                urlArr.push(config.dataUrl);
-                this.dataUrl = config.dataUrl;
+                if(Util.isObject(config.data)){ //数据
+                    this.model = new Model(config.data, this);
+                }else{ //数据文件
+                    typeArr.push('data');
+                    urlArr.push(config.data);
+                    this.dataUrl = <string>config.data;
+                }
             }
 
             //批量请求文件
             if (typeArr.length > 0) {
-                this.initLinker = new Linker('getfiles', urlArr).then((files) => {
+                this.initLinker = Linker.gen('getfiles', urlArr).then((files) => {
                     let head = document.querySelector('head');
                     files.forEach((file, ind) => {
                         switch (typeArr[ind]) {
                         case 'js':
-                            let script = nodom.newEl('script');
+                            let script = Util.newEl('script');
                             script.innerHTML = file;
                             head.appendChild(script);
                             script.setAttribute('dsrc', urlArr[ind]);
@@ -303,29 +336,29 @@ namespace nodom {
                             head.removeChild(script);
                             break;
                         case 'template':
-                            this.virtualDom = Compiler.compile(me, file.trim());
+                            this.virtualDom = Compiler.compile(this, file.trim());
                             break;
                         case 'compiled': //预编译后的js文件
-                            let arr = Serializer.deserialize(file, me);
+                            let arr = Serializer.deserialize(file, this);
                             this.virtualDom = arr[0];
                             this.expressionFactory = arr[1];
                             break;
                         case 'data': //数据
-                            this.model = new Model(JSON.parse(file), me);
+                            this.model = new Model(JSON.parse(file), this);
                         }
                     });
                     //主模块状态变为3
-                    changeState(me);
+                    changeState(this);
                     delete this.initing;
                 });
             } else {
                 this.initLinker = Promise.resolve();
                 //修改状态
-                changeState(me);
+                changeState(this);
                 delete this.initing;
             }
 
-            if (nodom.isArray(this.initConfig.modules)) {
+            if (Util.isArray(this.initConfig.modules)) {
                 this.initConfig.modules.forEach((item) => {
                     this.addChild(item);
                 });
@@ -338,8 +371,8 @@ namespace nodom {
              * 修改状态
              * @param mod 	模块
              */
-            function changeState(mod) {
-                if (mod.isMain) {
+            function changeState(mod:Module) {
+                if (mod.main) {
                     mod.state = 3;
                     //可能不能存在数据，需要手动添加到渲染器
                     Renderer.add(mod);
@@ -349,7 +382,6 @@ namespace nodom {
                     mod.state = 1;
                 }
             }
-
         }
 
         /**
@@ -357,21 +389,20 @@ namespace nodom {
          * @return false 渲染失败 true 渲染成功
          */
         render() {
-            const me = this;
             //容器没就位或state不为active则不渲染，返回渲染失败
             if (this.state !== 3 || !this.virtualDom || !this.hasContainer()) {
                 return false;
             }
             //克隆新的树
-            let root = this.virtualDom.clone(me);
+            let root = this.virtualDom.clone();
             if (this.firstRender) {
                 //model无数据，如果存在dataUrl，则需要加载数据
                 if (this.loadNewData && this.dataUrl) {
-                    new Linker('ajax', {
+                    Linker.gen('ajax', {
                         url: this.dataUrl,
                         type: 'json'
                     }).then((r) => {
-                        this.model = new Model(r, me);
+                        this.model = new Model(r, this);
                         this.doFirstRender(root);
                     });
                     this.loadNewData = false;
@@ -386,22 +417,22 @@ namespace nodom {
                     let oldTree = this.renderTree;
                     this.renderTree = root;
                     //渲染
-                    root.render(me, null);
+                    root.render(this, null);
 
                     // 比较节点
                     root.compare(oldTree, this.renderDoms);
                     // 删除
                     for (let i = this.renderDoms.length - 1; i >= 0; i--) {
-                        let item = this.renderDoms[i];
+                        let item:ChangedDom = this.renderDoms[i];
                         if (item.type === 'del') {
-                            item.node.removeFromHtml(me);
+                            item.node.removeFromHtml(this);
                             this.renderDoms.splice(i, 1);
                         }
                     }
 
                     // 渲染
                     this.renderDoms.forEach((item) => {
-                        item.node.renderToHtml(me, item);
+                        item.node.renderToHtml(this, item);
                     });
                 }
 
@@ -415,7 +446,7 @@ namespace nodom {
             this.renderDoms = [];
 
             //子模块渲染
-            if (nodom.isArray(this.children)) {
+            if (Util.isArray(this.children)) {
                 this.children.forEach(item => {
                     item.render();
                 });
@@ -431,7 +462,7 @@ namespace nodom {
             //执行首次渲染前事件
             this.doModuleEvent('onBeforeFirstRender');
             this.beforeFirstRenderOps.forEach((foo) => {
-                nodom.apply(foo, me, []);
+                Util.apply(foo, me, []);
             });
             this.beforeFirstRenderOps = [];
             //渲染树
@@ -457,7 +488,7 @@ namespace nodom {
                 this.doModuleEvent('onFirstRender');
                 //执行首次渲染后操作队列
                 this.firstRenderOps.forEach((foo) => {
-                    nodom.apply(foo, me, []);
+                    Util.apply(foo, me, []);
                 });
                 this.firstRenderOps = [];
             }, 0);
@@ -465,27 +496,24 @@ namespace nodom {
         }
         // 检查容器是否存在，如果不存在，则尝试找到
         hasContainer() {
-            const me = this;
             if (this.container) {
                 return true;
             } else if (this.containerParam !== undefined) {
                 let ct;
-                if (this.containerParam.module === undefined) { //没有父节点
+                if (this.containerParam['module'] === undefined) { //没有父节点
                     ct = document;
                 } else {
-                    let module = ModuleFactory.get(this.containerParam.module);
+                    let module = ModuleFactory.get(this.containerParam['module']);
                     if (module) {
                         ct = module.container;
                     }
                 }
 
                 if (ct) {
-                    this.container = ct.querySelector(this.containerParam.selector);
+                    this.container = ct.querySelector(this.containerParam['selector']);
                     return this.container !== null;
                 }
-                console.log(this.container);
             }
-
             return false;
         }
         /**
@@ -513,19 +541,18 @@ namespace nodom {
 
         /**
          * 发送
-         * @param toName 		接受模块名
+         * @param toName 		接收模块名
          * @param data 			消息内容
          */
-        send(toName, data) {
-            MessageFactory.add(this.name, toName, data);
+        send(toName:string, data:any) {
+            MessageQueue.add(this.name, toName, data);
         }
 
 
         /**
          * 广播给父、兄弟和孩子（第一级）节点
          */
-        broadcast(data) {
-            const me = this;
+        broadcast(data:any) {
             //兄弟节点
             if (this.parentName) {
                 let pmod = ModuleFactory.get(this.parentName);
@@ -533,7 +560,7 @@ namespace nodom {
                     this.send(pmod.name, data);
                     pmod.children.forEach((m) => {
                         //自己不发
-                        if (m === me) {
+                        if (m === this) {
                             return;
                         }
                         this.send(m.name, data);
@@ -562,7 +589,7 @@ namespace nodom {
          * 激活
          * @param callback 	激活后的回调函数
          */
-        active(callback) {
+        active(callback?:Function) {
             const me = this;
             //激活状态不用激活，创建状态不能激活
             if (this.state === 3) {
@@ -573,7 +600,7 @@ namespace nodom {
             if (this.state === 0) {
                 this.init().then(() => {
                     this.state = 3;
-                    if (nodom.isFunction(callback)) {
+                    if (Util.isFunction(callback)) {
                         callback(this.model);
                     }
                     Renderer.add(me);
@@ -588,7 +615,7 @@ namespace nodom {
             }
 
             //子节点
-            if (nodom.isArray(this.children)) {
+            if (Util.isArray(this.children)) {
                 this.children.forEach((m) => {
                     m.active(callback);
                 });
@@ -605,14 +632,14 @@ namespace nodom {
         unactive() {
             const me = this;
             //主模块不允许取消
-            if (this.isRoot || this.state === 2) {
+            if (this.main || this.state === 2) {
                 return;
             }
             this.state = 2;
             //设置首次渲染标志
             this.firstRender = true;
             delete this.container;
-            if (nodom.isArray(this.children)) {
+            if (Util.isArray(this.children)) {
                 this.children.forEach((m) => {
                     m.unactive();
                 });
@@ -629,7 +656,7 @@ namespace nodom {
 
             this.state = 4;
 
-            if (nodom.isArray(this.children)) {
+            if (Util.isArray(this.children)) {
                 this.children.forEach((m) => {
                     m.unactive();
                 });
@@ -637,7 +664,7 @@ namespace nodom {
         }
 
         destroy() {
-            if (nodom.isArray(this.children)) {
+            if (Util.isArray(this.children)) {
                 this.children.forEach((m) => {
                     m.destroy();
                 });
@@ -654,10 +681,9 @@ namespace nodom {
          * @param eventName 	事件名
          * @param param 		参数，为数组
          */
-        doModuleEvent(eventName, param) {
-            const me = this;
+        doModuleEvent(eventName:string, param?:Array<any>) {
             let foo = this.methodFactory.get(eventName);
-            if (!nodom.isFunction(foo)) {
+            if (!Util.isFunction(foo)) {
                 return;
             }
             if (!param) {
@@ -666,16 +692,16 @@ namespace nodom {
                 param.unshift(this.model);
             }
             //调用方法
-            nodom.apply(foo, me, param);
+            Util.apply(foo, this, param);
         }
 
         /**
          * 添加首次渲染后执行操作
          * @param foo  	操作方法
          */
-        addFirstRenderOperation(foo) {
+        addFirstRenderOperation(foo:Function) {
             let me = this;
-            if (!nodom.isFunction(foo)) {
+            if (!Util.isFunction(foo)) {
                 return;
             }
             if (this.firstRenderOps.indexOf(foo) === -1) {
@@ -697,5 +723,4 @@ namespace nodom {
             }
         }
     }
-
 }

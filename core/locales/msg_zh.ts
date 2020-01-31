@@ -6,6 +6,7 @@ namespace nodom{
 	 * 提示单词
 	 */
 	export const TipWords={
+		application:"应用",
 		system:"系统",
 		module:"模块",
 		moduleClass:'模块类',
@@ -45,7 +46,8 @@ namespace nodom{
 		namedinvalid:"{0}{1}命名错误，请参考用户手册对应命名规范",
 		initial:"{0}初始化参数错误",
 		jsonparse:"JSON解析错误",
-		timeout:"请求超时"
+		timeout:"请求超时",
+		config:"{1}配置参数错误"
 	}
 
 	/**

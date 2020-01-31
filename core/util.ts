@@ -34,7 +34,7 @@ namespace nodom{
             /**
              * clone对象
              * @param src   待clone对象
-             * @return      克隆后的对象
+             * @returns     克隆后的对象
              */
             function clone(src){
                 let dst;
@@ -85,7 +85,7 @@ namespace nodom{
         /**
          * 合并多个对象并返回
          * @param   参数数组
-         * @return  返回对象
+         * @returns 返回对象
          */
         static merge(){
             for(let i=0;i<arguments.length;i++){
@@ -126,7 +126,7 @@ namespace nodom{
         /**
          * 获取对象自有属性
          */
-        static getOwnProps(obj){
+        static getOwnProps(obj):Array<string>{
             if(!obj){
                 return [];
             }
@@ -136,68 +136,78 @@ namespace nodom{
         /**
          * 是否为函数
          * @param foo   检查的对象
-         * @return true/false
+         * @returns     true/false
          */
-        static isFunction(foo){
+        static isFunction(foo):boolean{
             return foo !== undefined && foo !== null && foo.constructor === Function;
         }
         /**
          * 是否为数组
          * @param obj   检查的对象
-         * @return true/false
+         * @returns     true/false
          */
-        static isArray(obj) {
+        static isArray(obj) :boolean{
             return Array.isArray(obj);
         }
 
         /**
          * 是否为对象
          * @param obj   检查的对象
-         * @return true/false
+         * @returns true/false
          */
-        static isObject(obj) {
+        static isObject(obj):boolean {
             return obj !== null && obj !== undefined && obj.constructor === Object;
         }
 
         /**
          * 判断是否为整数
+         * @param v 检查的值
+         * @returns true/false
          */
-        static isInt(x) {
-            return Number.isInteger(x);
+        static isInt(v):boolean {
+            return Number.isInteger(v);
         }
         /**
          * 判断是否为number
+         * @param v 检查的值
+         * @returns true/false
          */
-        static isNumber(v){
+        static isNumber(v):boolean{
             return typeof v === 'number';
         }
 
         /**
          * 判断是否为boolean
+         * @param v 检查的值
+         * @returns true/false
          */
-        static isBoolean(v){
+        static isBoolean(v):boolean{
             return typeof v === 'boolean';
         }
         /**
          * 判断是否为字符串
+         * @param v 检查的值
+         * @returns true/false
          */
-        static isString(str){
-            return typeof str === 'string';
+        static isString(v):boolean{
+            return typeof v === 'string';
         }
 
         /**
          * 是否为数字串
+         * @param v 检查的值
+         * @returns true/false
          */
-        static isNumberString(str){
-            return /^\d+\.?\d*$/.test(str);
+        static isNumberString(v):boolean{
+            return /^\d+\.?\d*$/.test(v);
         }
 
         /**
          * 对象/字符串是否为空
          * @param obj   检查的对象
-         * @return true/false
+         * @returns     true/false
          */
-        static isEmpty(obj){
+        static isEmpty(obj):boolean{
             if(obj === null || obj === undefined)
                 return true;
             let tp = typeof obj;
@@ -213,26 +223,23 @@ namespace nodom{
         }
 
 
-        /**
-         * 对象相关
-         */
+        /***********************对象相关******************/
 
-        
         /**
          * 找到符合符合属性值条件的对象（深度遍历）
          * @param obj       待查询对象
          * @param props     属性值对象
          * @param one       是否满足一个条件就可以，默认false
          */ 
-        static findObjByProps(obj,props,one){
+        static findObjByProps(obj:object,props:object,one:boolean):Array<object>|object{
             if(!this.isObject(obj)){
                 throw new NodomError('invoke','this.findObjByProps','0','Object');
             }
 
             //默认false
             one = one || false;
-            let ps = this.getOwnProps(props);
-            let find = false;
+            let ps:Array<string> = this.getOwnProps(props);
+            let find:boolean = false;
             if(one === false){  //所有条件都满足
                 find = true;
                 for(let i=0;i<ps.length;i++){
@@ -246,7 +253,6 @@ namespace nodom{
                 for(let i=0;i<ps.length;i++){
                     let p = ps[i];
                     if(obj[p] === props[p]){
-                        console.log(p);
                         find = true;
                         break;
                     }
@@ -265,7 +271,7 @@ namespace nodom{
                         //递归查找
                         let oprops = this.getOwnProps(o);
                         for(let i=0;i<oprops.length;i++){
-                            let item = oprops[i];
+                            let item = o[oprops[i]];
                             if(item !== null && this.isObject(item)){
                                 let r = this.findObjByProps(item,props,one);
                                 if(r !== null){
@@ -294,10 +300,10 @@ namespace nodom{
          * 获取dom节点
          * @param selector  选择器
          * @param findAll   是否获取所有，默认为false
-         * @param pview     父对象
-         * @return element/null 或 element数组/[]
+         * @param pview     父html element
+         * @returns         html element/null 或 nodelist或[]
          */
-        static get(selector,findAll,pview):HTMLElement{
+        static get(selector:string,findAll?:boolean,pview?:HTMLElement|Document):Node|NodeList{
             pview = pview || document;
             if(findAll === true){
                 return pview.querySelectorAll(selector);
@@ -310,30 +316,29 @@ namespace nodom{
          * @param el    父element
          * @param dom   要添加的dom节点或dom串
          */
-        static append(el,dom){
+        static append(el:HTMLElement,dom:Node|string){
             if(this.isNode(dom)){
-                el.appendChild(dom);
+                el.appendChild(<Node>dom);
             }else if(this.isString(dom)){
                 let div:HTMLElement = this.newEl('div');
-                div.innerHTML = dom;
-                // this.transChildren(div,el);
+                div.innerHTML = <string>dom;
             }
         }
         /**
          * 是否为element
-         * @param el 传入的对象
-         * @return true/false
+         * @param el    传入的对象
+         * @returns     true/false
          */
-        static isEl(el){
+        static isEl(el:any):boolean{
             return el instanceof HTMLElement;
         }
 
         /**
          * 是否为node
          * @param node 传入的对象
-         * @return true/false
+         * @returns true/false
          */
-        static isNode(node){
+        static isNode(node:any):boolean{
             return node !== undefined && node !== null && (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE);  
         }
         
@@ -341,13 +346,13 @@ namespace nodom{
          * 获取translate3d 数据
          * @param view  element
          */
-        static getTranslate(el){
+        static getTranslate(el:HTMLElement):Array<number>{
             let tr = el.style.transform;
             let arr;
             if(tr && tr !== 'none'){
                 arr = [];
-                let va = tr.substring(tr.indexOf('(')+1,tr.indexOf(')')-1);
-                va = va.split(',');
+                let vs:string = tr.substring(tr.indexOf('(')+1,tr.indexOf(')')-1);
+                let va:Array<string> = vs.split(',');
                 for(let i=0;i<va.length;i++){
                     arr.push(parseInt(va[i]));
                 }
@@ -380,9 +385,9 @@ namespace nodom{
         /**
          * 新建svg element
          * @param tagName   标签名
-         * @return          svg element
+         * @returns         svg element
          */
-        static newSvgEl(tagName){
+        static newSvgEl(tagName):HTMLElement{
             return document.createElementNS("http://www.w3.org/2000/svg",tagName);
         }
         /**
@@ -398,16 +403,13 @@ namespace nodom{
             if(!this.isNode(nodes) && !this.isArray(nodes)){
                 throw new NodomError('invoke1','this.replaceNode','1','Node','Node Array');
             }
-
-            srcPropCopy = srcPropCopy || false;
-
-            let pnode = srcNode.parentNode;
-            let bnode = srcNode.nextSibling;
+            let pnode:Node = srcNode.parentNode;
+            let bnode:Node = srcNode.nextSibling;
             if(pnode === null){
                 return;
             }
             pnode.removeChild(srcNode);
-            let nodeArr:Array<Node> = this.isArray(nodes)?<Node[]>nodes:[<Node>nodes];
+            const nodeArr:Array<Node> = this.isArray(nodes)?<Node[]>nodes:[<Node>nodes];
             nodeArr.forEach(function(node){
                 if(bnode === undefined || bnode === null){
                     pnode.appendChild(node);
@@ -421,8 +423,7 @@ namespace nodom{
          * @param newNode   新节点或数组
          * @param oldNode   旧节点
          */
-        static insertAfter(newNode,srcNode,pNode){
-            const me = this;
+        static insertAfter(newNode:Node|Array<Node>,srcNode:Node,pNode:Node){
             if(!this.isNode(newNode)){
                 throw new NodomError('invoke','this.insertAfter','0','Node');
             }
@@ -442,23 +443,23 @@ namespace nodom{
             }
             if(bNode === null){
                 if(this.isArray(newNode)){
-                    newNode.forEach(function(n){
-                        if(me.isEl(n)){
+                    for(let n of <Array<Node>>newNode){
+                        if(this.isEl(n)){
                             pNode.appendChild(n);
                         }
-                    });
+                    }
                 }else{
-                    pNode.appendChild(newNode);
+                    pNode.appendChild(<Node>newNode);
                 }
             }else{
                 if(this.isArray(newNode)){
-                    newNode.forEach(function(n){
-                        if(me.isEl(n)){
+                    for(let n of <Array<Node>>newNode){
+                        if(this.isEl(n)){
                             pNode.insertBefore(n,bNode);
                         }
-                    });
+                    }
                 }else{
-                    pNode.insertBefore(newNode,bNode);
+                    pNode.insertBefore(<Node>newNode,bNode);
                 }
             }
         }
@@ -467,21 +468,21 @@ namespace nodom{
          * 清空子节点
          * @param el
          */
-        static empty(el){
+        static empty(el:HTMLElement){
             const me = this;
             if(!me.isEl(el)){
                 throw new NodomError('invoke','this.empty','0','Element');
             }
-            let nodes = el.childNodes;
+            let nodes:NodeList = el.childNodes;
             for(let i=nodes.length-1;i>=0;i--){
                 el.removeChild(nodes[i]);
             }
         }
         /**
-         * 删除自己
-         * @param node
+         * 删除节点
+         * @param node html node
          */
-        static remove(node){
+        static remove(node:Node){
             const me = this;
             if(!me.isNode(node)){
                 throw new NodomError('invoke','this.remove','0','Node');
@@ -536,11 +537,11 @@ namespace nodom{
         /**
          * 获取或设置宽度
          * @param el        elment
-         * @param value     如果为false，则获取外部width(含pathis.ng)，否则获取内部width，如果为数字，则设置width + px
+         * @param value     如果为false，则获取外部width(含padding)，否则获取内部width，如果为数字，则设置width=value + px
          */
-        static width(el,value){
+        static width(el:HTMLElement,value?:number|boolean){
             if(!this.isEl(el)){
-                throw new NodomError('invoke','this.width','0','Element');
+                throw new NodomError('invoke','nodom.width','0','Element');
             }
             if(this.isNumber(value)){
                 el.style.width = value + 'px';
@@ -555,14 +556,19 @@ namespace nodom{
                 }
                 let w = parseInt(compStyle['width']);
                 if(value === true){
-                    let pw = parseInt(compStyle['pathis.ngLeft'])+parseInt(compStyle['pathis.ngRight']);
+                    let pw = parseInt(compStyle['paddingLeft'])+parseInt(compStyle['paddingRight']);
                     w -= pw;    
                 }
                 return w;
             }
         }
 
-        static height(el,value){
+        /**
+         * 获取或设置高度
+         * @param el        elment
+         * @param value     如果为false，则获取外部height(含padding)，否则获取内部height，如果为数字，则设置height=value + px
+         */
+        static height(el:HTMLElement,value:number|boolean){
             if(!this.isEl(el)){
                 throw new NodomError('invoke','this.height','0','Element');
             }
@@ -587,10 +593,10 @@ namespace nodom{
         }
         /**
          * 添加class
-         * @param el        element
+         * @param el    html element
          * @param cls   类名
          */
-        static addClass(el,cls){
+        static addClass(el:HTMLElement,cls:string){
             if(!this.isEl(el)){
                 throw new NodomError('invoke','this.addClass','0','Element');
             }
@@ -598,7 +604,7 @@ namespace nodom{
                 throw new NodomError('invoke','this.addClass','1','string');   
             }
 
-            let cn = el.className.trim();
+            let cn:string = el.className.trim();
             if(this.isEmpty(cn)){
                 el.className = cls;
             }else{
@@ -616,10 +622,10 @@ namespace nodom{
         }
         /**
          * 移除cls
-         * @param el        element
+         * @param el    html element
          * @param cls   类名
          */
-        static removeClass(el,cls){
+        static removeClass(el:HTMLElement,cls:string){
             if(!this.isEl(el)){
                 throw new NodomError('invoke','this.removeClass','0','Element');
             }
@@ -627,7 +633,7 @@ namespace nodom{
                 throw new NodomError('invoke','this.removeClass','1','string');   
             }
 
-            let cn = el.className.trim();
+            let cn:string = el.className.trim();
             if(!this.isEmpty(cn)){
                 let arr = cn.split(/\s+/);
                 //遍历class数组，如果存在cls，则移除
@@ -644,38 +650,41 @@ namespace nodom{
         /******日期相关******/
         /**
          * 日期格式化
-         * @param srcDate   原始日期
+         * @param srcDate   时间戳串
          * @param format    日期格式
-         * @return          日期串
+         * @returns          日期串
          */
-        static formatDate(srcDate,format){
+        static formatDate(srcDate:string|number,format:string):string{
+            //时间戳
+            let timeStamp:number;
             if(this.isString(srcDate)){
                 //排除日期格式串,只处理时间戳
                 let reg = new RegExp(/^\d+$/);
-                if(reg.exec(srcDate) !== null){
-                    try{
-                        srcDate = parseInt(srcDate);
-                    }catch(e){}    
+                if(reg.test(<string>srcDate) === true){
+                    timeStamp = parseInt(<string>srcDate);
                 }
+            }else if(this.isNumber(srcDate)){
+                timeStamp = <number>srcDate;
+            }else{
+                throw new NodomError('invoke','this.formatDate','0','date string','date');
             }
                 
             //得到日期
-            srcDate = new Date(srcDate);
+            let date:Date = new Date(timeStamp);
             // invalid date
-            if(isNaN(srcDate.getDay())){
+            if(isNaN(date.getDay())){
                 return '';
-                // throw new NodomError('invoke','this.formatDate',0,'date string','date');
             }
 
             let o = {
-                "M+" : srcDate.getMonth()+1, //月份
-                "d+" : srcDate.getDate(), //日
-                "h+" : srcDate.getHours()%12 === 0 ? 12 : srcDate.getHours()%12, //小时
-                "H+" : srcDate.getHours(), //小时
-                "m+" : srcDate.getMinutes(), //分
-                "s+" : srcDate.getSeconds(), //秒
-                "q+" : Math.floor((srcDate.getMonth()+3)/3), //季度
-                "S" : srcDate.getMilliseconds() //毫秒
+                "M+" : date.getMonth()+1, //月份
+                "d+" : date.getDate(), //日
+                "h+" : date.getHours()%12 === 0 ? 12 : date.getHours()%12, //小时
+                "H+" : date.getHours(), //小时
+                "m+" : date.getMinutes(), //分
+                "s+" : date.getSeconds(), //秒
+                "q+" : Math.floor((date.getMonth()+3)/3), //季度
+                "S" : date.getMilliseconds() //毫秒
             };
             let week = {
                 "0" : "日",
@@ -685,66 +694,36 @@ namespace nodom{
                 "4" : "四",
                 "5" : "五",
                 "6" : "六"
-        };
-        //年份单独处理
-        if(/(y+)/.test(format)){
-            format=format.replace(RegExp.$1, (srcDate.getFullYear()+"").substr(4 - RegExp.$1.length));
-        }
-        //月日
-        this.getOwnProps(o).forEach(function(k){
-            if(new RegExp("("+ k +")").test(format)){
-                format = format.replace(RegExp.$1, (RegExp.$1.length==1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));
+            };
+
+            //年
+            if(/(y+)/.test(format)){
+                format=format.replace(RegExp.$1, (date.getFullYear()+"").substr(4 - RegExp.$1.length));
             }
-        });
-
-        //星期
-        if(/(E+)/.test(format)){
-            format=format.replace(RegExp.$1, ((RegExp.$1.length>1) ? (RegExp.$1.length>2 ? "/u661f/u671f" : "/u5468") : "") + week[srcDate.getDay() + ""]);
-        }
-        return format;
-        }
-
-        /**
-         * 日期串转日期
-         * @param dateStr   日期串
-         * @return          日期
-         */
-        static toDate(dateStr){
-            let date1;
-            try{
-                date1 = new Date(Date.parse(dateStr));
-            }catch(e){
-
-            }
-            if(!date1){
-                throw new NodomError('invoke','this.toDate','0','date string');
-            }
-
-            //处理非标准日期串
-            //14位
-            if(isNaN(date1) || isNaN(date1.getDay())){
-                if(dateStr.length === 14){
-                    dateStr = dateStr.substr(0,4) + '/' + dateStr.substr(4,2) + '/' + dateStr.substr(6,2) + ' ' +
-                            dateStr.substr(8,2) + ':' + dateStr.substr(10,2) + ':' + dateStr.substr(12);
-                    date1 = new Date(Date.parse(dateStr));
-                }else if(dateStr.length === 8){ //8位
-                    dateStr = dateStr.substr(0,4) + '/' + dateStr.substr(4,2) + '/' + dateStr.substr(6,2);
-                    date1 = new Date(Date.parse(dateStr));
+            //月日
+            this.getOwnProps(o).forEach(function(k){
+                if(new RegExp("("+ k +")").test(format)){
+                    format = format.replace(RegExp.$1, (RegExp.$1.length==1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));
                 }
+            });
+
+            //星期
+            if(/(E+)/.test(format)){
+                format=format.replace(RegExp.$1, ((RegExp.$1.length>1) ? (RegExp.$1.length>2 ? "/u661f/u671f" : "/u5468") : "") + week[date.getDay() + ""]);
             }
-            return date1;
+            return format;
         }
+
         /******字符串相关*****/
         /**
-         * 编译字符串
+         * 编译字符串，把{n}替换成带入值
          * @param str 待编译的字符串
          * @param args1,args2,args3,... 待替换的参数
-         * @return 转换后的消息
+         * @returns 转换后的消息
          */
-        static compileStr(){
-            let reg = new RegExp(/\{.+?\}/);
-            let arr = [];
-            let r;
+        static compileStr(src:string,p1?:any,p2?:any,p3?:any,p4?:any,p5?:any):string{
+            let reg:RegExp = new RegExp(/\{.+?\}/);
+            let r:RegExpExecArray;
             let args = arguments;
             let str = args[0];
             while((r=reg.exec(str))!==null){
@@ -781,7 +760,7 @@ namespace nodom{
          * @param obj   this指向
          * @param args  参数数组
          */
-        static apply(foo:Function,obj:any,args?:Array<any>){
+        static apply(foo:Function,obj:any,args?:Array<any>):any{
             return Reflect.apply(foo,obj,args);
         }
     }
