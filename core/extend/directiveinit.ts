@@ -427,7 +427,7 @@ namespace nodom {
                 if (el) {
                     //增加事件
                     el.addEventListener('focus', function (e) {
-                        el.canBeValid = true;
+                        directive.params.enabled = true;
                     });
                     el.addEventListener('blur', function (e) {
                         Renderer.add(m);
@@ -438,8 +438,7 @@ namespace nodom {
 
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             const el:HTMLInputElement = module.container.querySelector("[name='" + directive.value + "']");
-
-            if (!el || !el.canBeValid) {
+            if (!directive.params.enabled) {
                 dom.dontRender = true;
                 return;
             }
