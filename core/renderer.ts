@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
 	/**
 	 * 渲染器
@@ -35,7 +36,7 @@ namespace nodom {
          */
         static render() {
             //调用队列渲染
-            for (let i = 0; i < Renderer.waitList.length; i++) {
+            for (let i = 0; i < this.waitList.length; i++) {
                 let m = ModuleFactory.get(this.waitList[i]);
                 if (!m || m.render()) {
                 	this.waitList.splice(i--, 1);

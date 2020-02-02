@@ -1,15 +1,45 @@
 module.exports = {
     mode:'development',
-    entry:{
-        index:"./src/index.ts",
-        routetest:"./src/routetest.ts",
-        decorator:"./src/decorator.ts"
-        
-    },
-    output:{
+    entry:['./core/application.ts',
+        './core/compiler.ts',
+        './core/directive.ts',
+        './core/directivefactory.ts',
+        './core/directivemanager.ts',
+        './core/element.ts',
+        './core/expression.ts',
+        './core/expressionfactory.ts',
+        './core/factory.ts',
+        './core/filter.ts',
+        './core/filterfactory.ts',
+        './core/filtermanager.ts',
+        './core/linker.ts',
+        './core/messagequeue.ts',
+        './core/methodfactory.ts',
+        './core/model.ts',
+        './core/modelfactory.ts',
+        './core/module.ts',
+        './core/modulefactory.ts',
+        './core/nodom.ts',
+        './core/nodomerror.ts',
+        './core/nodomevent.ts',
+        './core/renderer.ts',
+        './core/router.ts',
+        './core/scheduler.ts',
+        './core/serializer.ts',
+        './core/util.ts',
+        './core/extend/directiveinit.ts',
+        './core/extend/exposemethod.ts',
+        './core/filterinit.ts',
+        './core/locales/msg_zh.ts'
+    ],
+    /*output:{
         path:__dirname + "/dist",
         filename:"[name].js"
+    },*/
+    output:{
+        filename:'./dist/nodom.js',
     },
+    devtool:'source-map',
     resolve:{
         extensions:[".ts",".tsx"]
     },

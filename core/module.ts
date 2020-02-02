@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
     /**
      * 模块配置对象
@@ -77,7 +78,7 @@ namespace nodom {
         /**
          * 是否是首次渲染
          */
-        firstRender: boolean;
+        firstRender: boolean=true;
         /**
          * 根虚拟dom
          */
@@ -247,7 +248,7 @@ namespace nodom {
 
             this.initing = true;
             let config = this.initConfig;
-            let typeArr = []; //请求类型数组
+            let typeArr:Array<string> = []; //请求类型数组
             let urlArr = []; //请求url数组
             
             //app页面根路径
@@ -288,7 +289,7 @@ namespace nodom {
                 });
             }
 
-            let templateStr:string; 
+            let templateStr:string=this.template; 
             //模版信息
             if(config.template){
                 config.template = config.template.trim();

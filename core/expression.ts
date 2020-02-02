@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
 	/**
 	 * 堆栈Item

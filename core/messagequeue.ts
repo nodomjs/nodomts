@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
     /**
      * 消息类
@@ -39,7 +40,7 @@ namespace nodom {
         /**
          * 消息数组
          */
-        static messages: Array < Message > ;
+        static messages: Array < Message > =[];
         /**
          * 添加消息到消息队列
          * @param fromModule 	来源模块名

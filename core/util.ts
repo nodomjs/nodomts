@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom{
     /**
      * @description 基础服务库
@@ -761,7 +762,10 @@ namespace nodom{
          * @param args  参数数组
          */
         static apply(foo:Function,obj:any,args?:Array<any>):any{
-            return Reflect.apply(foo,obj,args);
+            if(!foo){
+                return;
+            }
+            return Reflect.apply(foo,obj||null,args);
         }
     }
 }

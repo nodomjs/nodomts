@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
 	/**
      * 方法工厂，每个模块一个

@@ -1,8 +1,7 @@
-class A{
-    constructor(a,b){
-        this.a = a;
-    }
+let a = new Map();
+a.set('a',1);
+a.set('b',2);
+console.log(a);
+for(let o of a){
+    console.log(o);
 }
-
-let a = new A(1,2);
-console.log(a.constructor.name);

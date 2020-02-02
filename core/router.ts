@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
 	/**
 	 * 路由配置
@@ -714,7 +715,6 @@ namespace nodom {
             if (dom.tagName === 'A') {
                 dom.props['href'] = 'javascript:void(0)';
             }
-            let dirObj = {};
             // 表达式处理
             if (value && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
                 let expr = new Expression(value.substring(2, value.length - 2), module);
@@ -723,7 +723,7 @@ namespace nodom {
             } else {
                 dom.props['path'] = value;
             }
-
+            
             //添加click事件
             let method = '$nodomGenMethod' + Util.genId();
             module.methodFactory.add(method,

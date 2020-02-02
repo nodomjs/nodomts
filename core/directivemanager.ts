@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
     /**
      * 指令管理器
@@ -89,7 +90,7 @@ namespace nodom {
             }
 
             //调用
-            return Util.apply(this.directiveTypes.get(directive.type).handler, null, [directive,dom,module,parent]);
+            return Util.apply(this.directiveTypes.get(directive.type).handle, null, [directive,dom,module,parent]);
         }
     }
 }

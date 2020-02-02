@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom{
 	/**
 	 *  编译器
@@ -99,8 +100,8 @@ namespace nodom{
 							param = [jsonObj['name']];
 							break;
 					}
-					
-					retObj = Class.newInstance(cls,param);
+					let clazz:any = eval(cls);
+					// retObj = new .newInstance(cls,param);
 					if(cls === 'Element'){
 						vdom = retObj;
 					}

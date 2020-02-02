@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
     /**
      * 编译器，负责模版的编译
@@ -29,41 +30,42 @@ namespace nodom {
          * @param parent        父节点（virtualdom）   
          */
 
-        static compileDom(module, ele, parent) {
+        static compileDom(module:Module, ele:Node, parent:Element) {
             const me = this;
             let oe = new Element();
             //注视标志
             let isComment = false;
             switch (ele.nodeType) {
             case Node.ELEMENT_NODE: //元素
-                oe.tagName = ele.tagName;
+                let el:HTMLElement = <HTMLElement>ele;
+                oe.tagName = el.tagName;
                 //遍历attributes
-                for (let i = 0; i < ele.attributes.length; i++) {
-                    let attr = ele.attributes[i];
+                for (let i = 0; i < el.attributes.length; i++) {
+                    let attr = el.attributes[i];
                     let v = attr.value.trim();
                     if (attr.name.startsWith('x-')) { //指令
                         //添加到dom指令集
-                        oe.directives.push(new Directive(attr.name.substr(2), v, oe, module, ele));
+                        oe.directives.push(new Directive(attr.name.substr(2), v, oe, module, el));
                     } else if (attr.name.startsWith('e-')) { //事件
                         let en = attr.name.substr(2);
-                        oe.events[en] = new Event(en, attr.value.trim());
+                        oe.events[en] = new NodomEvent(en, attr.value.trim());
                     } else {
                         let isExpr = false;
                         if (v !== '') {
                             let ra = me.compileExpression(module, v);
-                            if (nodom.isArray(ra)) {
-                                oe.exprProps[attr.name] = ra;
+                            if (Util.isArray(ra)) {
+                                oe.exprProps.set(attr.name,new Property(attr.name,ra));
                                 isExpr = true;
                             }
                         }
                         if (!isExpr) {
-                            oe.props[attr.name] = v;
+                            oe.props.set(attr.name,new Property(attr.name,v));
                         }
                     }
                 }
                 let subEls = [];
                 //子节点编译
-                ele.childNodes.forEach(function (nd) {
+                ele.childNodes.forEach((nd:Node)=> {
                     subEls.push(me.compileDom(module, nd, oe));
                 });
 

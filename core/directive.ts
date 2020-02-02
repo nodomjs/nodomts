@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
     /**
      * 指令类
@@ -8,11 +9,14 @@ namespace nodom {
 		 */
 		id:number;
 
-		/**
+        /**
 		 * 指令类型，指令管理器中定义
 		 */
 		type:string;
-
+        /**
+         * 优先级，越小优先级越高
+         */
+        prio:number;
 		/**
 		 * 指令值
 		 */
@@ -31,7 +35,7 @@ namespace nodom {
 		/**
 		 * 渲染时执行方法
 		 */
-		handler:Function;
+		handle:Function;
         
         /**
          * 过滤器

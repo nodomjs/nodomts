@@ -4,6 +4,7 @@
   "description": "nodom-ts",
   "main": "webpack.config.js",
   "scripts": {
+    "build": "tsc",
     "pack": "node_modules/.bin/webpack"
   },
   "author": "fieldyang@163.com",
@@ -14,6 +15,9 @@
   "keywords": [],
   "devDependencies": {
     "clean-webpack-plugin": "^3.0.0",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-uglify": "^4.0.1",
+    "load-grunt-tasks": "^5.1.0",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.2",
     "webpack": "^4.41.2",

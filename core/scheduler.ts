@@ -1,13 +1,18 @@
+/// <reference path="nodom.ts" />
 namespace nodom{
 	/**
 	 * 调度器，用于每次空闲的待操作序列调度
 	 */
 	export class Scheduler{
-		static tasks:Array<Function> = [];
+		static tasks:Array<any> = [];
 		static dispatch(){
-			Scheduler.tasks.forEach((foo)=>{
-				if(Util.isFunction(foo)){
-					foo();	
+			Scheduler.tasks.forEach((item)=>{
+				if(Util.isFunction(item.func)){
+					if(item.thiser){
+						item.func.call(item.thiser);
+					}else{
+						item.func();
+					}
 				}
 			});
 		}
@@ -23,15 +28,15 @@ namespace nodom{
 
 		/**
 		 * 添加任务
-		 * @param foo 	任务
+		 * @param foo 		任务和this指向
+		 * @param thiser 	this指向
 		 */
-		static addTask(foo){
+		static addTask(foo:Function,thiser?:any){
 			if(!Util.isFunction(foo)){
 				throw new NodomError("invoke","Scheduler.addTask","0","function");
 			}
-			if(Scheduler.tasks.indexOf(foo) !== undefined){
-				Scheduler.tasks.push(foo);	
-			}
+			
+			Scheduler.tasks.push({func:foo,thiser:thiser});
 		}
 
 		/**

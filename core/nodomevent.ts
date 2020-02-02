@@ -1,3 +1,4 @@
+/// <reference path="nodom.ts" />
 namespace nodom {
     /**
      * 事件类
@@ -48,7 +49,7 @@ namespace nodom {
         /**
          * 事件所属虚拟dom的key
          */
-        domKey:number;
+        domKey:string;
 
         /**
          * 事件监听器

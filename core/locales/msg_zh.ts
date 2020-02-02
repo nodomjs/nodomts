@@ -1,3 +1,4 @@
+/// <reference path="../nodom.ts" />
 /*
  * 消息js文件 中文文件
  */

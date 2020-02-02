@@ -1,5 +1,29 @@
+/// <reference path="../nodom.ts" />
 namespace nodom {
-
+    /**
+     * 新建一个App
+     * @param config {global:全局配置,module:主模块配置}
+     *      global:应用全局配置，{routerPrePath:路由前置配置,templatePath:模版路径位置,renderTick:调度器间隔时间(ms)，如果支持requestAnimationFrame，则不需要}
+     *      module:主模块配置
+     */
+    export function newApp(config:IApplicationCfg):Module{
+        if(!config.module){
+            throw new NodomError('config',TipWords.application);
+        }
+        if(config.global){
+            Application.routerPrePath = config.global['routerPrePath'] || '';
+            Application.templatePath = config.global['templatePath'] || '';
+            Application.renderTick = config.global['renderTick'] || 100;
+        }
+        
+        //消息队列消息处理任务
+        Scheduler.addTask(MessageQueue.handleQueue,MessageQueue);
+        //渲染器启动渲染
+        Scheduler.addTask(Renderer.render,Renderer);
+        //启动调度器
+        Scheduler.start();
+        return createModule(config.module,true);
+    }
 
     /**
      * 暴露方法集
@@ -32,5 +56,25 @@ namespace nodom {
         } else {
             return new Route(<IRouteCfg>config);
         }
+    }
+
+    /**
+     * 创建指令
+     * @param name      指令名 
+     * @param init      初始化方法
+     * @param handler   渲染时方法
+     */
+    export function createDirective(name:string,init:Function,handler:Function){
+
+    }
+
+    /**
+     * 创建插件
+     * @param name      插件名 
+     * @param init      初始化方法
+     * @param handler   渲染时方法
+     */
+    export function createPlugin(name:string,init:Function,handler:Function){
+
     }
 }
