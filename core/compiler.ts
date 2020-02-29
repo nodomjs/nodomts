@@ -50,16 +50,16 @@ namespace nodom {
                         let en = attr.name.substr(2);
                         oe.events[en] = new NodomEvent(en, attr.value.trim());
                     } else {
-                        let isExpr = false;
+                        let isExpr:boolean = false;
                         if (v !== '') {
                             let ra = me.compileExpression(module, v);
                             if (Util.isArray(ra)) {
-                                oe.exprProps.set(attr.name,new Property(attr.name,ra));
+                                oe.exprProps[attr.name] = ra;
                                 isExpr = true;
                             }
                         }
                         if (!isExpr) {
-                            oe.props.set(attr.name,new Property(attr.name,v));
+                            oe.props[attr.name] = v;
                         }
                     }
                 }
@@ -82,6 +82,7 @@ namespace nodom {
                 let expA = me.compileExpression(module, txt);
                 if (typeof expA === 'string') { //无表达式
                     oe.textContent = expA;
+                    
                 } else { //含表达式
                     oe.expressions = expA;
                 }
@@ -110,7 +111,8 @@ namespace nodom {
             }
             let reg = /\{\{.+?\}\}/g;
             let retA = new Array();
-            let re, oIndex = 0;
+            let re:RegExpExecArray;
+            let oIndex:number = 0;
             while ((re = reg.exec(exprStr)) !== null) {
                 let ind = re.index;
                 //字符串
@@ -127,8 +129,8 @@ namespace nodom {
                 oIndex = ind + re[0].length;
             }
             //最后的字符串
-            if (re && re.index + re[0].length < exprStr.length - 1) {
-                retA.push(exprStr.substr(re.index + re[0].length));
+            if (oIndex < exprStr.length - 1) {
+                retA.push(exprStr.substr(oIndex));
             }
             return retA;
         }

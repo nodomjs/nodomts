@@ -52,7 +52,7 @@ declare namespace nodom {
         /**
          * 事件监听器
          */
-        handleListener: EventListenerObject;
+        handleListener: any;
         /**
          * 触屏监听器
          */
@@ -68,17 +68,19 @@ declare namespace nodom {
         constructor(eventName: string, eventStr?: string);
         /**
          * 事件触发
-         * @param e  事件
+         * @param e     事件
+         * @param el    html element
+         * @param dom   virtual dom
          */
-        fire(e: Event): void;
+        fire(e: Event, el: HTMLElement, dom: Element): void;
         /**
          * 绑定事件
          * @param module    模块
-         * @param vdom      虚拟dom
+         * @param dom       虚拟dom
          * @param el        element
          
          */
-        bind(module: any, vdom: any, el: any): void;
+        bind(module: Module, dom: Element, el: HTMLElement): void;
         /**
          *
          * 事件代理到父对象

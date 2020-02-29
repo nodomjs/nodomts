@@ -10,10 +10,10 @@ namespace nodom {
         if(!config.module){
             throw new NodomError('config',TipWords.application);
         }
-        if(config.global){
-            Application.routerPrePath = config.global['routerPrePath'] || '';
-            Application.templatePath = config.global['templatePath'] || '';
-            Application.renderTick = config.global['renderTick'] || 100;
+        if(config.options){
+            Application.routerPrePath = config.options['routerPrePath'] || '';
+            Application.templatePath = config.options['templatePath'] || '';
+            Application.renderTick = config.options['renderTick'] || 100;
         }
         
         //消息队列消息处理任务

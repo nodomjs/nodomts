@@ -34,7 +34,7 @@ module.exports = function (grunt) {
             './dist/serializer.js',
             './dist/extend/directiveinit.js',
             './dist/extend/exposemethods.js',
-            './dist/filterinit.js',
+            './dist/extend/filterinit.js',
             './dist/locales/msg_zh.js'
             
           ],

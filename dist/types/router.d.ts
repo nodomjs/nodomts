@@ -90,6 +90,10 @@ declare namespace nodom {
          */
         static startStyle: number;
         /**
+         * 激活Dom map，格式为{moduleName:[]}
+         */
+        static activeDomMap: Map<string, Array<string>>;
+        /**
          * 往路由管理器中添加路径
          * @param path 	路径
          */

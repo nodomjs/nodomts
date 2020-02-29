@@ -20,7 +20,7 @@ var nodom;
                     p = this.getfiles(config);
                     break;
                 case 'dolist': //同步操作组
-                    if (arguments.length === 3) {
+                    if (config.params) {
                         p = this.dolist(config.funcs, config.params);
                     }
                     else {
@@ -149,7 +149,7 @@ var nodom;
                 }
                 else {
                     return new Promise((resolve, reject) => {
-                        if (pa !== null || pa !== undefined) {
+                        if (nodom.Util.isArray(pa)) {
                             fa[i](resolve, reject, pa[i]);
                         }
                         else {

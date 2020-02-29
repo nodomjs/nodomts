@@ -19,7 +19,7 @@ namespace nodom {
                 p = this.getfiles(config);
                 break;
             case 'dolist': //同步操作组
-                if (arguments.length === 3) {
+                if (config.params) {
                     p = this.dolist(config.funcs,config.params);
                 } else {
                     p = this.dolist(config.funcs);
@@ -144,14 +144,14 @@ namespace nodom {
          * @returns 		promise对象
          */
         private static dolist(funcArr:Array<Function>, paramArr?:Array<any>):Promise<any> {
-			return foo(funcArr, 0, paramArr);
+            return foo(funcArr, 0, paramArr);
 			
             function foo(fa, i, pa) {
                 if (fa.length === 0) {
                     return Promise.resolve();
                 } else {
                     return new Promise((resolve, reject) => {
-                        if (pa !== null || pa !== undefined) {
+                        if (Util.isArray(pa)) {
                             fa[i](resolve, reject, pa[i]);
                         } else {
                             fa[i](resolve, reject);

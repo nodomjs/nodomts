@@ -297,7 +297,7 @@ namespace nodom {
                 if(ch==='<'){ //html模版串
                     templateStr = config.template;
                 }else{  //文件
-                    if(config.template.lastIndexOf('.nd') !== config.template.length-3){ //nodom编译文件
+                    if(config.template.lastIndexOf('.nd') === config.template.length-3){ //nodom编译文件
                         typeArr.push('compiled');
                     }else{  //普通html文件
                         typeArr.push('template');

@@ -11,10 +11,10 @@ var nodom;
         if (!config.module) {
             throw new nodom.NodomError('config', nodom.TipWords.application);
         }
-        if (config.global) {
-            nodom.Application.routerPrePath = config.global['routerPrePath'] || '';
-            nodom.Application.templatePath = config.global['templatePath'] || '';
-            nodom.Application.renderTick = config.global['renderTick'] || 100;
+        if (config.options) {
+            nodom.Application.routerPrePath = config.options['routerPrePath'] || '';
+            nodom.Application.templatePath = config.options['templatePath'] || '';
+            nodom.Application.renderTick = config.options['renderTick'] || 100;
         }
         //消息队列消息处理任务
         nodom.Scheduler.addTask(nodom.MessageQueue.handleQueue, nodom.MessageQueue);

@@ -11,9 +11,6 @@ var nodom;
     class Util {
         //唯一主键
         static genId() {
-            if (this.generatedId === undefined) {
-                this.generatedId = 1;
-            }
             return this.generatedId++;
         }
         /******对象相关******/
@@ -750,6 +747,7 @@ var nodom;
             return Reflect.apply(foo, obj || null, args);
         }
     }
+    Util.generatedId = 1;
     nodom.Util = Util;
 })(nodom || (nodom = {}));
 //# sourceMappingURL=util.js.map
@@ -863,12 +861,12 @@ var nodom;
                             if (v !== '') {
                                 let ra = me.compileExpression(module, v);
                                 if (nodom.Util.isArray(ra)) {
-                                    oe.exprProps.set(attr.name, new nodom.Property(attr.name, ra));
+                                    oe.exprProps[attr.name] = ra;
                                     isExpr = true;
                                 }
                             }
                             if (!isExpr) {
-                                oe.props.set(attr.name, new nodom.Property(attr.name, v));
+                                oe.props[attr.name] = v;
                             }
                         }
                     }
@@ -916,7 +914,8 @@ var nodom;
             }
             let reg = /\{\{.+?\}\}/g;
             let retA = new Array();
-            let re, oIndex = 0;
+            let re;
+            let oIndex = 0;
             while ((re = reg.exec(exprStr)) !== null) {
                 let ind = re.index;
                 //字符串
@@ -932,8 +931,8 @@ var nodom;
                 oIndex = ind + re[0].length;
             }
             //最后的字符串
-            if (re && re.index + re[0].length < exprStr.length - 1) {
-                retA.push(exprStr.substr(re.index + re[0].length));
+            if (oIndex < exprStr.length - 1) {
+                retA.push(exprStr.substr(oIndex));
             }
             return retA;
         }
@@ -1087,20 +1086,6 @@ var nodom;
 var nodom;
 (function (nodom) {
     /**
-     * 属性
-     */
-    class Property {
-        /**
-         * @param name 		属性名
-         * @param value 	属性值
-         */
-        constructor(name, value) {
-            this.name = name;
-            this.value = value;
-        }
-    }
-    nodom.Property = Property;
-    /**
      * 改变的dom类型
      */
     class ChangedDom {
@@ -1133,28 +1118,31 @@ var nodom;
             this.directives = [];
             /**
              * 属性集合
+             * {prop1:value1,...}
              */
-            this.props = new Map();
+            this.props = {};
             /**
              * 含表达式的属性集合
+             * {prop1:value1,...}
              */
-            this.exprProps = new Map();
+            this.exprProps = {};
             /**
-             * 事件集合
+             * 事件集合,{eventName1:nodomEvent1,...}
              */
-            this.events = [];
+            this.events = {};
             /**
              * 表达式集合
              */
             this.expressions = [];
             /**
-             * 修改后的属性(单次渲染周期内)
+             * 改变的属性数组
+             * {prop1:value1,...}
              */
-            this.changeProps = []; //
+            // changeProps:Array<object>;
             /**
-             * 待删除属性(单次渲染周期内)
+             * 移除的属性名数组
              */
-            this.removeProps = [];
+            // removeProps:Array<string>;
             /**
              * 子element
              */
@@ -1269,18 +1257,20 @@ var nodom;
                     //删除属性
                     if (params.removeProps) {
                         params.removeProps.forEach((p) => {
-                            el.removeAttribute(p.name);
+                            el.removeAttribute(p);
                         });
                     }
                     //修改属性
-                    params.changeProps.forEach((p) => {
-                        if (el.tagName === 'INPUT' && p.name === 'value') { //文本框单独处理
-                            el.value = p.value;
-                        }
-                        else {
-                            el.setAttribute(p.name, p.value);
-                        }
-                    });
+                    if (params.changeProps) {
+                        params.changeProps.forEach((p) => {
+                            if (el.tagName === 'INPUT' && p.k === 'value') { //文本框单独处理
+                                el.value = p.v;
+                            }
+                            else {
+                                el.setAttribute(p.k, p.v);
+                            }
+                        });
+                    }
                     break;
                 case 'rep': //替换节点
                     el1 = newEl(this, parent);
@@ -1312,8 +1302,8 @@ var nodom;
                 //创建element
                 let el = document.createElement(vdom.tagName);
                 //设置属性
-                vdom.props.forEach((v, k) => {
-                    el.setAttribute(v.name, v.value);
+                nodom.Util.getOwnProps(vdom.props).forEach((k) => {
+                    el.setAttribute(k, vdom.props[k]);
                 });
                 el.setAttribute('key', vdom.key);
                 vdom.handleEvents(module, el, parent, parentEl);
@@ -1369,17 +1359,17 @@ var nodom;
                 dst.directives.push(d);
             }
             //普通属性
-            this.props.forEach((v, k) => {
-                dst.props.set(k, v);
+            nodom.Util.getOwnProps(this.props).forEach((k) => {
+                dst.props[k] = this.props[k];
             });
             //表达式属性
-            this.exprProps.forEach((v, k) => {
-                dst.exprProps.set(k, v);
+            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
+                dst.exprProps[k] = this.exprProps[k];
             });
             //事件
-            for (let d of this.events) {
-                dst.events.push(d);
-            }
+            nodom.Util.getOwnProps(this.events).forEach((k) => {
+                dst.events[k] = this.events[k];
+            });
             //表达式
             dst.expressions = this.expressions;
             this.children.forEach((d) => {
@@ -1435,15 +1425,13 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            this.exprProps.forEach((v, k) => {
+            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
                 //属性值为数组，则为表达式
-                if (nodom.Util.isArray(v)) {
-                    let p = new Property(k, this.handleExpression(v, module));
-                    this.props.set(k, p);
+                if (nodom.Util.isArray(this.exprProps[k])) {
+                    this.props[k] = this.handleExpression(this.exprProps[k], module);
                 }
-                else if (v instanceof nodom.Expression) { //单个表达式
-                    let p = new Property(k, v.val(module.modelFactory.get(this.modelId)));
-                    this.props.set(k, p);
+                else if (this.exprProps[k] instanceof nodom.Expression) { //单个表达式
+                    this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
                 }
             });
         }
@@ -1454,22 +1442,23 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            if (this.expressions !== undefined) {
+            if (this.expressions !== undefined && this.expressions.length > 0) {
                 this.textContent = this.handleExpression(this.expressions, module);
             }
         }
         /**
          * 处理事件
-         * @param module
-         * @param model
-         * @param el
-         * @param parent
+         * @param module    模块
+         * @param el        html element
+         * @param parent    父virtual dom
+         * @param parentEl  父html element
          */
         handleEvents(module, el, parent, parentEl) {
-            if (this.events.length === 0) {
+            if (nodom.Util.isEmpty(this.events)) {
                 return;
             }
-            this.events.forEach((ev) => {
+            nodom.Util.getOwnProps(this.events).forEach((k) => {
+                let ev = this.events[k];
                 if (ev.delg && parent) { //代理到父对象
                     ev.delegateTo(module, this, el, parent, parentEl);
                 }
@@ -1609,7 +1598,7 @@ var nodom;
          * 比较节点
          * @param dst 	待比较节点
          * @returns	{type:类型 text/rep/add/upd,node:节点,parent:父节点,
-         * 			changeProps:改变属性,[prop1,prop2,...],removeProps:删除属性,[prop1,prop2,...]}
+         * 			changeProps:改变属性,[{k:prop1,v:value1},...],removeProps:删除属性,[prop1,prop2,...]}
          */
         compare(dst, retArr, parentNode) {
             if (!dst) {
@@ -1640,16 +1629,16 @@ var nodom;
                     //待删除属性
                     re.removeProps = [];
                     //删除或增加的属性的属性
-                    dst.props.forEach((v, k) => {
-                        if (!this.props.has(k)) {
-                            re.removeProps.push(v);
+                    nodom.Util.getOwnProps(dst.props).forEach((k) => {
+                        if (!this.props[k]) {
+                            re.removeProps.push(k);
                         }
                     });
                     //修改后的属性
-                    this.props.forEach((v, k) => {
-                        let p1 = dst.props.get(k);
-                        if (!p1 || v.value !== p1.value) {
-                            re.changeProps.push(v);
+                    nodom.Util.getOwnProps(this.props).forEach((k) => {
+                        let v1 = dst.props[k];
+                        if (this.props[k] !== v1) {
+                            re.changeProps.push({ k: k, v: this.props[k] });
                         }
                     });
                     if (re.changeProps.length > 0 || re.removeProps.length > 0) {
@@ -2363,7 +2352,7 @@ var nodom;
                     p = this.getfiles(config);
                     break;
                 case 'dolist': //同步操作组
-                    if (arguments.length === 3) {
+                    if (config.params) {
                         p = this.dolist(config.funcs, config.params);
                     }
                     else {
@@ -2492,7 +2481,7 @@ var nodom;
                 }
                 else {
                     return new Promise((resolve, reject) => {
-                        if (pa !== null || pa !== undefined) {
+                        if (nodom.Util.isArray(pa)) {
                             fa[i](resolve, reject, pa[i]);
                         }
                         else {
@@ -2961,7 +2950,7 @@ var nodom;
                     templateStr = config.template;
                 }
                 else { //文件
-                    if (config.template.lastIndexOf('.nd') !== config.template.length - 3) { //nodom编译文件
+                    if (config.template.lastIndexOf('.nd') === config.template.length - 3) { //nodom编译文件
                         typeArr.push('compiled');
                     }
                     else { //普通html文件
@@ -3497,7 +3486,7 @@ var nodom;
             //设备类型  1:触屏，2:非触屏	
             let dtype = 'ontouchend' in document ? 1 : 2;
             //触屏事件根据设备类型进行处理
-            if (dtype) { //触屏设备
+            if (dtype === 1) { //触屏设备
                 switch (this.name) {
                     case 'click':
                         this.name = 'tap';
@@ -3532,24 +3521,24 @@ var nodom;
         }
         /**
          * 事件触发
-         * @param e  事件
+         * @param e     事件
+         * @param el    html element
+         * @param dom   virtual dom
          */
-        fire(e) {
+        fire(e, el, dom) {
             const module = nodom.ModuleFactory.get(this.moduleName);
-            const dom = module.renderTree.query(this.domKey);
             if (!module.hasContainer()) {
                 return;
             }
-            const el = module.container.querySelector("[key='" + this.domKey + "']");
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
-                handleSelf(e, model, module, el);
-                handleDelg(e, model, module, el);
+                handleSelf(this, e, model, module, el, dom);
+                handleDelg(this, e, model, module, el, dom);
             }
             else {
-                if (handleDelg(e, model, module, el)) {
-                    handleSelf(e, model, module, el);
+                if (handleDelg(this, e, model, module, el, dom)) {
+                    handleSelf(this, e, model, module, el, dom);
                 }
             }
             //判断是否清除事件
@@ -3565,17 +3554,18 @@ var nodom;
             }
             /**
              * 处理自有事件
-             * @param model     模型
+             * @param eobj      nodom event对象
              * @param e         事件
+             * @param model     模型
              * @param module    模块
              * @param el        事件element
              */
-            function handleDelg(e, model, module, el) {
+            function handleDelg(eObj, e, model, module, el, dom) {
                 //代理事件执行
-                if (this.events === undefined) {
+                if (eObj.events === undefined) {
                     return true;
                 }
-                let arr = this.events[this.name];
+                let arr = eObj.events[eObj.name];
                 if (nodom.Util.isArray(arr)) {
                     if (arr.length > 0) {
                         for (let i = 0; i < arr.length; i++) {
@@ -3585,7 +3575,7 @@ var nodom;
                                 arr[i].fire(e);
                                 //执行一次，需要移除
                                 if (arr[i].once) {
-                                    this.removeSubEvt(arr[i]);
+                                    eObj.removeSubEvt(arr[i]);
                                 }
                                 //禁止冒泡
                                 if (arr[i].nopopo) {
@@ -3595,30 +3585,31 @@ var nodom;
                         }
                     }
                     else { //删除该事件
-                        this.events.delete(this.name);
+                        eObj.events.delete(eObj.name);
                     }
                 }
                 return true;
             }
             /**
              * 处理自有事件
-             * @param model     模型
+             * @param eObj      nodomevent对象
              * @param e         事件
+             * @param model     模型
              * @param module    模块
              * @param el        事件element
              */
-            function handleSelf(e, model, module, el) {
-                let foo = module.methodFactory.get(this.handler);
+            function handleSelf(eObj, e, model, module, el, dom) {
+                let foo = module.methodFactory.get(eObj.handler);
                 //自有事件
                 if (nodom.Util.isFunction(foo)) {
                     //禁止冒泡
-                    if (this.nopopo) {
+                    if (eObj.nopopo) {
                         e.stopPropagation();
                     }
                     nodom.Util.apply(foo, model, [e, module, el, dom]);
                     //事件只执行一次，则删除handler
-                    if (this.once) {
-                        delete this.handler;
+                    if (eObj.once) {
+                        delete eObj.handler;
                     }
                 }
             }
@@ -3626,22 +3617,21 @@ var nodom;
         /**
          * 绑定事件
          * @param module    模块
-         * @param vdom      虚拟dom
+         * @param dom       虚拟dom
          * @param el        element
          
          */
-        bind(module, vdom, el) {
-            const me = this;
-            this.domKey = vdom.key;
+        bind(module, dom, el) {
             this.moduleName = module.name;
             //触屏事件
             if (ExternalEvent.touches[this.name]) {
-                ExternalEvent.regist(me, el);
+                ExternalEvent.regist(this, el);
             }
             else {
-                this.handleListener = el.addEventListener(this.name, function (e) {
-                    this.fire(e);
-                }, this.capture);
+                this.handleListener = (e) => {
+                    this.fire(e, el, dom);
+                };
+                el.addEventListener(this.name, this.handleListener, this.capture);
             }
         }
         /**
@@ -3654,7 +3644,6 @@ var nodom;
          * @param parentEl  父element
          */
         delegateTo(module, vdom, el, parent, parentEl) {
-            const me = this;
             this.domKey = vdom.key;
             this.moduleName = module.name;
             //如果不存在父对象，则用body
@@ -3662,13 +3651,13 @@ var nodom;
                 parentEl = document.body;
             }
             //父节点如果没有这个事件，则新建，否则直接指向父节点相应事件
-            if (!parent.events.includes(this)) {
+            if (!parent.events.hasOwnProperty(this.name)) {
                 let ev = new NodomEvent(this.name);
                 ev.bind(module, parent, parentEl);
-                parent.events.push(ev);
+                parent.events[this.name] = ev;
             }
             //添加子事件
-            parent.events[parent.events.indexOf(this)].addSubEvt(me);
+            parent.events[this.name].addSubEvt(this);
         }
         /**
          * 添加子事件
@@ -3689,7 +3678,6 @@ var nodom;
          * @param ev    子事件
          */
         removeSubEvt(ev) {
-            const me = this;
             if (this.events === undefined || this.events[ev.name] === undefined) {
                 return;
             }
@@ -3702,11 +3690,10 @@ var nodom;
             }
         }
         clone() {
-            const me = this;
             let evt = new Event(this.name);
             let arr = ['delg', 'once', 'nopopo', 'useCapture', 'handler', 'handleEvent', 'module'];
             arr.forEach((item) => {
-                evt[item] = me[item];
+                evt[item] = this[item];
             });
             return evt;
         }
@@ -4236,11 +4223,15 @@ var nodom;
          * @param path 		view对应的route路径
          */
         static changeActive(module, path) {
-            if (!module || !path || path === '' || !module.routerActiveViews) {
+            if (!module || !path || path === '') {
+                return;
+            }
+            let domArr = Router.activeDomMap.get(module.name);
+            if (!domArr) {
                 return;
             }
             //遍历router active view，设置或取消active class
-            module.routerActiveViews.forEach((item) => {
+            domArr.forEach((item) => {
                 let dom = module.renderTree.query(item);
                 if (!dom) {
                     return;
@@ -4309,6 +4300,10 @@ var nodom;
      * 启动方式 0:直接启动 1:由element active改变启动 2:popstate 启动
      */
     Router.startStyle = 0;
+    /**
+     * 激活Dom map，格式为{moduleName:[]}
+     */
+    Router.activeDomMap = new Map();
     nodom.Router = Router;
     /**
      * 路由类
@@ -4528,7 +4523,7 @@ var nodom;
             let method = '$nodomGenMethod' + nodom.Util.genId();
             module.methodFactory.add(method, (e, module, view, dom) => {
                 let path = dom.props['path'];
-                if (!path) {
+                if (nodom.Util.isEmpty(path)) {
                     return;
                 }
                 Router.addPath(path);
@@ -4536,18 +4531,20 @@ var nodom;
             dom.events['click'] = new nodom.NodomEvent('click', method);
         },
         handle: (directive, dom, module, parent) => {
-            //添加到active view 队列
-            if (!module.routerActiveViews) {
-                module.routerActiveViews = [];
-            }
-            if (module.routerActiveViews.indexOf(dom.key) === -1) {
-                //设置已添加标志，避免重复添加
-                module.routerActiveViews.push(dom.key);
-                if (dom.props.hasOwnProperty('active')) {
-                    let route = Router.getRoute(dom.props['path'], true);
-                    if (route === null) {
-                        return;
+            if (dom.props.hasOwnProperty('active')) {
+                //添加到router的activeDomMap
+                let domArr = Router.activeDomMap.get(module.name);
+                if (!domArr) {
+                    Router.activeDomMap.set(module.name, [dom.key]);
+                }
+                else {
+                    if (!domArr.includes(dom.key)) {
+                        domArr.push(dom.key);
                     }
+                }
+                let route = Router.getRoute(dom.props['path'], true);
+                if (route === null) {
+                    return;
                 }
             }
             let path = dom.props['path'];
@@ -4555,7 +4552,7 @@ var nodom;
                 return;
             }
             //active需要跳转路由（当前路由为该路径对应的父路由）
-            if (dom.props['active'] && dom.props['active'] !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
+            if (dom.props.hasOwnProperty('active') && dom.props['active'] !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
                 Router.addPath(path);
             }
         }
@@ -4835,7 +4832,8 @@ var nodom;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
             }
-            let ind, filter, modelName;
+            let ind;
+            let modelName;
             //过滤器
             if ((ind = value.indexOf('|')) !== -1) {
                 modelName = value.substr(0, ind).trim();
@@ -5295,10 +5293,10 @@ var nodom;
         if (!config.module) {
             throw new nodom.NodomError('config', nodom.TipWords.application);
         }
-        if (config.global) {
-            nodom.Application.routerPrePath = config.global['routerPrePath'] || '';
-            nodom.Application.templatePath = config.global['templatePath'] || '';
-            nodom.Application.renderTick = config.global['renderTick'] || 100;
+        if (config.options) {
+            nodom.Application.routerPrePath = config.options['routerPrePath'] || '';
+            nodom.Application.templatePath = config.options['templatePath'] || '';
+            nodom.Application.renderTick = config.options['renderTick'] || 100;
         }
         //消息队列消息处理任务
         nodom.Scheduler.addTask(nodom.MessageQueue.handleQueue, nodom.MessageQueue);
@@ -5363,6 +5361,294 @@ var nodom;
     nodom.createPlugin = createPlugin;
 })(nodom || (nodom = {}));
 //# sourceMappingURL=exposemethods.js.map
+/// <reference path="../nodom.ts" />
+var nodom;
+(function (nodom) {
+    /**
+     * 过滤器类型初始化
+     */
+    /**
+     * 格式化日期
+     * @param format    日期格式
+     */
+    nodom.FilterManager.addType('date', (value, param) => {
+        if (nodom.Util.isEmpty(value)) {
+            return '';
+        }
+        //去掉首尾" '
+        param = param.substr(1, param.length - 2);
+        return nodom.Util.formatDate(value, param);
+    });
+    /**
+     * 转换为货币
+     * @param sign  货币符号¥ $ 等，默认 ¥
+     */
+    nodom.FilterManager.addType('currency', (value, sign) => {
+        if (isNaN(value)) {
+            return '';
+        }
+        sign = sign || '¥';
+        if (typeof value === 'string') {
+            value = parseFloat(value);
+        }
+        return sign + ((value * 100 + 0.5 | 0) / 100);
+    });
+    /**
+     * 格式化，如果为字符串，转换成数字，保留小数点后位数
+     * @param digits    小数点后位数
+     */
+    nodom.FilterManager.addType('number', (value, param) => {
+        let digits = param || 0;
+        if (isNaN(value) || digits < 0) {
+            return '';
+        }
+        if (typeof value === 'string') {
+            value = parseFloat(value);
+        }
+        let x = 1;
+        for (let i = 0; i < digits; i++) {
+            x *= 10;
+        }
+        console.log(x);
+        return ((value * x + 0.5) | 0) / x;
+    });
+    /**
+     * 转换为小写字母
+     */
+    nodom.FilterManager.addType('tolowercase', (value) => {
+        if (nodom.Util.isEmpty(value)) {
+            return '';
+        }
+        if (!nodom.Util.isString(value) || nodom.Util.isEmpty(value)) {
+            throw new nodom.NodomError('invoke1', nodom.TipWords.filter + ' tolowercase', '0', 'string');
+        }
+        return value.toLowerCase();
+    });
+    /**
+     * 转换为大写字母
+     */
+    nodom.FilterManager.addType('touppercase', (value) => {
+        if (nodom.Util.isEmpty(value)) {
+            return '';
+        }
+        if (!nodom.Util.isString(value) || nodom.Util.isEmpty(value)) {
+            throw new nodom.NodomError('invoke1', nodom.TipWords.filter + ' touppercase', '0', 'string');
+        }
+        return value.toUpperCase();
+    });
+    /**
+     * 数组排序
+     * @param arr       数组
+     * @param param
+     *     用法: orderBy:字段:desc/asc
+     */
+    nodom.FilterManager.addType('orderby', function () {
+        let args = arguments;
+        let arr = args[0]; //数组
+        let field = args[1]; //比较字段
+        let odr = args[2] || 'asc'; //升序或降序,默认升序
+        if (!nodom.Util.isArray(arr)) {
+            throw new nodom.NodomError('invoke1', nodom.TipWords.filter + ' orderby', '0', 'array');
+        }
+        //复制数组
+        let ret = arr.concat([]);
+        if (field && nodom.Util.isObject(arr[0])) { //对象数组
+            if (odr === 'asc') {
+                ret.sort((a, b) => a[field] >= b[field] ? 1 : -1);
+            }
+            else {
+                ret.sort((a, b) => b[field] <= a[field] ? 1 : -1);
+            }
+        }
+        else { //值数组
+            if (odr === 'asc') {
+                ret.sort((a, b) => a >= b ? 1 : -1);
+            }
+            else {
+                ret.sort((a, b) => b <= a ? 1 : -1);
+            }
+        }
+        return ret;
+    });
+    /**
+     * 数组过滤
+     * 用法: 无参数select:odd 带参数 select:range:1:5
+     * odd      奇数，返回索引号为奇数的数组元素
+     * even     偶数，返回索引号为偶数的数组元素
+     * value    返回值中含有指定字符的数组元素
+     *          {prop1:v1,prop2:v2,...} 满足所有属性prop的值中含有对应字符或相等值的数组元素
+     * func     自定义函数过滤
+     * range    数组范围1:5 返回索引1到5的数组元素
+     * index    数组索引序列1:2:3 返回索引1，2，3的元素
+     */
+    nodom.FilterManager.addType('select', function () {
+        if (!nodom.Util.isArray(arguments[0])) {
+            throw new nodom.NodomError('invoke1', nodom.TipWords.filter + ' filter', '0', 'array');
+        }
+        let params = new Array();
+        for (let i = 0; i < arguments.length; i++) {
+            params.push(arguments[i]);
+        }
+        //内部处理方法对象
+        let handler = {
+            //奇数索引过滤
+            odd: function () {
+                let arr = arguments[0];
+                let ret = [];
+                for (let i = 0; i < arr.length; i++) {
+                    if (i % 2 === 1) {
+                        ret.push(arr[i]);
+                    }
+                }
+                return ret;
+            },
+            //偶数索引过滤
+            even: function () {
+                let arr = arguments[0];
+                let ret = [];
+                for (let i = 0; i < arr.length; i++) {
+                    if (i % 2 === 0) {
+                        ret.push(arr[i]);
+                    }
+                }
+                return ret;
+            },
+            //索引区域过滤
+            range: function () {
+                let args = arguments;
+                let arr = args[0];
+                let ret = [];
+                //第一个索引,第二个索引
+                let first = args[1];
+                let last = args[2];
+                if (isNaN(first)) {
+                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter range');
+                }
+                if (!nodom.Util.isNumber(first)) {
+                    first = parseInt(first);
+                }
+                //判断数字
+                if (isNaN(last)) {
+                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter range');
+                }
+                //字符串转数字
+                if (!nodom.Util.isNumber(last)) {
+                    last = parseInt(last);
+                }
+                if (first > last) {
+                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter range');
+                }
+                return arr.slice(first, last + 1);
+            },
+            //索引过滤
+            index: function () {
+                let args = arguments;
+                let arr = args[0];
+                if (!nodom.Util.isArray(args[0])) {
+                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter index');
+                }
+                let ret = [];
+                //读取所有index
+                if (arr.length > 0) {
+                    for (let i = 1; i < args.length; i++) {
+                        if (isNaN(args[i])) {
+                            continue;
+                        }
+                        let k = parseInt(args[i]);
+                        if (k < arr.length) {
+                            ret.push(arr[k]);
+                        }
+                    }
+                }
+                return ret;
+            },
+            //函数过滤
+            func: function (arr, param) {
+                if (!nodom.Util.isArray(arr) || nodom.Util.isEmpty(param)) {
+                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter func');
+                }
+                //自定义函数
+                let foo = this.methodFactory.get(param);
+                if (nodom.Util.isFunction(foo)) {
+                    return foo(arr);
+                }
+                return arr;
+            },
+            //值过滤
+            value: function (arr, param) {
+                if (!nodom.Util.isArray(arr) || nodom.Util.isEmpty(param)) {
+                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter value');
+                }
+                //属性值对象，所有属性值满足才过滤出来
+                if (nodom.Util.isObject(param)) {
+                    let keys = nodom.Util.getOwnProps(param);
+                    return arr.filter(function (item) {
+                        for (let i = 0; i < keys.length; i++) {
+                            let v = item[keys[i]];
+                            let v1 = param[keys[i]];
+                            //找不到属性值，或者不相等并且是字符串且不包含的情况都返回false
+                            if (v === undefined || v !== v1 && typeof v === 'string' && v.indexOf(v1) === -1) {
+                                return false;
+                            }
+                        }
+                        //都匹配则返回true
+                        return true;
+                    });
+                }
+                else { //字符串
+                    return arr.filter(function (item) {
+                        let props = nodom.Util.getOwnProps(item);
+                        for (let i = 0; i < props.length; i++) {
+                            let v = item[props[i]];
+                            if (nodom.Util.isString(v) && v.indexOf(param) !== -1) {
+                                return item;
+                            }
+                        }
+                    });
+                }
+            }
+        };
+        let type;
+        //类型匹配并处理
+        if (nodom.Util.isString(params[1])) {
+            type = params[1].trim();
+            if (handler.hasOwnProperty(type)) {
+                //去掉type
+                params.splice(1, 1);
+            }
+            else { //默认为value
+                type = 'value';
+            }
+        }
+        else { //默认为value，值对象
+            type = 'value';
+        }
+        //校验输入参数是否为空
+        if (type === 'range' || type === 'index' || type === 'func') {
+            if (params.length < 2) {
+                throw new nodom.NodomError('paramException', nodom.TipWords.filter);
+            }
+        }
+        //方法调用
+        return nodom.Util.apply(handler[type], this, params);
+    });
+    /**
+     * html过滤器
+     */
+    nodom.FilterManager.addType('html', (value) => {
+        if (nodom.Util.isEmpty(value)) {
+            return '';
+        }
+        let div = nodom.Util.newEl('div');
+        div.innerHTML = value;
+        let frag = document.createDocumentFragment();
+        for (let i = 0; i < div.childNodes.length; i++) {
+            frag.appendChild(div.childNodes[i]);
+        }
+        return frag;
+    });
+})(nodom || (nodom = {}));
+//# sourceMappingURL=filterinit.js.map
 /// <reference path="../nodom.ts" />
 /*
  * 消息js文件 中文文件

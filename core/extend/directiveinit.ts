@@ -67,7 +67,8 @@ namespace nodom {
                 throw new NodomError("paramException", "x-repeat");
             }
 
-            let ind, filter, modelName;
+            let ind:number;
+            let modelName:string;
             //过滤器
             if ((ind = value.indexOf('|')) !== -1) {
                 modelName = value.substr(0, ind).trim();
@@ -253,8 +254,8 @@ namespace nodom {
         },
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let obj = directive.value;
-            let clsArr = [];
-            let cls = dom.props['class'];
+            let clsArr:Array<string> = [];
+            let cls:string = dom.props['class'];
             let model = module.modelFactory.get(dom.modelId);
             if (Util.isString(cls) && !Util.isEmpty(cls)) {
                 clsArr = cls.trim().split(/\s+/);

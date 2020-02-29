@@ -64,7 +64,8 @@ var nodom;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
             }
-            let ind, filter, modelName;
+            let ind;
+            let modelName;
             //过滤器
             if ((ind = value.indexOf('|')) !== -1) {
                 modelName = value.substr(0, ind).trim();

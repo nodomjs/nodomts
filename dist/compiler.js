@@ -54,12 +54,12 @@ var nodom;
                             if (v !== '') {
                                 let ra = me.compileExpression(module, v);
                                 if (nodom.Util.isArray(ra)) {
-                                    oe.exprProps.set(attr.name, new nodom.Property(attr.name, ra));
+                                    oe.exprProps[attr.name] = ra;
                                     isExpr = true;
                                 }
                             }
                             if (!isExpr) {
-                                oe.props.set(attr.name, new nodom.Property(attr.name, v));
+                                oe.props[attr.name] = v;
                             }
                         }
                     }
@@ -107,7 +107,8 @@ var nodom;
             }
             let reg = /\{\{.+?\}\}/g;
             let retA = new Array();
-            let re, oIndex = 0;
+            let re;
+            let oIndex = 0;
             while ((re = reg.exec(exprStr)) !== null) {
                 let ind = re.index;
                 //字符串
@@ -123,8 +124,8 @@ var nodom;
                 oIndex = ind + re[0].length;
             }
             //最后的字符串
-            if (re && re.index + re[0].length < exprStr.length - 1) {
-                retA.push(exprStr.substr(re.index + re[0].length));
+            if (oIndex < exprStr.length - 1) {
+                retA.push(exprStr.substr(oIndex));
             }
             return retA;
         }

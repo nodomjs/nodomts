@@ -1,28 +1,6 @@
 /// <reference path="nodom.d.ts" />
 declare namespace nodom {
     /**
-     * 属性
-     */
-    class Property {
-        /**
-         * 属性名
-         */
-        name: string;
-        /**
-         * 值，可以是字符串、数字、bool或表达式数组
-         */
-        value: any;
-        /**
-         * @param name 		属性名
-         * @param value 	属性值
-         */
-        constructor(name: string, value: any);
-        /**
-         * 类型 0:常规属性 1:表达式属性
-         */
-        type: number;
-    }
-    /**
      * 改变的dom类型
      */
     class ChangedDom {
@@ -44,12 +22,13 @@ declare namespace nodom {
         index: number;
         /**
          * 改变的属性数组
+         * {prop1:value1,...}
          */
-        changeProps: Array<Property>;
+        changeProps: Array<object>;
         /**
-         * 移除的属性数组
+         * 移除的属性名数组
          */
-        removeProps: Array<Property>;
+        removeProps: Array<string>;
         /**
          *
          * @param node      虚拟节点
@@ -89,28 +68,29 @@ declare namespace nodom {
         directives: Array<Directive>;
         /**
          * 属性集合
+         * {prop1:value1,...}
          */
-        props: Map<string, Property>;
+        props: object;
         /**
          * 含表达式的属性集合
+         * {prop1:value1,...}
          */
-        exprProps: Map<string, Property>;
+        exprProps: object;
         /**
-         * 事件集合
+         * 事件集合,{eventName1:nodomEvent1,...}
          */
-        events: Array<NodomEvent>;
+        events: object;
         /**
          * 表达式集合
          */
         expressions: Array<Expression>;
         /**
-         * 修改后的属性(单次渲染周期内)
+         * 改变的属性数组
+         * {prop1:value1,...}
          */
-        changeProps: Array<Property>;
         /**
-         * 待删除属性(单次渲染周期内)
+         * 移除的属性名数组
          */
-        removeProps: Array<Property>;
         /**
          * 子element
          */
@@ -176,10 +156,10 @@ declare namespace nodom {
         handleTextContent(module: any): void;
         /**
          * 处理事件
-         * @param module
-         * @param model
-         * @param el
-         * @param parent
+         * @param module    模块
+         * @param el        html element
+         * @param parent    父virtual dom
+         * @param parentEl  父html element
          */
         handleEvents(module: any, el: any, parent: any, parentEl: any): void;
         /**
@@ -238,7 +218,7 @@ declare namespace nodom {
          * 比较节点
          * @param dst 	待比较节点
          * @returns	{type:类型 text/rep/add/upd,node:节点,parent:父节点,
-         * 			changeProps:改变属性,[prop1,prop2,...],removeProps:删除属性,[prop1,prop2,...]}
+         * 			changeProps:改变属性,[{k:prop1,v:value1},...],removeProps:删除属性,[prop1,prop2,...]}
          */
         compare(dst: Element, retArr: Array<ChangedDom>, parentNode?: Element): void;
     }

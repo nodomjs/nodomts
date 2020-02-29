@@ -92,7 +92,11 @@ namespace nodom {
 		 * 启动方式 0:直接启动 1:由element active改变启动 2:popstate 启动
 		 */
 		static startStyle:number = 0;
-	
+    
+        /**
+         * 激活Dom map，格式为{moduleName:[]}
+         */
+        static activeDomMap:Map<string,Array<string>> = new Map();
         /**
          * 往路由管理器中添加路径
          * @param path 	路径 
@@ -419,17 +423,21 @@ namespace nodom {
          * @param path 		view对应的route路径
          */
         static changeActive(module, path) {
-            if (!module || !path || path === '' || !module.routerActiveViews) {
+            if (!module || !path || path === '') {
+                return;
+            }
+            let domArr:string[] = Router.activeDomMap.get(module.name);
+            if(!domArr){
                 return;
             }
             //遍历router active view，设置或取消active class
-            module.routerActiveViews.forEach((item) => {
+            domArr.forEach((item) => {
                 let dom = module.renderTree.query(item);
                 if (!dom) {
                     return;
                 }
                 // dom route 路径
-                let domPath = dom.props['path'];
+                let domPath:string = dom.props['path'];
                 if (dom.exprProps.hasOwnProperty('active')) { // active属性为表达式，修改字段值
                     let model = module.modelFactory.get(dom.modelId);
                     if (!model) {
@@ -456,7 +464,6 @@ namespace nodom {
                     }
                 }
             });
-
         }
     }
 
@@ -634,7 +641,6 @@ namespace nodom {
          * @param path  	路径
          */
         static get(path:string):Array<Route> {
-            
             if (!this.root) {
                 throw new NodomError("notexist", TipWords.root);
             }
@@ -705,7 +711,7 @@ namespace nodom {
      * 增加route指令
      */
     DirectiveManager.addType('route', {
-        init: (directive, dom, module) => {
+        init: (directive:Directive, dom:Element, module:Module) => {
             let value = directive.value;
             if (Util.isEmpty(value)) {
                 return;
@@ -721,15 +727,14 @@ namespace nodom {
                 dom.exprProps['path'] = expr;
                 directive.value = expr;
             } else {
-                dom.props['path'] = value;
+                dom.props['path'] =  value;
             }
-            
             //添加click事件
             let method = '$nodomGenMethod' + Util.genId();
             module.methodFactory.add(method,
-                (e, module, view, dom) => {
-                    let path = dom.props['path'];
-                    if (!path) {
+                (e, module, view,dom) => {
+                    let path:string = dom.props['path'];
+                    if (Util.isEmpty(path)) {
                         return;
                     }
                     Router.addPath(path);
@@ -738,29 +743,30 @@ namespace nodom {
             dom.events['click'] = new NodomEvent('click', method);
         },
 
-        handle: (directive, dom, module, parent) => {
-            //添加到active view 队列
-            if (!module.routerActiveViews) {
-                module.routerActiveViews = [];
-            }
-
-            if (module.routerActiveViews.indexOf(dom.key) === -1) {
-                //设置已添加标志，避免重复添加
-                module.routerActiveViews.push(dom.key);
-                if (dom.props.hasOwnProperty('active')) {
-                    let route = Router.getRoute(dom.props['path'], true);
-                    if (route === null) {
-                        return;
+        handle: (directive:Directive, dom:Element, module:Module, parent:Element) => {
+            if (dom.props.hasOwnProperty('active')) {
+                //添加到router的activeDomMap
+                let domArr:string[] = Router.activeDomMap.get(module.name);
+                if(!domArr){
+                    Router.activeDomMap.set(module.name,[dom.key]);
+                }else{
+                    if(!domArr.includes(dom.key)){
+                        domArr.push(dom.key);
                     }
+                }
+                
+                let route:Array<Route> = Router.getRoute(dom.props['path'], true);
+                if (route === null) {
+                    return;
                 }
             }
 
-            let path = dom.props['path'];
+            let path:string = dom.props['path'];
             if (path === Router.currentPath) {
                 return;
             }
             //active需要跳转路由（当前路由为该路径对应的父路由）
-            if (dom.props['active'] && dom.props['active'] !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
+            if (dom.props.hasOwnProperty('active') && dom.props['active'] !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
                 Router.addPath(path);
             }
         }

@@ -10,9 +10,6 @@ var nodom;
     class Util {
         //唯一主键
         static genId() {
-            if (this.generatedId === undefined) {
-                this.generatedId = 1;
-            }
             return this.generatedId++;
         }
         /******对象相关******/
@@ -749,6 +746,7 @@ var nodom;
             return Reflect.apply(foo, obj || null, args);
         }
     }
+    Util.generatedId = 1;
     nodom.Util = Util;
 })(nodom || (nodom = {}));
 //# sourceMappingURL=util.js.map

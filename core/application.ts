@@ -7,7 +7,7 @@ namespace nodom{
         /**
          * 应用全局配置，{routerPrePath:路由前置配置,templatePath:模版路径位置,renderTick:调度器间隔时间(ms)，如果支持requestAnimationFrame，则不需要}
          */
-        global:object;
+        options:object;
         /**
          * 主模块配置
          */

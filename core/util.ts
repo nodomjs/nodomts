@@ -7,12 +7,9 @@ namespace nodom{
      * @create      2016-09-28
      */
     export class Util{
-        static generatedId:number;
+        static generatedId:number=1;
         //唯一主键
         static genId(){
-            if(this.generatedId === undefined){
-                this.generatedId = 1;
-            }
             return this.generatedId++;
         }
         

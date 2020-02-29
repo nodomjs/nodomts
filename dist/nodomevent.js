@@ -48,7 +48,7 @@ var nodom;
             //设备类型  1:触屏，2:非触屏	
             let dtype = 'ontouchend' in document ? 1 : 2;
             //触屏事件根据设备类型进行处理
-            if (dtype) { //触屏设备
+            if (dtype === 1) { //触屏设备
                 switch (this.name) {
                     case 'click':
                         this.name = 'tap';
@@ -83,24 +83,24 @@ var nodom;
         }
         /**
          * 事件触发
-         * @param e  事件
+         * @param e     事件
+         * @param el    html element
+         * @param dom   virtual dom
          */
-        fire(e) {
+        fire(e, el, dom) {
             const module = nodom.ModuleFactory.get(this.moduleName);
-            const dom = module.renderTree.query(this.domKey);
             if (!module.hasContainer()) {
                 return;
             }
-            const el = module.container.querySelector("[key='" + this.domKey + "']");
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
-                handleSelf(e, model, module, el);
-                handleDelg(e, model, module, el);
+                handleSelf(this, e, model, module, el, dom);
+                handleDelg(this, e, model, module, el, dom);
             }
             else {
-                if (handleDelg(e, model, module, el)) {
-                    handleSelf(e, model, module, el);
+                if (handleDelg(this, e, model, module, el, dom)) {
+                    handleSelf(this, e, model, module, el, dom);
                 }
             }
             //判断是否清除事件
@@ -116,17 +116,18 @@ var nodom;
             }
             /**
              * 处理自有事件
-             * @param model     模型
+             * @param eobj      nodom event对象
              * @param e         事件
+             * @param model     模型
              * @param module    模块
              * @param el        事件element
              */
-            function handleDelg(e, model, module, el) {
+            function handleDelg(eObj, e, model, module, el, dom) {
                 //代理事件执行
-                if (this.events === undefined) {
+                if (eObj.events === undefined) {
                     return true;
                 }
-                let arr = this.events[this.name];
+                let arr = eObj.events[eObj.name];
                 if (nodom.Util.isArray(arr)) {
                     if (arr.length > 0) {
                         for (let i = 0; i < arr.length; i++) {
@@ -136,7 +137,7 @@ var nodom;
                                 arr[i].fire(e);
                                 //执行一次，需要移除
                                 if (arr[i].once) {
-                                    this.removeSubEvt(arr[i]);
+                                    eObj.removeSubEvt(arr[i]);
                                 }
                                 //禁止冒泡
                                 if (arr[i].nopopo) {
@@ -146,30 +147,31 @@ var nodom;
                         }
                     }
                     else { //删除该事件
-                        this.events.delete(this.name);
+                        eObj.events.delete(eObj.name);
                     }
                 }
                 return true;
             }
             /**
              * 处理自有事件
-             * @param model     模型
+             * @param eObj      nodomevent对象
              * @param e         事件
+             * @param model     模型
              * @param module    模块
              * @param el        事件element
              */
-            function handleSelf(e, model, module, el) {
-                let foo = module.methodFactory.get(this.handler);
+            function handleSelf(eObj, e, model, module, el, dom) {
+                let foo = module.methodFactory.get(eObj.handler);
                 //自有事件
                 if (nodom.Util.isFunction(foo)) {
                     //禁止冒泡
-                    if (this.nopopo) {
+                    if (eObj.nopopo) {
                         e.stopPropagation();
                     }
                     nodom.Util.apply(foo, model, [e, module, el, dom]);
                     //事件只执行一次，则删除handler
-                    if (this.once) {
-                        delete this.handler;
+                    if (eObj.once) {
+                        delete eObj.handler;
                     }
                 }
             }
@@ -177,22 +179,21 @@ var nodom;
         /**
          * 绑定事件
          * @param module    模块
-         * @param vdom      虚拟dom
+         * @param dom       虚拟dom
          * @param el        element
          
          */
-        bind(module, vdom, el) {
-            const me = this;
-            this.domKey = vdom.key;
+        bind(module, dom, el) {
             this.moduleName = module.name;
             //触屏事件
             if (ExternalEvent.touches[this.name]) {
-                ExternalEvent.regist(me, el);
+                ExternalEvent.regist(this, el);
             }
             else {
-                this.handleListener = el.addEventListener(this.name, function (e) {
-                    this.fire(e);
-                }, this.capture);
+                this.handleListener = (e) => {
+                    this.fire(e, el, dom);
+                };
+                el.addEventListener(this.name, this.handleListener, this.capture);
             }
         }
         /**
@@ -205,7 +206,6 @@ var nodom;
          * @param parentEl  父element
          */
         delegateTo(module, vdom, el, parent, parentEl) {
-            const me = this;
             this.domKey = vdom.key;
             this.moduleName = module.name;
             //如果不存在父对象，则用body
@@ -213,13 +213,13 @@ var nodom;
                 parentEl = document.body;
             }
             //父节点如果没有这个事件，则新建，否则直接指向父节点相应事件
-            if (!parent.events.includes(this)) {
+            if (!parent.events.hasOwnProperty(this.name)) {
                 let ev = new NodomEvent(this.name);
                 ev.bind(module, parent, parentEl);
-                parent.events.push(ev);
+                parent.events[this.name] = ev;
             }
             //添加子事件
-            parent.events[parent.events.indexOf(this)].addSubEvt(me);
+            parent.events[this.name].addSubEvt(this);
         }
         /**
          * 添加子事件
@@ -240,7 +240,6 @@ var nodom;
          * @param ev    子事件
          */
         removeSubEvt(ev) {
-            const me = this;
             if (this.events === undefined || this.events[ev.name] === undefined) {
                 return;
             }
@@ -253,11 +252,10 @@ var nodom;
             }
         }
         clone() {
-            const me = this;
             let evt = new Event(this.name);
             let arr = ['delg', 'once', 'nopopo', 'useCapture', 'handler', 'handleEvent', 'module'];
             arr.forEach((item) => {
-                evt[item] = me[item];
+                evt[item] = this[item];
             });
             return evt;
         }

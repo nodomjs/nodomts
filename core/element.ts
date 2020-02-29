@@ -1,33 +1,6 @@
 /// <reference path="nodom.ts" />
 namespace nodom {
-	/**
-	 * 属性
-	 */
-	export class Property{
-		/**
-		 * 属性名
-		 */
-		name:string;
-		/**
-		 * 值，可以是字符串、数字、bool或表达式数组
-		 */
-
-		value:any;
-		/**
-		 * @param name 		属性名
-		 * @param value 	属性值
-		 */
-		constructor(name:string,value:any){
-			this.name = name;
-			this.value = value;
-		}
-
-		/**
-		 * 类型 0:常规属性 1:表达式属性
-		 */
-		type:number;
-    }
-    
+	
     /**
      * 改变的dom类型
      */
@@ -51,13 +24,14 @@ namespace nodom {
 
         /**
          * 改变的属性数组
+         * {prop1:value1,...}
          */
-        changeProps:Array<Property>;
+        changeProps:Array<object>;
 
         /**
-         * 移除的属性数组
+         * 移除的属性名数组
          */
-        removeProps:Array<Property>;
+        removeProps:Array<string>;
 
         /**
          * 
@@ -106,17 +80,19 @@ namespace nodom {
 		directives:Array<Directive> = [];
 		/**
 		 * 属性集合
+         * {prop1:value1,...}
 		 */
-		props:Map<string,Property> = new Map();
+		props:object = {};
 		/**
 		 * 含表达式的属性集合
+         * {prop1:value1,...}
 		 */
-		exprProps:Map<string,Property> = new Map();
+		exprProps:object = {};
 
 		/**
-		 * 事件集合
+		 * 事件集合,{eventName1:nodomEvent1,...}
 		 */
-		events:Array<NodomEvent>=[];
+		events:object={};
 
 		/**
 		 * 表达式集合
@@ -124,13 +100,15 @@ namespace nodom {
 		expressions:Array<Expression>=[];
 		
 		/**
-		 * 修改后的属性(单次渲染周期内)
-		 */
-		changeProps:Array<Property> = []; //
-		/**
-		 * 待删除属性(单次渲染周期内)
-		 */
-		removeProps:Array<Property> = [];
+         * 改变的属性数组
+         * {prop1:value1,...}
+         */
+        // changeProps:Array<object>;
+
+        /**
+         * 移除的属性名数组
+         */
+        // removeProps:Array<string>;
 		/**
 		 * 子element
 		 */
@@ -265,17 +243,19 @@ namespace nodom {
                 //删除属性
                 if (params.removeProps) {
 					params.removeProps.forEach((p) => {
-                        el.removeAttribute(p.name);
+                        el.removeAttribute(p);
                     });
                 }
                 //修改属性
-                params.changeProps.forEach((p) => {
-                    if (el.tagName === 'INPUT' && p.name === 'value') { //文本框单独处理
-                        (<HTMLInputElement>el).value = p.value;
-                    } else {
-                        el.setAttribute(p.name, p.value);
-                    }
-                });
+                if(params.changeProps){
+                    params.changeProps.forEach((p) => {
+                        if (el.tagName === 'INPUT' && p.k === 'value') { //文本框单独处理
+                            (<HTMLInputElement>el).value = p.v;
+                        } else {
+                            el.setAttribute(p.k, p.v);
+                        }
+                    });
+                }
                 break;
             case 'rep': //替换节点
                 el1 = newEl(this, parent);
@@ -306,8 +286,8 @@ namespace nodom {
                 //创建element
                 let el = document.createElement(vdom.tagName);
 				//设置属性
-				vdom.props.forEach((v,k)=>{
-					el.setAttribute(v.name, v.value);
+				Util.getOwnProps(vdom.props).forEach((k)=>{
+					el.setAttribute(k,vdom.props[k]);
 				});
                 
                 el.setAttribute('key', vdom.key);
@@ -356,7 +336,6 @@ namespace nodom {
          */
         clone() {
             let dst = new Element();
-
             //简单属性
 			Util.getOwnProps(this).forEach((p) => {
                 if (typeof this[p] !== 'object') {
@@ -368,20 +347,20 @@ namespace nodom {
 				dst.directives.push(d);
 			}
 			//普通属性
-            this.props.forEach((v,k)=>{
-				dst.props.set(k,v);
+            Util.getOwnProps(this.props).forEach((k)=>{
+				dst.props[k] = this.props[k];
 		    });
 
             //表达式属性
-            this.exprProps.forEach((v,k)=>{
-				dst.exprProps.set(k,v);
+            Util.getOwnProps(this.exprProps).forEach((k)=>{
+				dst.exprProps[k] = this.exprProps[k];
 		    });
 
             //事件
-            for(let d of this.events){
-				dst.events.push(d);
-		    }
-			
+            Util.getOwnProps(this.events).forEach((k)=>{
+                dst.events[k] = this.events[k];
+            });
+            
             //表达式
             dst.expressions = this.expressions;
 
@@ -445,14 +424,12 @@ namespace nodom {
             if (this.dontRender) {
                 return;
             }
-            this.exprProps.forEach((v,k) => {
+            Util.getOwnProps(this.exprProps).forEach((k) => {
                 //属性值为数组，则为表达式
-                if (Util.isArray(v)) {
-                    let p:Property = new Property(k,this.handleExpression(v, module));
-                    this.props.set(k,p);
-                } else if (v instanceof Expression) { //单个表达式
-                    let p:Property = new Property(k,v.val(module.modelFactory.get(this.modelId)));
-                    this.props.set(k,p);
+                if (Util.isArray(this.exprProps[k])) {
+                    this.props[k] = this.handleExpression(this.exprProps[k], module);
+                } else if (this.exprProps[k] instanceof Expression) { //单个表达式
+                    this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
                 }
             });
         }
@@ -464,26 +441,24 @@ namespace nodom {
             if (this.dontRender) {
                 return;
             }
-            if (this.expressions !== undefined) {
+            if (this.expressions !== undefined && this.expressions.length>0) {
                 this.textContent = this.handleExpression(this.expressions, module);
             }
         }
 
         /**
          * 处理事件
-         * @param module 
-         * @param model
-         * @param el
-         * @param parent
+         * @param module    模块
+         * @param el        html element
+         * @param parent    父virtual dom
+         * @param parentEl  父html element
          */
         handleEvents(module, el, parent, parentEl) {
-            
-
-            if (this.events.length === 0) {
+            if (Util.isEmpty(this.events)) {
                 return;
             }
-
-            this.events.forEach((ev) => {
+            Util.getOwnProps(this.events).forEach((k) => {
+                let ev:NodomEvent = this.events[k];
                 if (ev.delg && parent) { //代理到父对象
                     ev.delegateTo(module, this, el, parent, parentEl);
                 } else {
@@ -637,7 +612,7 @@ namespace nodom {
          * 比较节点
          * @param dst 	待比较节点
          * @returns	{type:类型 text/rep/add/upd,node:节点,parent:父节点, 
-         * 			changeProps:改变属性,[prop1,prop2,...],removeProps:删除属性,[prop1,prop2,...]}
+         * 			changeProps:改变属性,[{k:prop1,v:value1},...],removeProps:删除属性,[prop1,prop2,...]}
          */
         compare(dst:Element, retArr:Array<ChangedDom>, parentNode?:Element) {
             if (!dst) {
@@ -667,17 +642,17 @@ namespace nodom {
                     re.removeProps = [];
 
 					//删除或增加的属性的属性
-					dst.props.forEach((v,k)=>{
-						if (!this.props.has(k)) {
-                            re.removeProps.push(v);
+					Util.getOwnProps(dst.props).forEach((k)=>{
+						if (!this.props[k]) {
+                            re.removeProps.push(k);
                         }
 					})
                     
 					//修改后的属性
-					this.props.forEach((v,k)=>{
-						let p1 = dst.props.get(k);
-						if (!p1 || v.value !== p1.value) {
-                            re.changeProps.push(v);
+					Util.getOwnProps(this.props).forEach((k)=>{
+						let v1 = dst.props[k];
+						if (this.props[k] !== v1) {
+                            re.changeProps.push({k:k,v:this.props[k]});
                         }
 					});
 					

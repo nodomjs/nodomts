@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>repeat</title>
-    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
 
     <style>
         .code {
@@ -58,30 +58,33 @@
     </div>
 </body>
 <script>
-    let mod = new Module({
-        el: '.view',
-        root: true,
-        data: {
-            discount: 0.9,
-            foods: [{
-                name: '夫妻肺片',
-                price: 25
-            }, {
-                name: '京酱肉丝',
-                price: 22
-            }, {
-                name: '糖醋里脊',
-                price: 20
-            }, {
-                name: '红烧茄子',
-                price: 12
-            }, {
-                name: '口水鸡',
-                price: 18
-            }, {
-                name: '水煮肉片',
-                price: 24
-            }]
+    let mod = nodom.newApp({
+        options:{},
+        module:{
+            el: '.view',
+            root: true,
+            data: {
+                discount: 0.9,
+                foods: [{
+                    name: '夫妻肺片',
+                    price: 25
+                }, {
+                    name: '京酱肉丝',
+                    price: 22
+                }, {
+                    name: '糖醋里脊',
+                    price: 20
+                }, {
+                    name: '红烧茄子',
+                    price: 12
+                }, {
+                    name: '口水鸡',
+                    price: 18
+                }, {
+                    name: '水煮肉片',
+                    price: 24
+                }]
+            }
         }
     });
 
