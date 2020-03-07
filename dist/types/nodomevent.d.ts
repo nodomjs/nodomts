@@ -72,7 +72,7 @@ declare namespace nodom {
          * @param el    html element
          * @param dom   virtual dom
          */
-        fire(e: Event, el: HTMLElement, dom: Element): void;
+        fire(e: Event, el?: HTMLElement, dom?: Element): void;
         /**
          * 绑定事件
          * @param module    模块
@@ -101,7 +101,7 @@ declare namespace nodom {
          * @param ev    子事件
          */
         removeSubEvt(ev: any): void;
-        clone(): Event;
+        clone(): NodomEvent;
     }
     /****************扩展事件*********************/
     class ExternalEvent {

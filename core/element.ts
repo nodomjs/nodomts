@@ -358,7 +358,7 @@ namespace nodom {
 
             //事件
             Util.getOwnProps(this.events).forEach((k)=>{
-                dst.events[k] = this.events[k];
+                dst.events[k] = this.events[k].clone();
             });
             
             //表达式

@@ -284,7 +284,7 @@ var nodom;
             });
             //事件
             nodom.Util.getOwnProps(this.events).forEach((k) => {
-                dst.events[k] = this.events[k];
+                dst.events[k] = this.events[k].clone();
             });
             //表达式
             dst.expressions = this.expressions;

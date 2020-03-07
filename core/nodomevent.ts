@@ -137,11 +137,18 @@ namespace nodom {
          * @param el    html element
          * @param dom   virtual dom
          */
-        fire(e:Event,el:HTMLElement,dom:Element) {
-            const module = ModuleFactory.get(this.moduleName);
+        fire(e:Event,el?:HTMLElement,dom?:Element) {
+            const module:Module = ModuleFactory.get(this.moduleName);
             if (!module.hasContainer()) {
                 return;
             }
+            if(!dom){
+                dom = module.renderTree.query(this.domKey);
+            }
+            if(!el){
+                el = module.container.querySelector("[key='" + this.domKey + "']");
+            }
+        
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
@@ -236,6 +243,7 @@ namespace nodom {
          */
         bind(module:Module, dom:Element, el:HTMLElement) {
             this.moduleName = module.name;
+            this.domKey = dom.key;
             //触屏事件
             if (ExternalEvent.touches[this.name]) {
                 ExternalEvent.regist(this, el);
@@ -309,7 +317,7 @@ namespace nodom {
         }
 
         clone() {
-            let evt = new Event(this.name);
+            let evt = new NodomEvent(this.name);
             let arr = ['delg', 'once', 'nopopo', 'useCapture', 'handler', 'handleEvent', 'module'];
             arr.forEach((item) => {
                 evt[item] = this[item];
@@ -332,18 +340,18 @@ namespace nodom {
          */
         static regist(evtObj:NodomEvent, el:HTMLElement) {
             //触屏事件组
-            let touchEvts:any = this.touches.get(evtObj.name);
+            let touchEvts:any = ExternalEvent.touches[evtObj.name];
             //如果绑定了，需要解绑
             if (!Util.isEmpty(evtObj.touchListeners)) {
                 this.unregist(evtObj);
             }
 
+            // el不存在
             if (!el) {
                 const module = ModuleFactory.get(evtObj.moduleName);
                 el = module.container.querySelector("[key='" + evtObj.domKey + "']");
             }
-
-            // el不存在
+            
             evtObj.touchListeners = new Map();
             if (touchEvts && el !== null) {
                 // 绑定事件组
@@ -363,7 +371,7 @@ namespace nodom {
          * @param el        事件绑定的html element
          */
         static unregist(evtObj:NodomEvent, el?:HTMLElement) {
-            const evt = ExternalEvent.touches.get(evtObj.name);
+            const evt = ExternalEvent.touches[evtObj.name];
             if (!el) {
                 const module = ModuleFactory.get(evtObj.moduleName);
                 el = module.container.querySelector("[key='" + evtObj.domKey + "']");

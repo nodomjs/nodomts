@@ -92,6 +92,12 @@ var nodom;
             if (!module.hasContainer()) {
                 return;
             }
+            if (!dom) {
+                dom = module.renderTree.query(this.domKey);
+            }
+            if (!el) {
+                el = module.container.querySelector("[key='" + this.domKey + "']");
+            }
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
@@ -185,6 +191,7 @@ var nodom;
          */
         bind(module, dom, el) {
             this.moduleName = module.name;
+            this.domKey = dom.key;
             //触屏事件
             if (ExternalEvent.touches[this.name]) {
                 ExternalEvent.regist(this, el);
@@ -252,7 +259,7 @@ var nodom;
             }
         }
         clone() {
-            let evt = new Event(this.name);
+            let evt = new NodomEvent(this.name);
             let arr = ['delg', 'once', 'nopopo', 'useCapture', 'handler', 'handleEvent', 'module'];
             arr.forEach((item) => {
                 evt[item] = this[item];
@@ -269,16 +276,16 @@ var nodom;
          */
         static regist(evtObj, el) {
             //触屏事件组
-            let touchEvts = this.touches.get(evtObj.name);
+            let touchEvts = ExternalEvent.touches[evtObj.name];
             //如果绑定了，需要解绑
             if (!nodom.Util.isEmpty(evtObj.touchListeners)) {
                 this.unregist(evtObj);
             }
+            // el不存在
             if (!el) {
                 const module = nodom.ModuleFactory.get(evtObj.moduleName);
                 el = module.container.querySelector("[key='" + evtObj.domKey + "']");
             }
-            // el不存在
             evtObj.touchListeners = new Map();
             if (touchEvts && el !== null) {
                 // 绑定事件组
@@ -297,7 +304,7 @@ var nodom;
          * @param el        事件绑定的html element
          */
         static unregist(evtObj, el) {
-            const evt = ExternalEvent.touches.get(evtObj.name);
+            const evt = ExternalEvent.touches[evtObj.name];
             if (!el) {
                 const module = nodom.ModuleFactory.get(evtObj.moduleName);
                 el = module.container.querySelector("[key='" + evtObj.domKey + "']");
