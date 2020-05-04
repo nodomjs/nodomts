@@ -1,12 +1,5 @@
-/// <reference path="../nodom.ts" />
-/*
- * 消息js文件 中文文件
- */
 var nodom;
 (function (nodom) {
-    /**
-     * 提示单词
-     */
     nodom.TipWords = {
         application: "应用",
         system: "系统",
@@ -28,9 +21,6 @@ var nodom;
         resource: '资源',
         root: '根'
     };
-    /**
-     * 异常信息
-     */
     nodom.ErrorMsgs = {
         unknown: "未知错误",
         paramException: "{0}'{1}'方法参数错误，请参考api",
@@ -51,9 +41,6 @@ var nodom;
         timeout: "请求超时",
         config: "{1}配置参数错误"
     };
-    /**
-     * 表单信息
-     */
     nodom.FormMsgs = {
         type: "请输入有效的{0}",
         unknown: "输入错误",

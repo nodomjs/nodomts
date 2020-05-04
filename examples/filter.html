@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>filter</title>
-    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
 
     <style>
         .code {
@@ -106,32 +106,34 @@
     </div>
 </body>
 <script>
-    let mod = new Module({
-        el: '.view',
-        root: true,
-        data: {
-            date1: (new Date()).getTime(),
-            price1: 236.83,
-            number1: 1223,
-            name: 'Hello world!',
-            rows: [
-                { name: 'yang', addr: 'chengdu' },
-                { name: 'zhang', addr: 'mianyang' },
-                { name: 'chen', addr: 'luoyang' },
-                { name: 'tang', addr: 'beijing' },
-                { name: 'li', addr: 'shanghai' }
-            ]
-        },
-        methods: {
-            selectArr: function (arr) {
-                var a = [];
-                // 过滤出name为yang的数组元素
-                arr.forEach(item => {
-                    if (item.name === 'yang') {
-                        a.push(item)
-                    }
-                });
-                return a;
+    nodom.newApp({
+        module:{
+            el: '.view',
+            root: true,
+            data: {
+                date1: (new Date()).getTime(),
+                price1: 236.83,
+                number1: 1223,
+                name: 'Hello world!',
+                rows: [
+                    { name: 'yang', addr: 'chengdu' },
+                    { name: 'zhang', addr: 'mianyang' },
+                    { name: 'chen', addr: 'luoyang' },
+                    { name: 'tang', addr: 'beijing' },
+                    { name: 'li', addr: 'shanghai' }
+                ]
+            },
+            methods: {
+                selectArr: function (arr) {
+                    var a = [];
+                    // 过滤出name为yang的数组元素
+                    arr.forEach(item => {
+                        if (item.name === 'yang') {
+                            a.push(item)
+                        }
+                    });
+                    return a;
+                }
             }
         }
     });

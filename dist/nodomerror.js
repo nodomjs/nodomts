@@ -1,8 +1,3 @@
-/// <reference path="nodom.ts" />
-/**
- * @description 异常处理类
- * @since       0.0.1
- */
 var nodom;
 (function (nodom) {
     class NodomError extends Error {

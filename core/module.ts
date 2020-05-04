@@ -240,7 +240,7 @@ namespace nodom {
          * 加载模块
          * @param callback  加载后的回调函数
          */
-        init():Promise<any> {
+        async init():Promise<any> {
             //已初始化，不用再初始化
             if (this.state !== 0 || this.initing) {
                 return this.initLinker;
@@ -268,6 +268,7 @@ namespace nodom {
                     }
                     //如果已经加载，则不再加载
                     if (type === 'css') {
+                        
                         let css: HTMLLinkElement = <HTMLLinkElement>Util.get("link[href='" + url + "']");
                         if (css !== null) {
                             return;
@@ -438,9 +439,10 @@ namespace nodom {
                 }
 
                 //执行每次渲染后事件，延迟执行
-                setTimeout(() => {
-                    this.doModuleEvent('onRender');
-                }, 0);
+                // setTimeout(() => {
+                //     this.doModuleEvent('onRender');
+                // }, 0);
+                this.doModuleEvent('onRender');
             }
 
             //数组还原
@@ -484,16 +486,23 @@ namespace nodom {
             //删除首次渲染标志
             delete this.firstRender;
             //延迟执行
-            setTimeout(() => {
-                //执行首次渲染后事件
-                this.doModuleEvent('onFirstRender');
-                //执行首次渲染后操作队列
-                this.firstRenderOps.forEach((foo) => {
-                    Util.apply(foo, me, []);
-                });
-                this.firstRenderOps = [];
-            }, 0);
+            // setTimeout(() => {
+            //     //执行首次渲染后事件
+            //     this.doModuleEvent('onFirstRender');
+            //     //执行首次渲染后操作队列
+            //     this.firstRenderOps.forEach((foo) => {
+            //         Util.apply(foo, me, []);
+            //     });
+            //     this.firstRenderOps = [];
+            // }, 0);
 
+            //执行首次渲染后事件
+            this.doModuleEvent('onFirstRender');
+            //执行首次渲染后操作队列
+            this.firstRenderOps.forEach((foo) => {
+                Util.apply(foo, me, []);
+            });
+            this.firstRenderOps = [];
         }
         // 检查容器是否存在，如果不存在，则尝试找到
         hasContainer() {
@@ -521,7 +530,7 @@ namespace nodom {
          * 数据改变
          * @param model 	改变的model
          */
-        dataChange(model) {
+        dataChange() {
             Renderer.add(this);
         }
 
@@ -591,12 +600,10 @@ namespace nodom {
          * @param callback 	激活后的回调函数
          */
         active(callback?:Function) {
-            const me = this;
             //激活状态不用激活，创建状态不能激活
             if (this.state === 3) {
                 return;
             }
-            let linker;
             //未初始化，需要先初始化
             if (this.state === 0) {
                 this.init().then(() => {
@@ -604,7 +611,7 @@ namespace nodom {
                     if (Util.isFunction(callback)) {
                         callback(this.model);
                     }
-                    Renderer.add(me);
+                    Renderer.add(this);
                 });
 
             } else {
@@ -612,7 +619,7 @@ namespace nodom {
                 if (callback) {
                     callback(this.model);
                 }
-                Renderer.add(me);
+                Renderer.add(this);
             }
 
             //子节点
@@ -621,17 +628,12 @@ namespace nodom {
                     m.active(callback);
                 });
             }
-            if (!linker) {
-                return Promise.resolve();
-            }
-            return linker;
         }
 
         /**
          * 取消激活
          */
         unactive() {
-            const me = this;
             //主模块不允许取消
             if (this.main || this.state === 2) {
                 return;

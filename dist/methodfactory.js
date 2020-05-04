@@ -1,15 +1,6 @@
-/// <reference path="nodom.ts" />
 var nodom;
 (function (nodom) {
-    /**
-     * 方法工厂，每个模块一个
-     */
     class MethodFactory extends nodom.Factory {
-        /**
-         * 调用方法
-         * @param name 		方法名
-         * @param params 	方法参数数组
-         */
         invoke(name, params) {
             const foo = this.get(name);
             if (!nodom.Util.isFunction(foo)) {

@@ -101,7 +101,7 @@ namespace nodom {
             }
             //添加到模块数据改变
             if (change) {
-                ModuleFactory.get(this.moduleName).dataChange(this);
+                ModuleFactory.get(this.moduleName).dataChange();
             }
         }
         /**

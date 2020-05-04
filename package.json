@@ -4,16 +4,21 @@
   "description": "nodom-ts",
   "main": "webpack.config.js",
   "scripts": {
-    "build": "tsc",
-    "pack": "node_modules/.bin/webpack"
+    "build": "webpack"
   },
-  "author": "fieldyang@163.com",
+  "author": "fieldyang(fieldyang@163.com)",
   "dependencies": {
+    "@babel/polyfill": "^7.8.7",
     "awesome-typescript-loader": "^5.2.1",
     "webpack-cli": "^3.3.10"
   },
-  "keywords": [],
+  "keywords": [
+    "nodom",
+    "mvvm"
+  ],
+  "license": "MIT",
   "devDependencies": {
+    "@types/webpack": "^4.41.12",
     "clean-webpack-plugin": "^3.0.0",
     "grunt-contrib-concat": "^1.0.1",
     "grunt-contrib-uglify": "^4.0.1",

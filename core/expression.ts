@@ -6,6 +6,7 @@ namespace nodom {
 	interface IStatckItem{
 		/**
 		 * item类型
+         * 包括：field(字段),string(字符串),operand(操作符),function(函数),filter(过滤器)
 		 */
 		type: string,
 
@@ -22,7 +23,12 @@ namespace nodom {
 		/**
 		 * 过滤器
 		 */
-		filter?:Filter;
+        filter?:Filter;
+        
+        /**
+         * 附加值，不通类型不同
+         */
+        extra?:any;
 	}
 
 	/**
@@ -42,13 +48,17 @@ namespace nodom {
 		/**
 		 * 堆栈数组
 		 */
-		stack:Array<IStatckItem>;
+		// stack:Array<IStatckItem>;
 
 		/**
 		 * 字段数组
 		 */
 		fields:Array<string>;
 
+        /**
+         * 执行函数
+         */
+        execFunc:Function;
 		/**
 		 * 一个expression可能被多次使用，以modelid进行区分，针对不同的模型id构建对象{modelId:{fieldValue:,value:}
 		 */
@@ -57,7 +67,7 @@ namespace nodom {
 		/**
 		 * 前置expressionId数组
 		 */
-		pre:Array<number>;
+		// pre:Array<number>;
 
         /**
          * @param exprStr	表达式串
@@ -73,16 +83,15 @@ namespace nodom {
             }
 
             if (exprStr) {
-                this.stack = this.init(exprStr);
+                this.init(exprStr);
             }
         }
 
         /**
          * 初始化，把表达式串转换成堆栈
          * @param exprStr 	表达式串
-		 * @returns 		堆栈数组
          */
-        init(exprStr:string):Array<IStatckItem> {
+        init(exprStr:string):void {
             //字符串开始
             let startStr:string;
             let type:number = 0; // 1字符串 2变量 3函数 4过滤器
@@ -91,6 +100,7 @@ namespace nodom {
             //运算符
             let operand:string = "()!|*/+-><=&%";
             let spaceChar:string = " 	";
+            
             //堆栈
 			let stack:Array<IStatckItem>=[];
 			let sTmp:string = '';
@@ -105,7 +115,7 @@ namespace nodom {
                     //字符串标识
                     if (strings.indexOf(c) !== -1) {
                         if (c === startStr) {
-                            this.addStr(sTmp + c, stack);
+                            this.addStr(sTmp + c,stack);
                             startStr = undefined;
                             sTmp = '';
                             type = 0;
@@ -119,7 +129,17 @@ namespace nodom {
                         if (c === '(') {
                             type = 3;
                         } else { //变量结束
-                            this.addVar(sTmp, stack);
+                            if(this.addField(sTmp)){
+                                stack.push({
+                                    val:sTmp,
+                                    type:'field'
+                                });
+                            }else{
+                                this.addStr(sTmp,stack);
+                                
+                            }
+                            
+                            
                             sTmp = '';
                             type = 0;
                         }
@@ -222,50 +242,88 @@ namespace nodom {
                 //抛出表达式错误
                 throw new NodomError('invoke', 'expression', '0', 'Node');
             }
-            return stack;
+
+            let bodyStr:string = this.genExprFuncStr(stack);
+            let funcStr = '(function ($module,' + this.fields.join(',') + '){ return ' + bodyStr + '})';
+            console.log(funcStr);
+            this.execFunc = eval(funcStr);
+
         }
 
+        /**
+         * 生成表达式函数串
+         * @param stack     操作堆栈
+         * @param paramArr  参数数组
+         * @returns         函数
+         */
+        private genExprFuncStr(stack:Array<IStatckItem>):string{
+            //函数体串
+            let bodyStr:string = '';
+
+            stack.forEach((item) => {
+                switch (item.type) {
+                case 'string': //字符串
+                    bodyStr += item.val;
+                    break;
+                case 'operand': //字符串
+                    bodyStr += item.val;
+                    break;
+                case 'field': //变量
+                    bodyStr += item.val;
+                    break;
+                case 'function': //函数
+                    //函数名
+                    let fName:string = item.val;
+                    //模块方法以$开头
+                    if (item.val.startsWith('$')) {
+                        fName = '$module.methodFactory.get("' + item.val.substr(1) + '")';
+                    }
+                    bodyStr += fName + '(' + item.params.join(',') + ')';
+                    break;
+                case 'filter':
+                    let arr = item.extra;
+                    let ftype = arr.shift();
+                    let v = '';
+                    if(arr.length>0){
+                        v = ',' + arr.join(',');
+                    }
+                    bodyStr += 'nodom.FilterManager.exec($module,'+ ftype + ',' + item.val + v + ')';
+                }
+            });
+            
+            return bodyStr;
+        }
         /**
          * 表达式计算
          * @param model 	模型 或 fieldObj对象 
          * @param modelId 	模型id（model为fieldObj时不能为空）
 		 * @returns 		计算结果
          */
-        val(model:Model, modelId?:number) {
+        val(model:Model) {
             if (!model) { 
 				return ''; 
 			}
-            if (this.stack === null) {
-                return '';
-            }
-
-            let fieldObj:object;
-            // 模型
-            if (model instanceof Model) {
-                modelId = model.id;
-                fieldObj = Object.create(null);
-                //字段值
-                this.fields.forEach((field) => {
-                    fieldObj[field] = this.getFieldValue(model, field);
-                });
-            } else {
-                fieldObj = model;
-            }
+            let module:Module = ModuleFactory.get(model.moduleName);
+            
+            let fieldObj:object = model.data;
             let newFieldValue:string = '';
+            let valueArr = [];
             this.fields.forEach((field) => {
-                newFieldValue += fieldObj[field];
+                valueArr.push(fieldObj[field]);
             });
             //如果对应模型的值对象不存在，需要新建
-            if (this.modelMap[modelId] === undefined) {
-                this.modelMap[modelId] = Object.create(null);
+            if (this.modelMap[model.id] === undefined) {
+                this.modelMap[model.id] = Object.create(null);
             }
+            newFieldValue = valueArr.join(',');
             //field值不一样，需要重新计算
-            if (this.modelMap[modelId].fieldValue !== newFieldValue) {
-                this.modelMap[modelId].value = this.cacStack(this.stack, fieldObj, modelId);
+            if (this.modelMap[model.id].fieldValue !== newFieldValue) {
+                this.modelMap[model.id].fieldValue = newFieldValue;
+                valueArr.unshift(module);
+                this.modelMap[model.id].value = this.execFunc.apply(this,valueArr);
             }
-
-            this.modelMap[modelId].fieldValue = newFieldValue;
-            return this.modelMap[modelId].value;
+            //返回实际计算值
+            return this.modelMap[model.id].value;
         }
 
         /**
@@ -278,16 +336,15 @@ namespace nodom {
             //判断是否为值表达式 null undefined true false
             let addFlag:boolean = values.indexOf(field) === -1 ? false : true;
             addFlag = addFlag || Util.isNumberString(field);
-
+            field = field.trim();
             //作为字符串处理   
-            if (addFlag) {
-                this.addStr(field, stack);
-            } else {
+            if(!this.addField(field)){
                 stack.push({
-                    val: field.trim(),
+                    val: field,
                     type: 'field'
                 });
-                this.addField(field);
+            } else {
+                this.addStr(field, stack);
             }
         }
 
@@ -322,14 +379,10 @@ namespace nodom {
 
         /**
          * 添加过滤器
-         * @param value 	value
          * @param filterArr	过滤器数组
          * @param stack 	堆栈
-         * @param vtype 	值类型 field字段 func函数 comp 组合 	
-         * @param extra 	附加参数
          */
         private addFilter(filterArr:Array<string>, stack:Array<IStatckItem>) {
-            let module:Module = ModuleFactory.get(this.moduleName);
             if (stack.length > 0) {
                 let filterStack:Array<IStatckItem> = []; //过滤器堆栈
                 let pre = stack[stack.length - 1];
@@ -357,20 +410,19 @@ namespace nodom {
                     //删除堆栈元素
                     stack.splice(j, stack.length - j);
                 }
-
-                let expr:Expression = new Expression(null, module);
-                expr.stack = filterStack;
-                expr.fields = this.fields;
-                //前置表达式
-                if (!this.pre) {
-                    this.pre = [];
+                let valStr = this.genExprFuncStr(filterStack);
+                //加上字符串标识
+                for(let i=0;i<filterArr.length;i++){
+                    let f = filterArr[i];
+                    if(!Util.isNumberString(f)){
+                        filterArr[i] = Util.addStrQuot(f);        
+                    }
                 }
-                this.pre.push(expr.id);
                 // 过滤器入栈
                 stack.push({
                     type: 'filter',
-                    filter: new Filter(filterArr),
-                    val: expr.id
+                    extra:filterArr,
+                    val: valStr
                 });
 
             }
@@ -462,11 +514,16 @@ namespace nodom {
         /**
          * 添加字段到fields
          * @param field 	字段
+         * @returns         true/false
          */
-        addField(field:string) {
-            if (this.fields.indexOf(field) === -1) {
+        addField(field:string):boolean{
+            if(Util.isNumberString(field)){
+                return false;
+            }
+            if (!this.fields.includes(field)) {
                 this.fields.push(field);
             }
+            return true;
         }
         /**
          * 获取field值

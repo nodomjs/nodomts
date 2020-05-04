@@ -1,12 +1,13 @@
 {
     "compilerOptions": {
-      "module":"commonjs",
-      "target": "es6",
       "sourceMap": true,
+      "noImplicitAny": false,
+      "noUnusedLocals":false,
+      "noUnusedParameters": false,
+      "removeComments":true,
       "moduleResolution": "node",
-      // "module": "esnext",
-      "experimentalDecorators": true,
-      "emitDecoratorMetadata": true,
+      "module": "commonJs",
+      "target": "es6",
       "outDir":"./dist",
       "declaration": true,
       "declarationDir":"./dist/types"
@@ -15,6 +16,6 @@
       "./core/**/*.ts"
     ],
     "exclude": [
-      // "./index.ts"
+        "./node_modules"
     ]
   }

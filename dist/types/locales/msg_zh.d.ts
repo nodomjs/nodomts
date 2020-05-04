@@ -1,8 +1,5 @@
 /// <reference path="../nodom.d.ts" />
 declare namespace nodom {
-    /**
-     * 提示单词
-     */
     const TipWords: {
         application: string;
         system: string;
@@ -24,9 +21,6 @@ declare namespace nodom {
         resource: string;
         root: string;
     };
-    /**
-     * 异常信息
-     */
     const ErrorMsgs: {
         unknown: string;
         paramException: string;
@@ -47,9 +41,6 @@ declare namespace nodom {
         timeout: string;
         config: string;
     };
-    /**
-     * 表单信息
-     */
     const FormMsgs: {
         type: string;
         unknown: string;

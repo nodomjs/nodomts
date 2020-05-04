@@ -427,10 +427,10 @@ namespace nodom {
                 const el = module.container.querySelector("[name='" + directive.value + "']");
                 if (el) {
                     //增加事件
-                    el.addEventListener('focus', function (e) {
+                    el.addEventListener('focus', function () {
                         directive.params.enabled = true;
                     });
-                    el.addEventListener('blur', function (e) {
+                    el.addEventListener('blur', function () {
                         Renderer.add(m);
                     });
                 }

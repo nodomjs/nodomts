@@ -1,4 +1,5 @@
 /// <reference path="nodom.ts" />
+
 namespace nodom {
 	/**
 	 * 路由配置
@@ -134,7 +135,7 @@ namespace nodom {
          * 切换路由
          * @param path 	路径
          */
-        static start(path:string) {
+        static async start(path:string) {
             let diff = this.compare(this.currentPath, path);
 
             //获得当前模块，用于寻找router view
@@ -156,19 +157,37 @@ namespace nodom {
                 module.unactive();
             }
 
-            let operArr:Array<Function> = []; 	//待操作函数数组
-            let paramArr:Array<any> = []; 		//函数对应参数数组
+            // let operArr:Array<Function> = []; 	//待操作函数数组
+            // let paramArr:Array<any> = []; 		//函数对应参数数组
             let showPath:string; 				//实际要显示的路径
 
-            //设置active
+            // if (!showPath) {
+            //     if (!this.getRoute(path)) {
+            //         throw new NodomError('notexist1', TipWords.route, path);
+            //     }
+            // }
+
+            //如果是history popstate，则不加入history
+            if (this.startStyle !== 2 && showPath) {
+                //子路由，替换state
+                if (this.showPath && showPath.indexOf(this.showPath) === 0) {
+                    history.replaceState(path, '', Application.routerPrePath + showPath);
+                } else { //路径push进history
+                    history.pushState(path, '', Application.routerPrePath + showPath);
+                }
+                //设置显示路径
+                this.showPath = showPath;
+            }
+
             if (diff[2].length === 0) { //路由相同，参数不同
-                if (diff[0] !== null) {
-                    setRouteParamToModel(diff[0]);
+                let route:Route = diff[0];
+                if (route !== null) {
+                    setRouteParamToModel(route);
                     //用父路由路径
-                    if (!diff[0].useParentPath) {
-                        showPath = diff[0].fullPath;
+                    if (!route.useParentPath) {
+                        showPath = route.fullPath;
                     }
-                    diff[0].setLinkActive(true);
+                    route.setLinkActive(true);
                 }
             } else { //路由不同
                 //加载模块
@@ -187,56 +206,37 @@ namespace nodom {
                         throw new NodomError('notexist', TipWords.routeView);
                     }
 
-                    //构建module route map
-                    Router.moduleRouteMap[route.module] = route.id;
-                    //参数数组
-                    paramArr.push(route.module);
+                    let module = ModuleFactory.get(route.module);
+                    //保留container参数
+                    module.containerParam = {
+                        module: parentModule.name,
+                        selector: "[key='" + parentModule.routerKey + "']"
+                    }
+                    
+                    module.addBeforeFirstRenderOperation(function () {
+                        //清空模块容器
+                        Util.empty(module.container);
+                    });
 
-                    //操作数组
-                    operArr.push(
-                        (resolve, reject, moduleName) => {
-                            let module = ModuleFactory.get(moduleName);
-                            //添加before first render 操作
-                            module.addBeforeFirstRenderOperation(function () {
-                                //清空模块容器
-                                Util.empty(module.container);
-                            });
-                            //保留container参数
-                            module.containerParam = {
-                                module: parentModule.name,
-                                selector: "[key='" + parentModule.routerKey + "']"
-                            }
+                    await module.init();
+                    await module.active();
 
-                            //激活模块
-                            module.active((model) => {
-                                let route:Route = Router.routes.get(Router.moduleRouteMap[module.name]);
-                                if (!route) {
-                                    return;
-                                }
-                                route.setLinkActive(true);
-                                delete Router.moduleRouteMap[module.name];
-                                setRouteParamToModel(route);
-                                if (Util.isFunction(this.onDefaultEnter)) {
-                                    this.onDefaultEnter(model);
-                                }
-                                if (Util.isFunction(route.onEnter)) {
-                                    route.onEnter(model);
-                                }
-                                parentModule = module;
-                                if (resolve) {
-                                    resolve();
-                                }
-                            });
-                        }
-                    );
+                    //设置route active
+                    route.setLinkActive(true);
+                    //设置路由参数
+                    setRouteParamToModel(route);
+                    //默认全局路由enter事件
+                    if (Util.isFunction(this.onDefaultEnter)) {
+                        this.onDefaultEnter(module.model);
+                    }
+                    //当前路由进入事件
+                    if (Util.isFunction(route.onEnter)) {
+                        route.onEnter(module.model);
+                    }
+                    parentModule = module;
                 }
             }
-            if (!showPath) {
-                if (!this.getRoute(path)) {
-                    throw new NodomError('notexist1', TipWords.route, path);
-                }
-            }
-
+            
             //如果是history popstate，则不加入history
             if (this.startStyle !== 2 && showPath) {
                 //子路由，替换state
@@ -248,25 +248,15 @@ namespace nodom {
                 //设置显示路径
                 this.showPath = showPath;
             }
-
-            if (operArr.length === 0) {
-                Router.loading = false;
-                Router.startStyle = 0;
-                return;
-            }
-
+            
             //修改currentPath
             this.currentPath = path;
-
-            //同步加载模块
-            Linker.gen("dolist", {funcs:operArr, params:paramArr}).then(() => {
-                Router.loading = false;
-                this.load();
-                Router.startStyle = 0;
-            }).catch((e) => {
-                throw e;
-            });
-
+            //加载标志为false
+            this.loading = false;
+            //开启新加载
+            this.load();
+            //设置start类型为正常start
+            Router.startStyle = 0;
             /**
              * 将路由参数放入model
              * @param route 	路由

@@ -38,7 +38,7 @@ namespace nodom {
          *					withCredentials 	同源策略，跨域时cookie保存，默认false
          * 					
          */
-        private static ajax(config):Promise<any> {
+        private static async ajax(config):Promise<any> {
             return new Promise((resolve, reject) => {
                 //随机数
                 if (config.rand) { //针对数据部分，仅在app中使用
@@ -120,7 +120,7 @@ namespace nodom {
          * 通过get获取多个文件
 		 * @param urls 	文件url数组
          */
-        private static getfiles(urls):Promise<any>{
+        private static async getfiles(urls):Promise<any>{
             let promises = [];
             urls.forEach((url) => {
                 promises.push(new Promise((resolve, reject) => {
@@ -156,7 +156,7 @@ namespace nodom {
                         } else {
                             fa[i](resolve, reject);
                         }
-                    }).then((success) => {
+                    }).then(() => {
                         if (i < fa.length - 1) {
                             return foo(fa, i + 1, pa);
                         }

@@ -61,11 +61,16 @@ namespace nodom {
     /**
      * 创建指令
      * @param name      指令名 
+     * @param priority  优先级（1最小，1-10为框架保留优先级）
      * @param init      初始化方法
      * @param handler   渲染时方法
      */
-    export function createDirective(name:string,init:Function,handler:Function){
-
+    export function createDirective(name:string,priority:number,init:Function,handler:Function){
+        return DirectiveManager.addType(name,{
+            prio:priority,
+            init:init,
+            handler:handler
+        });
     }
 
     /**
@@ -75,6 +80,6 @@ namespace nodom {
      * @param handler   渲染时方法
      */
     export function createPlugin(name:string,init:Function,handler:Function){
-
+        
     }
 }
