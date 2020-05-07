@@ -1238,7 +1238,7 @@ var nodom;
             srcStr = srcStr.replace(/\s+/g, '');
             let arrOperator = srcStr.split(/[\(\)\!\|\*\/\+\-><=&%]/);
             let arrOperand = [];
-            let index = arrOperator[0] === '' ? -1 : 0;
+            let index = 0;
             for (let sp of arrOperator) {
                 index += sp.length;
                 let ch = srcStr.charAt(index++);
@@ -1246,6 +1246,7 @@ var nodom;
                     arrOperand.push(ch);
                 }
             }
+            console.log(arrOperator, arrOperand);
             return this.genExecStr(arrOperator, arrOperand);
         }
         genExecStr(arrOperator, arrOperand) {
@@ -1253,19 +1254,23 @@ var nodom;
             for (; arrOperator.length > 1;) {
                 let opr = arrOperator.pop();
                 let opd = arrOperand.pop();
-                if (opr === '') {
-                    retStr = opd + retStr;
-                    continue;
-                }
                 let r;
                 let handled = false;
                 if (opd === '(') {
-                    if (!this.addField(opr)) {
-                        opr = this.recoveryString(opr);
-                    }
-                    r = this.judgeAndHandleFunc(arrOperator, arrOperand);
+                    r = this.judgeAndHandleFunc(arrOperator, arrOperand, opr);
                     if (r !== undefined) {
-                        retStr = r + opd + opr + retStr;
+                        if (r.startsWith('$module')) {
+                            retStr = r + retStr.substr(1);
+                        }
+                        else if (opr !== '') {
+                            if (!this.addField(opr)) {
+                                opr = this.recoveryString(opr);
+                            }
+                            retStr = r + opd + opr + retStr;
+                        }
+                        if (arrOperand.length > 0) {
+                            retStr = arrOperand.pop() + retStr;
+                        }
                         handled = true;
                     }
                 }
@@ -1306,12 +1311,13 @@ var nodom;
             }
             return str;
         }
-        judgeAndHandleFunc(arrOperator, arrOperand) {
+        judgeAndHandleFunc(arrOperator, arrOperand, srcOp) {
             let sp = arrOperator[arrOperator.length - 1];
+            console.log(sp);
             if (sp && sp !== '') {
                 arrOperator.pop();
                 if (sp.startsWith('$')) {
-                    return '$module.methodFactory.get("' + sp.substr(1) + '")';
+                    return '$module.methodFactory.get("' + sp.substr(1) + '").apply($module)';
                 }
                 else {
                     return sp;
@@ -1335,7 +1341,9 @@ var nodom;
                 let filterValue = '';
                 let opr = arrOperator[arrOperator.length - 1];
                 if (opr !== '') {
-                    this.addField(opr);
+                    if (!this.addField(opr)) {
+                        opr = this.recoveryString(opr);
+                    }
                     filterValue = opr;
                     arrOperator.pop();
                 }
@@ -1353,49 +1361,16 @@ var nodom;
                         a1.unshift(arrOperator.pop());
                         a2.unshift(arrOperand.pop());
                         if (quotNum === 0) {
-                            if (arrOperator[arrOperator.length - 1] !== '') {
-                                a1.unshift(arrOperator.pop());
-                            }
+                            a1.unshift(arrOperator.pop());
                             break;
                         }
                     }
+                    console.log(a1, a2);
                     filterValue = this.genExecStr(a1, a2);
                 }
                 console.log('nodom.FilterManager.exec($module,"' + ftype + '",' + filterValue + paramStr + ')');
                 return 'nodom.FilterManager.exec($module,"' + ftype + '",' + filterValue + paramStr + ')';
             }
-        }
-        genExprFuncStr(stack) {
-            let bodyStr = '';
-            stack.forEach((item) => {
-                switch (item.type) {
-                    case 'string':
-                        bodyStr += item.val;
-                        break;
-                    case 'operand':
-                        bodyStr += item.val;
-                        break;
-                    case 'field':
-                        bodyStr += item.val;
-                        break;
-                    case 'function':
-                        let fName = item.val;
-                        if (item.val.startsWith('$')) {
-                            fName = '$module.methodFactory.get("' + item.val.substr(1) + '")';
-                        }
-                        bodyStr += fName + '(' + item.params.join(',') + ')';
-                        break;
-                    case 'filter':
-                        let arr = item.extra;
-                        let ftype = arr.shift();
-                        let v = '';
-                        if (arr.length > 0) {
-                            v = ',' + arr.join(',');
-                        }
-                        bodyStr += 'nodom.FilterManager.exec($module,' + ftype + ',' + item.val + v + ')';
-                }
-            });
-            return bodyStr;
         }
         val(model) {
             if (!model) {
@@ -1420,170 +1395,15 @@ var nodom;
             }
             return this.modelMap[model.id].value;
         }
-        addVar(field, stack) {
-            let values = ['null', 'undefined', 'true', 'false', 'NaN'];
-            let addFlag = values.indexOf(field) === -1 ? false : true;
-            addFlag = addFlag || nodom.Util.isNumberString(field);
-            field = field.trim();
-            if (!this.addField(field)) {
-                stack.push({
-                    val: field,
-                    type: 'field'
-                });
-            }
-            else {
-                this.addStr(field, stack);
-            }
-        }
-        addStr(str, stack) {
-            if (stack.length > 0 && stack[stack.length - 1].type === "string") {
-                stack[stack.length - 1].val += str;
-            }
-            else {
-                stack.push({
-                    val: str,
-                    type: 'string'
-                });
-            }
-        }
-        addOperand(str, stack) {
-            stack.push({
-                val: str,
-                type: 'operand'
-            });
-        }
-        addFilter(filterArr, stack) {
-            if (stack.length > 0) {
-                let filterStack = [];
-                let pre = stack[stack.length - 1];
-                let type = pre.type;
-                if (type === 'field' || type === 'function' || type === 'string') {
-                    filterStack.push(stack.pop());
-                }
-                else if (type === 'operand' && pre.val === ')') {
-                    let cnt = 1;
-                    let j = stack.length - 2;
-                    for (; j >= 0; j--) {
-                        if (stack[j].val === '(') {
-                            if (--cnt === 0) {
-                                break;
-                            }
-                        }
-                        else if (stack[j].val === ')') {
-                            cnt++;
-                        }
-                    }
-                    filterStack = stack.slice(j, stack.length);
-                    stack.splice(j, stack.length - j);
-                }
-                let valStr = this.genExprFuncStr(filterStack);
-                for (let i = 0; i < filterArr.length; i++) {
-                    let f = filterArr[i];
-                    if (!nodom.Util.isNumberString(f)) {
-                        filterArr[i] = nodom.Util.addStrQuot(f);
-                    }
-                }
-                stack.push({
-                    type: 'filter',
-                    extra: filterArr,
-                    val: valStr
-                });
-            }
-        }
-        cacStack(stack, fieldObj, modelId) {
-            let retStr = '';
-            let needEval = false;
-            let module = nodom.ModuleFactory.get(this.moduleName);
-            stack.forEach((item) => {
-                let value = '';
-                switch (item.type) {
-                    case 'string':
-                        retStr += item.val;
-                        break;
-                    case 'operand':
-                        retStr += item.val;
-                        needEval = true;
-                        break;
-                    case 'field':
-                        value = fieldObj[item.val];
-                        if (nodom.Util.isString(value)) {
-                            value = nodom.Util.addStrQuot(value);
-                        }
-                        retStr += value;
-                        break;
-                    case 'function':
-                        let foo = module.methodFactory.get(item.val);
-                        let param = [];
-                        if (item.params.length > 0) {
-                            item.params.forEach((p) => {
-                                let pv = fieldObj[p];
-                                let isVal = false;
-                                if (nodom.Util.isString(pv) && pv !== '') {
-                                    pv = nodom.Util.addStrQuot(pv);
-                                }
-                                param.push(pv);
-                            });
-                        }
-                        if (foo !== undefined && nodom.Util.isFunction(foo)) {
-                            value = foo.apply(module.model, param);
-                        }
-                        else {
-                            value = item.val + '(' + param.join(',') + ')';
-                            needEval = true;
-                        }
-                        retStr += value;
-                        break;
-                    case 'filter':
-                        value = module.expressionFactory.get(item.val).val(fieldObj, modelId);
-                        value = item.filter.exec(value, module);
-                        if (typeof value === 'object') {
-                            retStr = value;
-                        }
-                        else {
-                            if (nodom.Util.isString(value) && value !== '') {
-                                value = nodom.Util.addStrQuot(value);
-                            }
-                            retStr += value;
-                        }
-                }
-            });
-            if (needEval) {
-                try {
-                    retStr = eval(retStr);
-                }
-                catch (e) {
-                }
-            }
-            else if (nodom.Util.isString(retStr) && retStr.charAt(0) === '"') {
-                retStr = retStr.substring(1, retStr.length - 1);
-            }
-            if (retStr === undefined) {
-                retStr = '';
-            }
-            return retStr;
-        }
         addField(field) {
             if (field === '' || field.startsWith(Expression.REP_STR) || nodom.Util.isNumberString(field)) {
                 return false;
             }
+            console.log(field, this.fields);
             if (!this.fields.includes(field)) {
                 this.fields.push(field);
             }
             return true;
-        }
-        getFieldValue(model, field) {
-            let module = nodom.ModuleFactory.get(this.moduleName);
-            if (!model && module) {
-                model = module.model;
-            }
-            if (!model) {
-                return undefined;
-            }
-            let v = model.query(field);
-            if (v === undefined && model !== module.model) {
-                v = module.model.query(field);
-            }
-            return v;
         }
     }
     Expression.REP_STR = '$$NODOM_TMPSTR';

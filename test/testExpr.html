@@ -9,8 +9,11 @@
 </head>
 <body>
     <div>
-        <!-- <span>{{Math.floor(x*y)|number:1 + "hello 'word',\"your\"" + word|touppercase + 'abc,"123"'}}</span> -->
-        <div>{{"hello 'world',\"you\"" + word|touppercase + 'abc,"123"'}}</div>
+        <span>{{(Math.floor(x*y)|currency:2 + "xxx")|touppercase + "hello 'word',\"your\"" + word|touppercase + 'abc,"123"'|touppercase}}</span>
+        <div>{{word|touppercase}}</div>
+        <div>{{((x+y)*x)|number:1}}</div>
+        <!-- <div>{{Math.abs(x+y) + $sum()}}</div> -->
+        <!-- <div>{{  }}</div> -->
     </div>
 </body>
 <script>
@@ -43,6 +46,13 @@ nodom.newApp({
                     }
                 });
                 return a;
+            },
+            sum:function(){
+                console.log(this);
+                // let x = model.data.x;
+                // let y = model.data.y;
+                // return x*y;
+                return 1000;
             }
         }
     }
