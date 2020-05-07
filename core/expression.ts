@@ -31,6 +31,7 @@ namespace nodom {
         extra?:any;
 	}
 
+
 	/**
 	 * 表达式类
 	 */
@@ -59,11 +60,23 @@ namespace nodom {
          * 执行函数
          */
         execFunc:Function;
+
+        /**
+         * 执行字符串，编译后生成
+         */
+        execString:string;
 		/**
 		 * 一个expression可能被多次使用，以modelid进行区分，针对不同的模型id构建对象{modelId:{fieldValue:,value:}
 		 */
 		modelMap:object={};
 
+        //替代串
+        static REP_STR:string='$$NODOM_TMPSTR';
+        
+        /**
+         * 字符串替换map
+         */
+        replaceMap:Map<string,string> = new Map();
 		/**
 		 * 前置expressionId数组
 		 */
@@ -83,7 +96,12 @@ namespace nodom {
             }
 
             if (exprStr) {
-                this.init(exprStr);
+                this.execString = this.compile(exprStr);
+            }
+            if(this.execString){
+                let v:string = this.fields.length>0?','+this.fields.join(','):'';
+                console.log('(function($module' + v + '){return ' + this.execString + '})');
+                this.execFunc = eval('(function($module' + v + '){return ' + this.execString + '})');
             }
         }
 
@@ -91,165 +109,222 @@ namespace nodom {
          * 初始化，把表达式串转换成堆栈
          * @param exprStr 	表达式串
          */
-        init(exprStr:string):void {
-            //字符串开始
-            let startStr:string;
-            let type:number = 0; // 1字符串 2变量 3函数 4过滤器
-            //字符串开始结束符
-            let strings:string = "'`\"";
-            //运算符
-            let operand:string = "()!|*/+-><=&%";
-            let spaceChar:string = " 	";
+        compile(exprStr:string):string {
             
-            //堆栈
-			let stack:Array<IStatckItem>=[];
-			let sTmp:string = '';
-            for (let i = 0; i < exprStr.length; i++) {
-                let c:string = exprStr[i];
-                //变量和函数的空格不处理
-                if ((type !== 1) && spaceChar.indexOf(c) !== -1) {
-                    continue;
-                }
-                switch (type) {
-                case 1: //当前为字符串
-                    //字符串标识
-                    if (strings.indexOf(c) !== -1) {
-                        if (c === startStr) {
-                            this.addStr(sTmp + c,stack);
-                            startStr = undefined;
-                            sTmp = '';
-                            type = 0;
-                            continue;
-                        }
-                    }
-                    break;
-                case 2: //当前为变量
-                    if (operand.indexOf(c) !== -1) {
-                        //转为函数
-                        if (c === '(') {
-                            type = 3;
-                        } else { //变量结束
-                            if(this.addField(sTmp)){
-                                stack.push({
-                                    val:sTmp,
-                                    type:'field'
-                                });
-                            }else{
-                                this.addStr(sTmp,stack);
-                                
-                            }
-                            
-                            
-                            sTmp = '';
-                            type = 0;
-                        }
-                    }
-                    break;
-                case 3: //当前为函数
-                    if (c === ')') {
-                        let a:Array<string> = sTmp.trim().split('(');
-                        //函数名
-                        let fn:string = a[0];
+            //字符串正则表达式
+            let stringReg:RegExp[] = [/\".*?\"/,/'.*?'/,/`.*?`/];
+            let quotReg:RegExp[] = [/\\"/g,/\\'/g,/\\`/g];
+            let quotStr = ['$$$$NODOM_QUOT1','$$$$NODOM_QUOT2','$$$$NODOM_QUOT3'];
+            //字符串替换map {$$NODOM_TMPSTRn:str,...}
+            let srcStr = exprStr;
+            let replaceIndex:number = 0;
+            //去掉内部 \" \' \`
+            for(let i=0;i<3;i++){
+                srcStr = srcStr.replace(quotReg[i],quotStr[i]);
+            }
 
-                        //参数
-                        let pa = a[1].split(',');
-                        for (let j = 0; j < pa.length; j++) {
-                            let field = pa[j].trim();
-                            pa[j] = field;
-
-                            // 添加字段到集合 
-                            this.addField(field);
-                        }
-
-                        //函数入栈
-                        stack.push({
-                            val: fn,
-                            params: pa,
-                            type: 'function'
-                        });
-                        sTmp = '';
-                        type = 0;
+            //替换字符串
+            for(;;){
+                let r:RegExpExecArray;
+                for(let reg of stringReg){
+                    let r1:RegExpExecArray = reg.exec(srcStr);
+                    if(!r1){
                         continue;
                     }
+                    if(!r || r.index > r1.index){
+                        r = r1;
+                    }
+                }
+                if(!r){
                     break;
-                default:
-                    //字符串开始
-                    if (strings.indexOf(c) !== -1) {
-                        startStr = c;
-                        type = 1;
-                    } else if (operand.indexOf(c) === -1) { //变量开始
-                        type = 2;
-                        if (sTmp !== '') {
-                            this.addStr(sTmp, stack);
-                            sTmp = '';
-                        }
-                    }
                 }
-
-                //过滤器标志
-                let isFilter:boolean = false;
-                //过滤器
-                if (c === '|') {
-                    let j = i + 1;
-                    let nextc:string = exprStr[j];
-                    if (nextc >= 'a' && nextc <= 'z') {
-                        let strCh = '';
-                        for (; j < exprStr.length; j++) {
-                            let ch = exprStr[j];
-                            if (strings.indexOf(ch) !== -1) {
-                                if (ch === strCh) { //字符串结束
-                                    strCh = '';
-                                } else {
-                                    strCh = ch;
-                                }
-
-                            }
-                            //遇到操作符且不在字符串内
-                            if (strCh === '' && operand.indexOf(ch) !== -1) {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (j > i) {
-                        let s:string = exprStr.substring(i + 1, j);
-                        if (s !== '') {
-                            // 过滤器串处理
-                            let filterArr:string[] = FilterManager.explain(s);
-                            //过滤器
-                            if (FilterManager.hasType(filterArr[0])) {
-                                this.addFilter(filterArr, stack);
-                                c = '';
-                                exprStr = '';
-                                isFilter = true;
-                            }
-                        }
-                    }
-                }
-
-                //操作符
-                if (!isFilter && type !== 1 && type !== 3 && operand.indexOf(c) !== -1) {
-                    this.addOperand(c, stack);
-                } else {
-                    sTmp += c;
-                }
-            }
-            if (type === 2) { //变量处理
-                this.addVar(sTmp, stack);
-            } else if (type === 0 && sTmp !== '') { //字符串
-                this.addStr(sTmp, stack);
-            } else if (type !== 0) {
-                //抛出表达式错误
-                throw new NodomError('invoke', 'expression', '0', 'Node');
+                let sTmp = Expression.REP_STR + replaceIndex++;
+                //存入map
+                this.replaceMap.set(sTmp,r[0]);
+                //用替代串替换源串内容srcStr
+                srcStr = srcStr.substr(0,r.index) + sTmp + srcStr.substr(r.index + r[0].length);
             }
 
-            let bodyStr:string = this.genExprFuncStr(stack);
-            let funcStr = '(function ($module,' + this.fields.join(',') + '){ return ' + bodyStr + '})';
-            console.log(funcStr);
-            this.execFunc = eval(funcStr);
+            //去掉空格
+            srcStr = srcStr.replace(/\s+/g,'');
 
+            //按操作符分组
+            //操作数数组
+            let arrOperator:Array<string> = srcStr.split(/[\(\)\!\|\*\/\+\-><=&%]/);
+            //操作符数组
+            let arrOperand:Array<string> = [];
+            let index:number = arrOperator[0]===''? -1:0;
+            for(let sp of arrOperator){
+                index += sp.length;
+                let ch:string = srcStr.charAt(index++);
+                if(ch !== ''){
+                    arrOperand.push(ch);
+                }
+            }
+            return this.genExecStr(arrOperator,arrOperand);
         }
 
+        /**
+         * 生成执行串
+         * @param arrOperator   操作数数组
+         * @param arrOperand    操作符数组
+         */
+        private genExecStr(arrOperator:string[],arrOperand:string[]):string{
+            let retStr:string = '';
+            for(;arrOperator.length>1;){
+                //操作数
+                let opr:string = arrOperator.pop();
+                //操作符
+                let opd = arrOperand.pop();
+                
+                if(opr === ''){
+                    retStr = opd + retStr;
+                    continue;
+                }
+                
+                let r:string;
+                let handled:boolean = false;
+                if(opd === '('){
+                    if(!this.addField(opr)){
+                        //还原字符串
+                        opr = this.recoveryString(opr);
+                    }
+                    r = this.judgeAndHandleFunc(arrOperator,arrOperand);
+                    if(r !== undefined){
+                        retStr = r + opd + opr + retStr;
+                        handled = true;
+                    }
+                }else if(opd === '|'){
+                    r = this.judgeAndHandleFilter(arrOperator,arrOperand,opr);
+                    if(r !== undefined){
+                        retStr = (arrOperand.length>0?arrOperand.pop():'') + r + retStr;
+                        handled = true;
+                    }
+                }
+
+                if(!handled){
+                    if(!this.addField(opr)){
+                        //还原字符串
+                        opr = this.recoveryString(opr);
+                    }
+                    retStr = opd + opr + retStr;
+                }
+            }
+            //第一个
+            if(arrOperator.length>0){
+                let opr:string = arrOperator.pop();
+                if(opr !== ''){
+                    if(!this.addField(opr)){
+                        //还原字符串
+                        opr = this.recoveryString(opr);
+                    }
+                    retStr = opr + retStr;
+                }
+                
+            }
+            console.log(retStr);
+            return retStr;    
+        }
+
+         /**
+         * 还原字符串
+         * 从$$NODOM_TMPSTR还原为源串
+         * @param str   待还原字符串
+         * @returns     还原后的字符串
+         */
+        private recoveryString(str:string){
+            if(str.startsWith(Expression.REP_STR)){
+                if(this.replaceMap.has(str)){
+                    str = this.replaceMap.get(str);
+                    str = str.replace(/\$\$NODOM_QUOT1/g,'\\"');
+                    str = str.replace(/\$\$NODOM_QUOT2/g,"\\'");
+                    str = str.replace(/\$\$NODOM_QUOT3/g,'\\`');
+                }
+            }
+
+            return str;
+        }
+        /**
+         * 判断并处理函数
+         * @param arrOperator   操作数数组
+         * @param arrOperand    操作符数组
+         * @returns     转换后的串
+         */
+        private judgeAndHandleFunc(arrOperator:string[],arrOperand:string[]):string{
+            let sp:string = arrOperator[arrOperator.length-1];
+            
+            if(sp && sp!==''){
+                //字符串阶段
+                arrOperator.pop();
+                //module 函数
+                if(sp.startsWith('$')){
+                    return '$module.methodFactory.get("' + sp.substr(1) + '")';
+                }else{
+                    return sp;
+                }
+            }
+        }
+
+        /**
+         * 判断并处理过滤器
+         * @param arrOperator   操作数数组
+         * @param arrOperand    操作符数组
+         * @returns     函数串
+         */
+        private judgeAndHandleFilter(arrOperator:string[],arrOperand:string[],srcOp:string):string{
+            //判断过滤器并处理
+            if(srcOp.startsWith(Expression.REP_STR) || Util.isNumberString(srcOp)){
+                return;
+            }
+            let sa:string[] = FilterManager.explain(srcOp);
+            //过滤器
+            if(sa.length>1 || FilterManager.hasType(sa[0])){
+                let ftype:string = sa[0];
+                sa.shift();
+                //参数如果不是数字，需要加上引号
+                sa.forEach((v,i)=>{
+                    if(!Util.isNumberString(v)){
+                        sa[i] = '"' + v + '"';
+                    }
+                });
+
+                //过滤器参数串
+                let paramStr:string = sa.length>0?','+sa.join(','):'';
+                
+                //过滤器待处理区域
+                let filterValue:string = '';
+                let opr:string = arrOperator[arrOperator.length-1];
+                if(opr!==''){
+                    this.addField(opr);
+                    filterValue = opr;
+                    arrOperator.pop();
+                }else if(arrOperand.length>2 && arrOperand[arrOperand.length-1] === ')'){ //过滤器待处理部分带括号
+                    let quotNum:number = 1;
+                    let a1:string[] = [arrOperator.pop()];
+                    let a2:string[] = [arrOperand.pop()];
+                    for(let i=arrOperand.length-1;i>=0;i--){
+                        if(arrOperand[i] === '('){
+                            quotNum--;
+                        }else if(arrOperand[i] === ')'){
+                            quotNum++;
+                        }
+                        a1.unshift(arrOperator.pop());
+                        a2.unshift(arrOperand.pop());
+                        if(quotNum === 0){
+                            //函数
+                            if(arrOperator[arrOperator.length-1] !== ''){
+                                a1.unshift(arrOperator.pop());
+                            }
+                            break;
+                        }
+                    }
+                    filterValue = this.genExecStr(a1,a2);
+
+                }
+                console.log('nodom.FilterManager.exec($module,"'+ ftype + '",' + filterValue + paramStr + ')');
+                return 'nodom.FilterManager.exec($module,"'+ ftype + '",' + filterValue + paramStr + ')';
+            }
+        }
         /**
          * 生成表达式函数串
          * @param stack     操作堆栈
@@ -320,7 +395,8 @@ namespace nodom {
             if (this.modelMap[model.id].fieldValue !== newFieldValue) {
                 this.modelMap[model.id].fieldValue = newFieldValue;
                 valueArr.unshift(module);
-                this.modelMap[model.id].value = this.execFunc.apply(this,valueArr);
+                console.log(valueArr,this.execFunc);
+                this.modelMap[model.id].value = this.execFunc.apply(null,valueArr);
             }
             //返回实际计算值
             return this.modelMap[model.id].value;
@@ -517,7 +593,7 @@ namespace nodom {
          * @returns         true/false
          */
         addField(field:string):boolean{
-            if(Util.isNumberString(field)){
+            if(field === '' || field.startsWith(Expression.REP_STR) || Util.isNumberString(field)){
                 return false;
             }
             if (!this.fields.includes(field)) {

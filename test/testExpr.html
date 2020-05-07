@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script type="text/javascript" src="../bin/nodom.js"></script>
+    <title>测试expression</title>
+</head>
+<body>
+    <div>
+        <!-- <span>{{Math.floor(x*y)|number:1 + "hello 'word',\"your\"" + word|touppercase + 'abc,"123"'}}</span> -->
+        <div>{{"hello 'world',\"you\"" + word|touppercase + 'abc,"123"'}}</div>
+    </div>
+</body>
+<script>
+nodom.newApp({
+    module:{
+        el: 'div',
+        data: {
+            x:10,
+            y:2.354,
+            date1: (new Date()).getTime(),
+            word:'yang',
+            price1: 236.83,
+            number1: 1223,
+            name: 'Hello world!',
+            rows: [
+                { name: 'yang', addr: 'chengdu' },
+                { name: 'zhang', addr: 'mianyang' },
+                { name: 'chen', addr: 'luoyang' },
+                { name: 'tang', addr: 'beijing' },
+                { name: 'li', addr: 'shanghai' }
+            ]
+        },
+        methods: {
+            selectArr: function (arr) {
+                var a = [];
+                // 过滤出name为yang的数组元素
+                arr.forEach(item => {
+                    if (item.name === 'yang') {
+                        a.push(item)
+                    }
+                });
+                return a;
+            }
+        }
+    }
+});
+
+</script>
+</html>
