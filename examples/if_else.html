@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Document</title>
-    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
 
     <style>
         .introduce {
@@ -60,14 +60,15 @@
     </div>
 </body>
 <script>
-    let mod = new Module({
-        el: '.view',
-        root: true,
-        data: {
-            discount: 0.5,
-            price: 200,
-            age: 20,
-            grade: 73
+    nodom.newApp({
+        module:{
+            el: '.view',
+            data: {
+                discount: 0.5,
+                price: 200,
+                age: 20,
+                grade: 73
+            }
         }
     });
 

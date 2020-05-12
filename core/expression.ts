@@ -40,11 +40,7 @@ namespace nodom {
          * 字符串替换map
          */
         replaceMap:Map<string,string> = new Map();
-		/**
-		 * 前置expressionId数组
-		 */
-		// pre:Array<number>;
-
+		
         /**
          * @param exprStr	表达式串
 		 * @param module 	模块
@@ -72,7 +68,6 @@ namespace nodom {
          * @param exprStr 	表达式串
          */
         compile(exprStr:string):string {
-            
             //字符串正则表达式
             let stringReg:RegExp[] = [/\".*?\"/,/'.*?'/,/`.*?`/];
             let quotReg:RegExp[] = [/\\"/g,/\\'/g,/\\`/g];
@@ -235,7 +230,7 @@ namespace nodom {
          * @param arrOperator   操作数数组
          * @param arrOperand    操作符数组
          * @param srcOp         前操作数
-         * @returns     函数串
+         * @returns             过滤器串
          */
         private judgeAndHandleFilter(arrOperator:string[],arrOperand:string[],srcOp:string):string{
             //判断过滤器并处理
@@ -249,6 +244,7 @@ namespace nodom {
                 sa.shift();
                 //参数如果不是数字，需要加上引号
                 sa.forEach((v,i)=>{
+                    v = this.recoveryString(v);
                     if(!Util.isNumberString(v)){
                         sa[i] = '"' + v + '"';
                     }
@@ -279,10 +275,8 @@ namespace nodom {
                         a1.unshift(arrOperator.pop());
                         a2.unshift(arrOperand.pop());
                         if(quotNum === 0){
-                            //函数
-                            // if(arrOperator[arrOperator.length-1] !== ''){
-                                a1.unshift(arrOperator.pop());
-                            // }
+                            //函数名
+                            a1.unshift(arrOperator.pop());
                             break;
                         }
                     }
@@ -303,26 +297,14 @@ namespace nodom {
 				return ''; 
 			}
             let module:Module = ModuleFactory.get(model.moduleName);
-            
             let fieldObj:object = model.data;
-            let newFieldValue:string = '';
             let valueArr = [];
             this.fields.forEach((field) => {
                 valueArr.push(fieldObj[field]);
             });
-            //如果对应模型的值对象不存在，需要新建
-            if (this.modelMap[model.id] === undefined) {
-                this.modelMap[model.id] = Object.create(null);
-            }
-            newFieldValue = valueArr.join(',');
-            //field值不一样，需要重新计算
-            if (this.modelMap[model.id].fieldValue !== newFieldValue) {
-                this.modelMap[model.id].fieldValue = newFieldValue;
-                valueArr.unshift(module);
-                this.modelMap[model.id].value = this.execFunc.apply(null,valueArr);
-            }
-            //返回实际计算值
-            return this.modelMap[model.id].value;
+            //module作为第一个参数
+            valueArr.unshift(module);
+            return this.execFunc.apply(null,valueArr);
         }
 
         /**
@@ -333,6 +315,11 @@ namespace nodom {
         addField(field:string):boolean{
             if(field === '' || field.startsWith(Expression.REP_STR) || Util.isNumberString(field)){
                 return false;
+            }
+            //多级字段只保留第一级，如 x.y只保留x
+            let ind:number;
+            if((ind=field.indexOf('.')) !== -1){
+                field = field.substr(0,ind);
             }
             if (!this.fields.includes(field)) {
                 this.fields.push(field);

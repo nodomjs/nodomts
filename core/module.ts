@@ -116,18 +116,14 @@ namespace nodom {
          */
         containerParam: object;
         /**
-         * 状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)、4 dead(死亡)
+         * 状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)
          */
         state: number = 0;
         /**
          * 数据url
          */
         dataUrl: string;
-        /**
-         * 正则初始化
-         */
-        initing:boolean;
-
+        
         /**
          * 需要加载新数据
          */
@@ -189,13 +185,12 @@ namespace nodom {
 
             // 把模块添加到工厂
             ModuleFactory.add(this.name, this);
-
+            
             this.methodFactory = new MethodFactory(this);
             this.modelFactory = new ModelFactory(this);
             this.expressionFactory = new ExpressionFactory(this);
             this.directiveFactory = new DirectiveFactory(this);
-            this.renderDoms = []; //修改渲染的el数组
-
+            
             if (config) {
                 //保存config，存在延迟初始化情况
                 this.initConfig = config;
@@ -226,34 +221,27 @@ namespace nodom {
                 if (main) {
                     this.main = true;
                     ModuleFactory.setMain(this);
-                    this.active();
+                    // this.active();
                 }
 
                 //不延迟初始化或为主模块，需要立即初始化
-                if (!config.delayInit || this.main) {
-                    this.init();
-                }
+                // if (!config.delayInit) {
+                //     this.init();
+                // }
             }
         }
 
         /**
-         * 加载模块
-         * @param callback  加载后的回调函数
+         * 初始化模块（加载和编译）
          */
         async init():Promise<any> {
-            //已初始化，不用再初始化
-            if (this.state !== 0 || this.initing) {
-                return this.initLinker;
-            }
-
-            this.initing = true;
             let config = this.initConfig;
             let typeArr:Array<string> = []; //请求类型数组
-            let urlArr = []; //请求url数组
+            let urlArr:Array<string> = []; //请求url数组
             
             //app页面根路径
             let appPath:string = Application.templatePath || '';
-
+            //加载文件
             if (Util.isArray(config.requires) && config.requires.length > 0) {
                 const head:HTMLHeadElement = document.head;
                 config.requires.forEach((item) => {
@@ -268,7 +256,6 @@ namespace nodom {
                     }
                     //如果已经加载，则不再加载
                     if (type === 'css') {
-                        
                         let css: HTMLLinkElement = <HTMLLinkElement>Util.get("link[href='" + url + "']");
                         if (css !== null) {
                             return;
@@ -290,15 +277,15 @@ namespace nodom {
                 });
             }
 
-            let templateStr:string=this.template; 
+            //模版串
+            let templateStr:string=this.template;
             //模版信息
             if(config.template){
                 config.template = config.template.trim();
-                let ch = config.template.substr(0,1);
-                if(ch==='<'){ //html模版串
+                if(config.template.startsWith('<')){ //html模版串
                     templateStr = config.template;
                 }else{  //文件
-                    if(config.template.lastIndexOf('.nd') === config.template.length-3){ //nodom编译文件
+                    if(config.template.endsWith('.nd')){ //nodom编译文件
                         typeArr.push('compiled');
                     }else{  //普通html文件
                         typeArr.push('template');
@@ -318,57 +305,47 @@ namespace nodom {
                     this.model = new Model(config.data, this);
                 }else{ //数据文件
                     typeArr.push('data');
-                    urlArr.push(config.data);
+                    urlArr.push((<object>config)['data']);
                     this.dataUrl = <string>config.data;
                 }
             }
 
             //批量请求文件
             if (typeArr.length > 0) {
-                this.initLinker = Linker.gen('getfiles', urlArr).then((files) => {
-                    let head = document.querySelector('head');
-                    files.forEach((file, ind) => {
-                        switch (typeArr[ind]) {
-                        case 'js':
-                            let script = Util.newEl('script');
-                            script.innerHTML = file;
-                            head.appendChild(script);
-                            script.setAttribute('dsrc', urlArr[ind]);
-                            script.innerHTML = '';
-                            head.removeChild(script);
-                            break;
-                        case 'template':
-                            this.virtualDom = Compiler.compile(this, file.trim());
-                            break;
-                        case 'compiled': //预编译后的js文件
-                            let arr = Serializer.deserialize(file, this);
-                            this.virtualDom = arr[0];
-                            this.expressionFactory = arr[1];
-                            break;
-                        case 'data': //数据
-                            this.model = new Model(JSON.parse(file), this);
-                        }
-                    });
-                    //主模块状态变为3
-                    changeState(this);
-                    delete this.initing;
+                let files = await Linker.gen('getfiles', urlArr);
+                let head = document.querySelector('head');
+                files.forEach((file, ind) => {
+                    switch (typeArr[ind]) {
+                    case 'js':
+                        let script = Util.newEl('script');
+                        script.innerHTML = file;
+                        head.appendChild(script);
+                        script.setAttribute('dsrc', urlArr[ind]);
+                        script.innerHTML = '';
+                        head.removeChild(script);
+                        break;
+                    case 'template':
+                        this.virtualDom = Compiler.compile(this, file.trim());
+                        break;
+                    case 'compiled': //预编译后的js文件
+                        let arr = Serializer.deserialize(file, this);
+                        this.virtualDom = arr[0];
+                        this.expressionFactory = arr[1];
+                        break;
+                    case 'data': //数据
+                        this.model = new Model(JSON.parse(file), this);
+                    }
                 });
-            } else {
-                this.initLinker = Promise.resolve();
-                //修改状态
-                changeState(this);
-                delete this.initing;
-            }
-
+            } 
+            changeState(this);
+            
             if (Util.isArray(this.initConfig.modules)) {
                 this.initConfig.modules.forEach((item) => {
                     this.addChild(item);
                 });
             }
-
-            //初始化后，不再需要initConfig
+            
             delete this.initConfig;
-            return this.initLinker;
             /**
              * 修改状态
              * @param mod 	模块
@@ -397,6 +374,7 @@ namespace nodom {
             }
             //克隆新的树
             let root = this.virtualDom.clone();
+
             if (this.firstRender) {
                 //model无数据，如果存在dataUrl，则需要加载数据
                 if (this.loadNewData && this.dataUrl) {
@@ -431,17 +409,12 @@ namespace nodom {
                             this.renderDoms.splice(i, 1);
                         }
                     }
-
                     // 渲染
                     this.renderDoms.forEach((item) => {
                         item.node.renderToHtml(this, item);
                     });
                 }
-
                 //执行每次渲染后事件，延迟执行
-                // setTimeout(() => {
-                //     this.doModuleEvent('onRender');
-                // }, 0);
                 this.doModuleEvent('onRender');
             }
 
@@ -460,12 +433,11 @@ namespace nodom {
          * 执行首次渲染
          * @param root 	根虚拟dom
          */
-        doFirstRender(root) {
-            let me = this;
+        doFirstRender(root:Element) {
             //执行首次渲染前事件
             this.doModuleEvent('onBeforeFirstRender');
             this.beforeFirstRenderOps.forEach((foo) => {
-                Util.apply(foo, me, []);
+                Util.apply(foo, this, []);
             });
             this.beforeFirstRenderOps = [];
             //渲染树
@@ -474,33 +446,22 @@ namespace nodom {
                 root.modelId = this.model.id;
             }
 
-            root.render(me, null);
-
+            root.render(this, null);
             //渲染到html
             if (root.children) {
                 root.children.forEach((item) => {
-                    item.renderToHtml(me, { type: 'fresh' });
+                    item.renderToHtml(this, { type: 'fresh' });
                 });
             }
 
             //删除首次渲染标志
             delete this.firstRender;
-            //延迟执行
-            // setTimeout(() => {
-            //     //执行首次渲染后事件
-            //     this.doModuleEvent('onFirstRender');
-            //     //执行首次渲染后操作队列
-            //     this.firstRenderOps.forEach((foo) => {
-            //         Util.apply(foo, me, []);
-            //     });
-            //     this.firstRenderOps = [];
-            // }, 0);
-
+            
             //执行首次渲染后事件
             this.doModuleEvent('onFirstRender');
             //执行首次渲染后操作队列
             this.firstRenderOps.forEach((foo) => {
-                Util.apply(foo, me, []);
+                Util.apply(foo, this, []);
             });
             this.firstRenderOps = [];
         }
@@ -539,7 +500,6 @@ namespace nodom {
          * @param config 	模块配置 
          */
         addChild(config) {
-            const me = this;
             config.parentName = this.name;
             let chd = new Module(config);
             if (this.children === undefined) {
@@ -593,39 +553,29 @@ namespace nodom {
         receive(fromName, data) {
             this.doModuleEvent('onReceive', [fromName, data]);
         }
-
-
+        
         /**
-         * 激活
-         * @param callback 	激活后的回调函数
+         * 激活模块(添加到渲染器)
          */
-        active(callback?:Function) {
+        async active() {
             //激活状态不用激活，创建状态不能激活
             if (this.state === 3) {
                 return;
             }
             //未初始化，需要先初始化
             if (this.state === 0) {
-                this.init().then(() => {
-                    this.state = 3;
-                    if (Util.isFunction(callback)) {
-                        callback(this.model);
-                    }
-                    Renderer.add(this);
-                });
-
+                await this.init();
+                this.state = 3;
             } else {
                 this.state = 3;
-                if (callback) {
-                    callback(this.model);
-                }
-                Renderer.add(this);
             }
-
-            //子节点
+            
+            Renderer.add(this);
+            
+            //子模块
             if (Util.isArray(this.children)) {
-                this.children.forEach((m) => {
-                    m.active(callback);
+                this.children.forEach(async (m) => {
+                    await m.active();
                 });
             }
         }
@@ -641,7 +591,6 @@ namespace nodom {
             this.state = 2;
             //设置首次渲染标志
             this.firstRender = true;
-            delete this.container;
             if (Util.isArray(this.children)) {
                 this.children.forEach((m) => {
                     m.unactive();
@@ -652,20 +601,7 @@ namespace nodom {
         /**
          * 模块终结
          */
-        dead() {
-            if (this.state === 4) {
-                return;
-            }
-
-            this.state = 4;
-
-            if (Util.isArray(this.children)) {
-                this.children.forEach((m) => {
-                    m.unactive();
-                });
-            }
-        }
-
+        
         destroy() {
             if (Util.isArray(this.children)) {
                 this.children.forEach((m) => {
@@ -685,8 +621,8 @@ namespace nodom {
          * @param param 		参数，为数组
          */
         doModuleEvent(eventName:string, param?:Array<any>) {
-            let foo = this.methodFactory.get(eventName);
-            if (!Util.isFunction(foo)) {
+            const foo:Function = this.methodFactory.get(eventName);
+            if (!foo) {
                 return;
             }
             if (!param) {
@@ -703,7 +639,6 @@ namespace nodom {
          * @param foo  	操作方法
          */
         addFirstRenderOperation(foo:Function) {
-            let me = this;
             if (!Util.isFunction(foo)) {
                 return;
             }

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>validity</title>
-    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
 	<style>
 		.label{
 			width:100px;
@@ -94,32 +94,33 @@
 </body>
 
 <script>
-	new Module({
-		el:'div',
-		root:true,
-		data:{
-			userName:'',
-			age:0,
-			sexy:1,
-			agree:'yes',
-			password:'',
-			password2:'',
-			birth:(new Date()).getTime(),
-			email:'',
-			homepage:'http://',
-			themecolor:'#666666'
-		},
-		methods:{
-			check:function(){
-				//判断当前form校验结果
-				// console.log('form校验结果是：' + DD.$validity.check());
+	nodom.newApp({
+        module:{
+			el:'div',
+			data:{
+				userName:'',
+				age:0,
+				sexy:1,
+				agree:'yes',
+				password:'',
+				password2:'',
+				birth:(new Date()).getTime(),
+				email:'',
+				homepage:'http://',
+				themecolor:'#666666'
 			},
-			compare:function(){
-				let data = this.data;
-				if(data.password !== data.password2){
-					return false;
+			methods:{
+				check:function(){
+					//判断当前form校验结果
+					// console.log('form校验结果是：' + DD.$validity.check());
+				},
+				compare:function(){
+					let data = this.data;
+					if(data.password !== data.password2){
+						return false;
+					}
+					return true;
 				}
-				return true;
 			}
 		}
 	});

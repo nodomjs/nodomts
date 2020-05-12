@@ -9,13 +9,67 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 var nodom;
 (function (nodom) {
+    function newApp(config) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!config.module) {
+                throw new nodom.NodomError('config', nodom.TipWords.application);
+            }
+            if (config.options) {
+                nodom.Application.routerPrePath = config.options['routerPrePath'] || '';
+                nodom.Application.templatePath = config.options['templatePath'] || '';
+                nodom.Application.renderTick = config.options['renderTick'] || 100;
+            }
+            nodom.Scheduler.addTask(nodom.MessageQueue.handleQueue, nodom.MessageQueue);
+            nodom.Scheduler.addTask(nodom.Renderer.render, nodom.Renderer);
+            nodom.Scheduler.start();
+            let module = createModule(config.module, true);
+            yield module.active();
+            return module;
+        });
+    }
+    nodom.newApp = newApp;
+    function createModule(config, main) {
+        if (nodom.Util.isArray(config)) {
+            for (let item of config) {
+                new nodom.Module(item);
+            }
+        }
+        else {
+            return new nodom.Module(config, main);
+        }
+    }
+    nodom.createModule = createModule;
+    function createRoute(config) {
+        if (nodom.Util.isArray(config)) {
+            for (let item of config) {
+                new nodom.Route(item);
+            }
+        }
+        else {
+            return new nodom.Route(config);
+        }
+    }
+    nodom.createRoute = createRoute;
+    function createDirective(name, priority, init, handler) {
+        return nodom.DirectiveManager.addType(name, {
+            prio: priority,
+            init: init,
+            handler: handler
+        });
+    }
+    nodom.createDirective = createDirective;
+    function createPlugin(name, init, handler) {
+    }
+    nodom.createPlugin = createPlugin;
+})(nodom || (nodom = {}));
+var nodom;
+(function (nodom) {
     class Util {
         static genId() {
             return this.generatedId++;
         }
         clone(srcObj, expKey) {
             let map = new WeakMap();
-            let src = this;
             let retObj = clone(srcObj);
             map = null;
             return retObj;
@@ -216,22 +270,6 @@ var nodom;
         static isNode(node) {
             return node !== undefined && node !== null && (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE);
         }
-        static getTranslate(el) {
-            let tr = el.style.transform;
-            let arr;
-            if (tr && tr !== 'none') {
-                arr = [];
-                let vs = tr.substring(tr.indexOf('(') + 1, tr.indexOf(')') - 1);
-                let va = vs.split(',');
-                for (let i = 0; i < va.length; i++) {
-                    arr.push(parseInt(va[i]));
-                }
-            }
-            if (arr) {
-                return arr;
-            }
-            return [0, 0, 0];
-        }
         static newEl(tagName, config, text) {
             if (!this.isString(tagName) || this.isEmpty(tagName)) {
                 throw new nodom.NodomError('invoke', 'this.newEl', '0', 'string');
@@ -414,47 +452,6 @@ var nodom;
                 return w;
             }
         }
-        static addClass(el, cls) {
-            if (!this.isEl(el)) {
-                throw new nodom.NodomError('invoke', 'this.addClass', '0', 'Element');
-            }
-            if (this.isEmpty(cls)) {
-                throw new nodom.NodomError('invoke', 'this.addClass', '1', 'string');
-            }
-            let cn = el.className.trim();
-            if (this.isEmpty(cn)) {
-                el.className = cls;
-            }
-            else {
-                let arr = cn.split(/\s+/);
-                for (let i = 0; i < arr.length; i++) {
-                    if (arr[i] === cls) {
-                        return;
-                    }
-                }
-                arr.push(cls);
-                el.className = arr.join(' ');
-            }
-        }
-        static removeClass(el, cls) {
-            if (!this.isEl(el)) {
-                throw new nodom.NodomError('invoke', 'this.removeClass', '0', 'Element');
-            }
-            if (this.isEmpty(cls)) {
-                throw new nodom.NodomError('invoke', 'this.removeClass', '1', 'string');
-            }
-            let cn = el.className.trim();
-            if (!this.isEmpty(cn)) {
-                let arr = cn.split(/\s+/);
-                for (let i = 0; i < arr.length; i++) {
-                    if (arr[i] === cls) {
-                        arr.splice(i, 1);
-                        el.className = arr.join(' ');
-                        return;
-                    }
-                }
-            }
-        }
         static formatDate(srcDate, format) {
             let timeStamp;
             if (this.isString(srcDate)) {
@@ -509,8 +506,7 @@ var nodom;
             let reg = new RegExp(/\{.+?\}/);
             let r;
             let args = arguments;
-            let str = args[0];
-            while ((r = reg.exec(str)) !== null) {
+            while ((r = reg.exec(src)) !== null) {
                 let rep;
                 let sIndex = r[0].substr(1, r[0].length - 2);
                 let pIndex = parseInt(sIndex) + 1;
@@ -520,17 +516,9 @@ var nodom;
                 else {
                     rep = '';
                 }
-                str = str.replace(reg, rep);
+                src = src.replace(reg, rep);
             }
-            return str;
-        }
-        static addStrQuot(srcStr, quot) {
-            srcStr = srcStr.replace(/\'/g, '\\\'');
-            srcStr = srcStr.replace(/\"/g, '\\\"');
-            srcStr = srcStr.replace(/\`/g, '\\\`');
-            quot = quot || '"';
-            srcStr = quot + srcStr + quot;
-            return srcStr;
+            return src;
         }
         static apply(foo, obj, args) {
             if (!foo) {
@@ -1204,7 +1192,6 @@ var nodom;
             }
             if (this.execString) {
                 let v = this.fields.length > 0 ? ',' + this.fields.join(',') : '';
-                console.log('(function($module' + v + '){return ' + this.execString + '})');
                 this.execFunc = eval('(function($module' + v + '){return ' + this.execString + '})');
             }
         }
@@ -1246,7 +1233,6 @@ var nodom;
                     arrOperand.push(ch);
                 }
             }
-            console.log(arrOperator, arrOperand);
             return this.genExecStr(arrOperator, arrOperand);
         }
         genExecStr(arrOperator, arrOperand) {
@@ -1297,7 +1283,6 @@ var nodom;
                     retStr = opr + retStr;
                 }
             }
-            console.log(retStr);
             return retStr;
         }
         recoveryString(str) {
@@ -1313,7 +1298,6 @@ var nodom;
         }
         judgeAndHandleFunc(arrOperator, arrOperand, srcOp) {
             let sp = arrOperator[arrOperator.length - 1];
-            console.log(sp);
             if (sp && sp !== '') {
                 arrOperator.pop();
                 if (sp.startsWith('$')) {
@@ -1333,6 +1317,7 @@ var nodom;
                 let ftype = sa[0];
                 sa.shift();
                 sa.forEach((v, i) => {
+                    v = this.recoveryString(v);
                     if (!nodom.Util.isNumberString(v)) {
                         sa[i] = '"' + v + '"';
                     }
@@ -1365,10 +1350,8 @@ var nodom;
                             break;
                         }
                     }
-                    console.log(a1, a2);
                     filterValue = this.genExecStr(a1, a2);
                 }
-                console.log('nodom.FilterManager.exec($module,"' + ftype + '",' + filterValue + paramStr + ')');
                 return 'nodom.FilterManager.exec($module,"' + ftype + '",' + filterValue + paramStr + ')';
             }
         }
@@ -1378,28 +1361,21 @@ var nodom;
             }
             let module = nodom.ModuleFactory.get(model.moduleName);
             let fieldObj = model.data;
-            let newFieldValue = '';
             let valueArr = [];
             this.fields.forEach((field) => {
                 valueArr.push(fieldObj[field]);
             });
-            if (this.modelMap[model.id] === undefined) {
-                this.modelMap[model.id] = Object.create(null);
-            }
-            newFieldValue = valueArr.join(',');
-            if (this.modelMap[model.id].fieldValue !== newFieldValue) {
-                this.modelMap[model.id].fieldValue = newFieldValue;
-                valueArr.unshift(module);
-                console.log(valueArr, this.execFunc);
-                this.modelMap[model.id].value = this.execFunc.apply(null, valueArr);
-            }
-            return this.modelMap[model.id].value;
+            valueArr.unshift(module);
+            return this.execFunc.apply(null, valueArr);
         }
         addField(field) {
             if (field === '' || field.startsWith(Expression.REP_STR) || nodom.Util.isNumberString(field)) {
                 return false;
             }
-            console.log(field, this.fields);
+            let ind;
+            if ((ind = field.indexOf('.')) !== -1) {
+                field = field.substr(0, ind);
+            }
             if (!this.fields.includes(field)) {
                 this.fields.push(field);
             }
@@ -1892,7 +1868,6 @@ var nodom;
             this.modelFactory = new nodom.ModelFactory(this);
             this.expressionFactory = new nodom.ExpressionFactory(this);
             this.directiveFactory = new nodom.DirectiveFactory(this);
-            this.renderDoms = [];
             if (config) {
                 this.initConfig = config;
                 if (nodom.Util.isString(config.el)) {
@@ -1916,19 +1891,11 @@ var nodom;
                 if (main) {
                     this.main = true;
                     nodom.ModuleFactory.setMain(this);
-                    this.active();
-                }
-                if (!config.delayInit || this.main) {
-                    this.init();
                 }
             }
         }
         init() {
             return __awaiter(this, void 0, void 0, function* () {
-                if (this.state !== 0 || this.initing) {
-                    return this.initLinker;
-                }
-                this.initing = true;
                 let config = this.initConfig;
                 let typeArr = [];
                 let urlArr = [];
@@ -1971,12 +1938,11 @@ var nodom;
                 let templateStr = this.template;
                 if (config.template) {
                     config.template = config.template.trim();
-                    let ch = config.template.substr(0, 1);
-                    if (ch === '<') {
+                    if (config.template.startsWith('<')) {
                         templateStr = config.template;
                     }
                     else {
-                        if (config.template.lastIndexOf('.nd') === config.template.length - 3) {
+                        if (config.template.endsWith('.nd')) {
                             typeArr.push('compiled');
                         }
                         else {
@@ -1994,51 +1960,43 @@ var nodom;
                     }
                     else {
                         typeArr.push('data');
-                        urlArr.push(config.data);
+                        urlArr.push(config['data']);
                         this.dataUrl = config.data;
                     }
                 }
                 if (typeArr.length > 0) {
-                    this.initLinker = nodom.Linker.gen('getfiles', urlArr).then((files) => {
-                        let head = document.querySelector('head');
-                        files.forEach((file, ind) => {
-                            switch (typeArr[ind]) {
-                                case 'js':
-                                    let script = nodom.Util.newEl('script');
-                                    script.innerHTML = file;
-                                    head.appendChild(script);
-                                    script.setAttribute('dsrc', urlArr[ind]);
-                                    script.innerHTML = '';
-                                    head.removeChild(script);
-                                    break;
-                                case 'template':
-                                    this.virtualDom = nodom.Compiler.compile(this, file.trim());
-                                    break;
-                                case 'compiled':
-                                    let arr = nodom.Serializer.deserialize(file, this);
-                                    this.virtualDom = arr[0];
-                                    this.expressionFactory = arr[1];
-                                    break;
-                                case 'data':
-                                    this.model = new nodom.Model(JSON.parse(file), this);
-                            }
-                        });
-                        changeState(this);
-                        delete this.initing;
+                    let files = yield nodom.Linker.gen('getfiles', urlArr);
+                    let head = document.querySelector('head');
+                    files.forEach((file, ind) => {
+                        switch (typeArr[ind]) {
+                            case 'js':
+                                let script = nodom.Util.newEl('script');
+                                script.innerHTML = file;
+                                head.appendChild(script);
+                                script.setAttribute('dsrc', urlArr[ind]);
+                                script.innerHTML = '';
+                                head.removeChild(script);
+                                break;
+                            case 'template':
+                                this.virtualDom = nodom.Compiler.compile(this, file.trim());
+                                break;
+                            case 'compiled':
+                                let arr = nodom.Serializer.deserialize(file, this);
+                                this.virtualDom = arr[0];
+                                this.expressionFactory = arr[1];
+                                break;
+                            case 'data':
+                                this.model = new nodom.Model(JSON.parse(file), this);
+                        }
                     });
                 }
-                else {
-                    this.initLinker = Promise.resolve();
-                    changeState(this);
-                    delete this.initing;
-                }
+                changeState(this);
                 if (nodom.Util.isArray(this.initConfig.modules)) {
                     this.initConfig.modules.forEach((item) => {
                         this.addChild(item);
                     });
                 }
                 delete this.initConfig;
-                return this.initLinker;
                 function changeState(mod) {
                     if (mod.main) {
                         mod.state = 3;
@@ -2103,26 +2061,25 @@ var nodom;
             return true;
         }
         doFirstRender(root) {
-            let me = this;
             this.doModuleEvent('onBeforeFirstRender');
             this.beforeFirstRenderOps.forEach((foo) => {
-                nodom.Util.apply(foo, me, []);
+                nodom.Util.apply(foo, this, []);
             });
             this.beforeFirstRenderOps = [];
             this.renderTree = root;
             if (this.model) {
                 root.modelId = this.model.id;
             }
-            root.render(me, null);
+            root.render(this, null);
             if (root.children) {
                 root.children.forEach((item) => {
-                    item.renderToHtml(me, { type: 'fresh' });
+                    item.renderToHtml(this, { type: 'fresh' });
                 });
             }
             delete this.firstRender;
             this.doModuleEvent('onFirstRender');
             this.firstRenderOps.forEach((foo) => {
-                nodom.Util.apply(foo, me, []);
+                nodom.Util.apply(foo, this, []);
             });
             this.firstRenderOps = [];
         }
@@ -2152,7 +2109,6 @@ var nodom;
             nodom.Renderer.add(this);
         }
         addChild(config) {
-            const me = this;
             config.parentName = this.name;
             let chd = new Module(config);
             if (this.children === undefined) {
@@ -2186,31 +2142,25 @@ var nodom;
         receive(fromName, data) {
             this.doModuleEvent('onReceive', [fromName, data]);
         }
-        active(callback) {
-            if (this.state === 3) {
-                return;
-            }
-            if (this.state === 0) {
-                this.init().then(() => {
+        active() {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (this.state === 3) {
+                    return;
+                }
+                if (this.state === 0) {
+                    yield this.init();
                     this.state = 3;
-                    if (nodom.Util.isFunction(callback)) {
-                        callback(this.model);
-                    }
-                    nodom.Renderer.add(this);
-                });
-            }
-            else {
-                this.state = 3;
-                if (callback) {
-                    callback(this.model);
+                }
+                else {
+                    this.state = 3;
                 }
                 nodom.Renderer.add(this);
-            }
-            if (nodom.Util.isArray(this.children)) {
-                this.children.forEach((m) => {
-                    m.active(callback);
-                });
-            }
+                if (nodom.Util.isArray(this.children)) {
+                    this.children.forEach((m) => __awaiter(this, void 0, void 0, function* () {
+                        yield m.active();
+                    }));
+                }
+            });
         }
         unactive() {
             if (this.main || this.state === 2) {
@@ -2218,18 +2168,6 @@ var nodom;
             }
             this.state = 2;
             this.firstRender = true;
-            delete this.container;
-            if (nodom.Util.isArray(this.children)) {
-                this.children.forEach((m) => {
-                    m.unactive();
-                });
-            }
-        }
-        dead() {
-            if (this.state === 4) {
-                return;
-            }
-            this.state = 4;
             if (nodom.Util.isArray(this.children)) {
                 this.children.forEach((m) => {
                     m.unactive();
@@ -2245,8 +2183,8 @@ var nodom;
             nodom.ModuleFactory.remove(this.name);
         }
         doModuleEvent(eventName, param) {
-            let foo = this.methodFactory.get(eventName);
-            if (!nodom.Util.isFunction(foo)) {
+            const foo = this.methodFactory.get(eventName);
+            if (!foo) {
                 return;
             }
             if (!param) {
@@ -2258,7 +2196,6 @@ var nodom;
             nodom.Util.apply(foo, this, param);
         }
         addFirstRenderOperation(foo) {
-            let me = this;
             if (!nodom.Util.isFunction(foo)) {
                 return;
             }
@@ -2654,7 +2591,7 @@ var nodom;
             if (module.state !== 3) {
                 return;
             }
-            if (this.waitList.indexOf(module.name) === -1) {
+            if (!this.waitList.includes(module.name)) {
                 this.waitList.push(module.name);
             }
         }
@@ -2668,7 +2605,8 @@ var nodom;
             for (let i = 0; i < this.waitList.length; i++) {
                 let m = nodom.ModuleFactory.get(this.waitList[i]);
                 if (!m || m.render()) {
-                    this.waitList.splice(i--, 1);
+                    this.waitList.shift();
+                    i--;
                 }
             }
         }
@@ -2680,25 +2618,31 @@ var nodom;
 (function (nodom) {
     class Router {
         static addPath(path) {
-            for (let i = 0; i < this.waitList.length; i++) {
-                let li = this.waitList[i];
-                if (li === path) {
-                    return;
+            return __awaiter(this, void 0, void 0, function* () {
+                for (let i = 0; i < this.waitList.length; i++) {
+                    let li = this.waitList[i];
+                    if (li === path) {
+                        return;
+                    }
+                    if (li.indexOf(path) === 0 && li.substr(path.length + 1, 1) === '/') {
+                        return;
+                    }
                 }
-                if (li.indexOf(path) === 0 && li.substr(path.length + 1, 1) === '/') {
-                    return;
-                }
-            }
-            this.waitList.push(path);
-            this.load();
+                this.waitList.push(path);
+                this.load();
+            });
         }
         static load() {
-            if (this.loading || this.waitList.length === 0) {
-                return;
-            }
-            let path = this.waitList.shift();
-            this.loading = true;
-            this.start(path);
+            return __awaiter(this, void 0, void 0, function* () {
+                if (this.loading || this.waitList.length === 0) {
+                    return;
+                }
+                let path = this.waitList.shift();
+                this.loading = true;
+                yield this.start(path);
+                this.loading = false;
+                this.load();
+            });
         }
         static start(path) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -2719,23 +2663,13 @@ var nodom;
                     module.unactive();
                 }
                 let showPath;
-                if (this.startStyle !== 2 && showPath) {
-                    if (this.showPath && showPath.indexOf(this.showPath) === 0) {
-                        history.replaceState(path, '', nodom.Application.routerPrePath + showPath);
-                    }
-                    else {
-                        history.pushState(path, '', nodom.Application.routerPrePath + showPath);
-                    }
-                    this.showPath = showPath;
-                }
                 if (diff[2].length === 0) {
                     let route = diff[0];
+                    let proute = diff[3];
                     if (route !== null) {
-                        setRouteParamToModel(route);
-                        if (!route.useParentPath) {
-                            showPath = route.fullPath;
-                        }
+                        showPath = route.useParentPath && proute ? proute.fullPath : route.fullPath;
                         route.setLinkActive(true);
+                        setRouteParamToModel(route);
                     }
                 }
                 else {
@@ -2758,9 +2692,10 @@ var nodom;
                         module.addBeforeFirstRenderOperation(function () {
                             nodom.Util.empty(module.container);
                         });
-                        yield module.init();
-                        yield module.active();
                         route.setLinkActive(true);
+                        delete module.container;
+                        module.firstRender = true;
+                        yield module.active();
                         setRouteParamToModel(route);
                         if (nodom.Util.isFunction(this.onDefaultEnter)) {
                             this.onDefaultEnter(module.model);
@@ -2781,28 +2716,22 @@ var nodom;
                     this.showPath = showPath;
                 }
                 this.currentPath = path;
-                this.loading = false;
-                this.load();
-                Router.startStyle = 0;
+                this.startStyle = 0;
                 function setRouteParamToModel(route) {
                     if (!route) {
                         return;
                     }
                     const module = nodom.ModuleFactory.get(route.module);
-                    let model = module.model;
                     let o = {
                         path: route.path
                     };
                     if (!nodom.Util.isEmpty(route.data)) {
                         o['data'] = route.data;
                     }
-                    if (!model) {
-                        module.model = new nodom.Model({ $route: o }, module);
+                    if (!module.model) {
+                        module.model = new nodom.Model({}, module);
                     }
-                    else {
-                        model.data['$route'] = o;
-                    }
-                    nodom.Renderer.add(module);
+                    module.model.set('$route', o);
                 }
             });
         }
@@ -2824,7 +2753,7 @@ var nodom;
                 return null;
             }
             if (last) {
-                return [routes[routes.length - 1]];
+                return [routes.pop()];
             }
             else {
                 return routes;
@@ -3046,6 +2975,7 @@ var nodom;
             let paramIndex = 0;
             let retArr = [];
             let fullPath = '';
+            let showPath = '';
             let preNode = this.root;
             for (let i = 0; i < pathArr.length; i++) {
                 let v = pathArr[i].trim();
@@ -3107,13 +3037,13 @@ var nodom;
                 dom.props['path'] = value;
             }
             let method = '$nodomGenMethod' + nodom.Util.genId();
-            module.methodFactory.add(method, (e, module, view, dom) => {
+            module.methodFactory.add(method, (e, module, view, dom) => __awaiter(this, void 0, void 0, function* () {
                 let path = dom.props['path'];
                 if (nodom.Util.isEmpty(path)) {
                     return;
                 }
                 Router.addPath(path);
-            });
+            }));
             dom.events['click'] = new nodom.NodomEvent('click', method);
         },
         handle: (directive, dom, module, parent) => {
@@ -3126,10 +3056,6 @@ var nodom;
                     if (!domArr.includes(dom.key)) {
                         domArr.push(dom.key);
                     }
-                }
-                let route = Router.getRoute(dom.props['path'], true);
-                if (route === null) {
-                    return;
                 }
             }
             let path = dom.props['path'];
@@ -3728,57 +3654,6 @@ var nodom;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
-    function newApp(config) {
-        if (!config.module) {
-            throw new nodom.NodomError('config', nodom.TipWords.application);
-        }
-        if (config.options) {
-            nodom.Application.routerPrePath = config.options['routerPrePath'] || '';
-            nodom.Application.templatePath = config.options['templatePath'] || '';
-            nodom.Application.renderTick = config.options['renderTick'] || 100;
-        }
-        nodom.Scheduler.addTask(nodom.MessageQueue.handleQueue, nodom.MessageQueue);
-        nodom.Scheduler.addTask(nodom.Renderer.render, nodom.Renderer);
-        nodom.Scheduler.start();
-        return createModule(config.module, true);
-    }
-    nodom.newApp = newApp;
-    function createModule(config, main) {
-        if (nodom.Util.isArray(config)) {
-            for (let item of config) {
-                new nodom.Module(item);
-            }
-        }
-        else {
-            return new nodom.Module(config, main);
-        }
-    }
-    nodom.createModule = createModule;
-    function createRoute(config) {
-        if (nodom.Util.isArray(config)) {
-            for (let item of config) {
-                new nodom.Route(item);
-            }
-        }
-        else {
-            return new nodom.Route(config);
-        }
-    }
-    nodom.createRoute = createRoute;
-    function createDirective(name, priority, init, handler) {
-        return nodom.DirectiveManager.addType(name, {
-            prio: priority,
-            init: init,
-            handler: handler
-        });
-    }
-    nodom.createDirective = createDirective;
-    function createPlugin(name, init, handler) {
-    }
-    nodom.createPlugin = createPlugin;
-})(nodom || (nodom = {}));
-var nodom;
-(function (nodom) {
     nodom.FilterManager.addType('date', (value, param) => {
         if (nodom.Util.isEmpty(value)) {
             return '';
@@ -3808,7 +3683,6 @@ var nodom;
         for (let i = 0; i < digits; i++) {
             x *= 10;
         }
-        console.log(x);
         return ((value * x + 0.5) | 0) / x;
     });
     nodom.FilterManager.addType('tolowercase', (value) => {

@@ -14,6 +14,8 @@
         <div>{{((x+y)*x)|number:1}}</div>
         <!-- <div>{{Math.abs(x+y) + $sum()}}</div> -->
         <!-- <div>{{  }}</div> -->
+        <div>姓名：{{info.name}},年龄:{{info.age}}</div>
+        <button e-click='change'>change</button>
     </div>
 </body>
 <script>
@@ -28,6 +30,10 @@ nodom.newApp({
             price1: 236.83,
             number1: 1223,
             name: 'Hello world!',
+            info:{
+                name:'yang',
+                age:42
+            },
             rows: [
                 { name: 'yang', addr: 'chengdu' },
                 { name: 'zhang', addr: 'mianyang' },
@@ -53,6 +59,9 @@ nodom.newApp({
                 // let y = model.data.y;
                 // return x*y;
                 return 1000;
+            },
+            change:function(){
+                this.data.info.age=50;
             }
         }
     }

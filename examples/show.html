@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>show</title>
-    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
 
     <style>
         .code {
@@ -39,15 +39,16 @@
     </div>
 </body>
 <script>
-    let mod = new Module({
-        el: '.view',
-        root: true,
-        data: {
-            commodities: [
-                { name: '酷炫夹克', price: 200, discount: 0.6 },
-                { name: '运动棉袜', price: 8, discount: 1 },
-                { name: '钥匙扣', price: 15, discount: 0.7 }
-            ]
+    nodom.newApp({
+        module:{
+            el: '.view',
+            data: {
+                commodities: [
+                    { name: '酷炫夹克', price: 200, discount: 0.6 },
+                    { name: '运动棉袜', price: 8, discount: 1 },
+                    { name: '钥匙扣', price: 15, discount: 0.7 }
+                ]
+            }
         }
     });
 

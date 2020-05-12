@@ -102,7 +102,7 @@ namespace nodom {
          * 往路由管理器中添加路径
          * @param path 	路径 
          */
-        static addPath(path:string) {
+        static async addPath(path:string) {
             for (let i = 0; i < this.waitList.length; i++) {
                 let li:string = this.waitList[i];
                 //相等，则不加入队列
@@ -121,14 +121,16 @@ namespace nodom {
         /**
          * 启动加载
          */
-        static load() {
+        static async load() {
             //在加载，或无等待列表，则返回
             if (this.loading || this.waitList.length === 0) {
                 return;
             }
-            let path = this.waitList.shift();
+            let path:string = this.waitList.shift();
             this.loading = true;
-            this.start(path);
+            await this.start(path);
+            this.loading = false;
+            this.load();
         }
 
         /**
@@ -137,7 +139,6 @@ namespace nodom {
          */
         static async start(path:string) {
             let diff = this.compare(this.currentPath, path);
-
             //获得当前模块，用于寻找router view
             let parentModule = diff[0] === null ? ModuleFactory.getMain() : ModuleFactory.get(diff[0].module);
             //onleave事件，从末往前执行
@@ -146,7 +147,7 @@ namespace nodom {
                 if (!r.module) {
                     continue;
                 }
-                let module = ModuleFactory.get(r.module);
+                let module:Module = ModuleFactory.get(r.module);
                 if (Util.isFunction(this.onDefaultLeave)) {
                     this.onDefaultLeave(module.model);
                 }
@@ -157,37 +158,29 @@ namespace nodom {
                 module.unactive();
             }
 
-            // let operArr:Array<Function> = []; 	//待操作函数数组
-            // let paramArr:Array<any> = []; 		//函数对应参数数组
             let showPath:string; 				//实际要显示的路径
 
-            // if (!showPath) {
-            //     if (!this.getRoute(path)) {
-            //         throw new NodomError('notexist1', TipWords.route, path);
-            //     }
-            // }
-
             //如果是history popstate，则不加入history
-            if (this.startStyle !== 2 && showPath) {
-                //子路由，替换state
-                if (this.showPath && showPath.indexOf(this.showPath) === 0) {
-                    history.replaceState(path, '', Application.routerPrePath + showPath);
-                } else { //路径push进history
-                    history.pushState(path, '', Application.routerPrePath + showPath);
-                }
-                //设置显示路径
-                this.showPath = showPath;
-            }
+            // if (this.startStyle !== 2 && showPath) {
+            //     //子路由，替换state
+            //     if (this.showPath && showPath.indexOf(this.showPath) === 0) {
+            //         history.replaceState(path, '', Application.routerPrePath + showPath);
+            //     } else { //路径push进history
+            //         history.pushState(path, '', Application.routerPrePath + showPath);
+            //     }
+            //     //设置显示路径
+            //     this.showPath = showPath;
+            // }
 
             if (diff[2].length === 0) { //路由相同，参数不同
                 let route:Route = diff[0];
+                let proute:Route = diff[3];
                 if (route !== null) {
-                    setRouteParamToModel(route);
-                    //用父路由路径
-                    if (!route.useParentPath) {
-                        showPath = route.fullPath;
-                    }
+                    //如果useparentpath，则使用父路由的路径，否则使用自己的路径
+                    showPath = route.useParentPath && proute?proute.fullPath:route.fullPath;
                     route.setLinkActive(true);
+                    //给模块设置路由参数
+                    setRouteParamToModel(route);
                 }
             } else { //路由不同
                 //加载模块
@@ -217,12 +210,14 @@ namespace nodom {
                         //清空模块容器
                         Util.empty(module.container);
                     });
-
-                    await module.init();
-                    await module.active();
-
                     //设置route active
                     route.setLinkActive(true);
+                    //清除container
+                    delete module.container;
+                    //设置首次渲染
+                    module.firstRender = true;
+                    //激活模块
+                    await module.active();
                     //设置路由参数
                     setRouteParamToModel(route);
                     //默认全局路由enter事件
@@ -248,37 +243,30 @@ namespace nodom {
                 //设置显示路径
                 this.showPath = showPath;
             }
-            
             //修改currentPath
             this.currentPath = path;
-            //加载标志为false
-            this.loading = false;
-            //开启新加载
-            this.load();
             //设置start类型为正常start
-            Router.startStyle = 0;
+            this.startStyle = 0;
+            
             /**
-             * 将路由参数放入model
+             * 将路由参数放入module的model中
              * @param route 	路由
              */
-            function setRouteParamToModel(route:Route) {
+            function setRouteParamToModel(route:Route){
                 if (!route) {
                     return;
                 }
                 const module:Module = ModuleFactory.get(route.module);
-                let model:Model = module.model;
                 let o = {
                     path: route.path
                 };
                 if (!Util.isEmpty(route.data)) {
                     o['data'] = route.data;
                 }
-                if (!model) {
-                    module.model = new Model({ $route: o }, module);
-                } else {
-                    model.data['$route'] = o;
+                if (!module.model) {
+                    module.model = new Model({}, module);
                 }
-                Renderer.add(module);
+                module.model.set('$route',o);
             }
         }
 
@@ -314,14 +302,14 @@ namespace nodom {
             if (!path) {
                 return null;
             }
-
+            
             let routes:Array<Route> = RouterTree.get(path);
             if (routes === null || routes.length === 0) {
                 return null;
             }
             //routeid 转route
             if (last) { //获取最后一个
-                return [routes[routes.length - 1]];
+                return [routes.pop()];
             } else { //获取所有
                 return routes;
             }
@@ -358,8 +346,9 @@ namespace nodom {
             } else {
                 len = 0;
             }
-
+            //需要销毁的旧路由数组
             let retArr1 = [];
+            //需要加入的新路由数组
             let retArr2 = [];
             let i = 0;
 
@@ -439,6 +428,7 @@ namespace nodom {
                         return;
                     }
                     let field = expr.fields[0];
+                        
                     //路径相同或参数路由路径前部分相同则设置active 为true，否则为false
                     if (path === domPath || path.indexOf(domPath + '/') === 0) {
                         model.data[field] = true;
@@ -634,20 +624,22 @@ namespace nodom {
             if (!this.root) {
                 throw new NodomError("notexist", TipWords.root);
             }
-            let pathArr = path.split('/');
-            let node = this.root;
-            let paramIndex = 0;
-            let retArr = [];
-            let fullPath = ''; //完整路径
-            let preNode = this.root; //前一个节点
+            let pathArr:string[] = path.split('/');
+            let node:Route = this.root;
+            
+            let paramIndex:number = 0;      //参数索引
+            let retArr:Array<Route> = [];
+            let fullPath:string = '';       //完整路径
+            let showPath:string = '';       //显示路径
+            let preNode:Route = this.root;  //前一个节点
 
             for (let i = 0; i < pathArr.length; i++) {
-                let v = pathArr[i].trim();
+                let v:string = pathArr[i].trim();
                 if (v === '') {
                     continue;
                 }
-                let find = false;
-                for (let j = 0; j < node.children.length; j++) {
+                let find:boolean = false;
+                for (let j=0; j<node.children.length; j++) {
                     if (node.children[j].path === v) {
                         //设置完整路径
                         if (preNode !== this.root) {
@@ -722,7 +714,7 @@ namespace nodom {
             //添加click事件
             let method = '$nodomGenMethod' + Util.genId();
             module.methodFactory.add(method,
-                (e, module, view,dom) => {
+               async (e, module, view,dom) => {
                     let path:string = dom.props['path'];
                     if (Util.isEmpty(path)) {
                         return;
@@ -745,20 +737,22 @@ namespace nodom {
                     }
                 }
                 
-                let route:Array<Route> = Router.getRoute(dom.props['path'], true);
-                if (route === null) {
-                    return;
-                }
+                // let route:Array<Route> = Router.getRoute(dom.props['path'], true);
+                // if (route === null) {
+                //     return;
+                // }
             }
 
             let path:string = dom.props['path'];
             if (path === Router.currentPath) {
                 return;
             }
+            
             //active需要跳转路由（当前路由为该路径对应的父路由）
             if (dom.props.hasOwnProperty('active') && dom.props['active'] !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
                 Router.addPath(path);
             }
+            
         }
     });
 

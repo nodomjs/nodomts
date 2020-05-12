@@ -24,7 +24,6 @@ namespace nodom{
 
         clone(srcObj:object,expKey?:string|RegExp):object{
             let map = new WeakMap();
-            let src = this;
             let retObj = clone(srcObj);
             map = null;
             return retObj;
@@ -293,7 +292,7 @@ namespace nodom{
             return null;
         }
 
-    /**********dom相关***********/
+        /**********dom相关***********/
         /**
          * 获取dom节点
          * @param selector  选择器
@@ -340,27 +339,6 @@ namespace nodom{
             return node !== undefined && node !== null && (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE);  
         }
         
-        /**
-         * 获取translate3d 数据
-         * @param view  element
-         */
-        static getTranslate(el:HTMLElement):Array<number>{
-            let tr = el.style.transform;
-            let arr;
-            if(tr && tr !== 'none'){
-                arr = [];
-                let vs:string = tr.substring(tr.indexOf('(')+1,tr.indexOf(')')-1);
-                let va:Array<string> = vs.split(',');
-                for(let i=0;i<va.length;i++){
-                    arr.push(parseInt(va[i]));
-                }
-            }
-            if(arr){
-                return arr;
-            }
-            return [0,0,0];
-        }
-
         /**
          * 新建dom
          * @param tagName   标签名
@@ -589,62 +567,6 @@ namespace nodom{
                 return w;
             }
         }
-        /**
-         * 添加class
-         * @param el    html element
-         * @param cls   类名
-         */
-        static addClass(el:HTMLElement,cls:string){
-            if(!this.isEl(el)){
-                throw new NodomError('invoke','this.addClass','0','Element');
-            }
-            if(this.isEmpty(cls)){
-                throw new NodomError('invoke','this.addClass','1','string');   
-            }
-
-            let cn:string = el.className.trim();
-            if(this.isEmpty(cn)){
-                el.className = cls;
-            }else{
-                let arr = cn.split(/\s+/);
-                //遍历class数组，如果存在cls，则不操作
-                for(let i=0;i<arr.length;i++){
-                    if(arr[i] === cls){
-                        return;
-                    }
-                }
-                //追加cls
-                arr.push(cls);
-                el.className = arr.join(' ');
-            }
-        }
-        /**
-         * 移除cls
-         * @param el    html element
-         * @param cls   类名
-         */
-        static removeClass(el:HTMLElement,cls:string){
-            if(!this.isEl(el)){
-                throw new NodomError('invoke','this.removeClass','0','Element');
-            }
-            if(this.isEmpty(cls)){
-                throw new NodomError('invoke','this.removeClass','1','string');   
-            }
-
-            let cn:string = el.className.trim();
-            if(!this.isEmpty(cn)){
-                let arr = cn.split(/\s+/);
-                //遍历class数组，如果存在cls，则移除
-                for(let i=0;i<arr.length;i++){
-                    if(arr[i] === cls){
-                        arr.splice(i,1);
-                        el.className = arr.join(' ');
-                        return;
-                    }
-                }
-            }
-        }
-
         /******日期相关******/
         /**
          * 日期格式化
@@ -723,8 +645,7 @@ namespace nodom{
             let reg:RegExp = new RegExp(/\{.+?\}/);
             let r:RegExpExecArray;
             let args = arguments;
-            let str = args[0];
-            while((r=reg.exec(str))!==null){
+            while((r=reg.exec(src))!==null){
                 let rep;
                 let sIndex = r[0].substr(1,r[0].length-2);
                 let pIndex = parseInt(sIndex)+1;
@@ -733,25 +654,11 @@ namespace nodom{
                 }else{
                     rep = '';
                 }
-                str = str.replace(reg,rep);
+                src = src.replace(reg,rep);
             }
-            return str;
+            return src;
         }
         
-        /**
-         * 为字符串值两端添加引号
-         * @param srcStr    带转换的字符串
-         * @param quot      引号 " 或 ' 或 `
-         */
-        static addStrQuot(srcStr:string,quot?:string){
-            srcStr = srcStr.replace(/\'/g,'\\\'');
-            srcStr = srcStr.replace(/\"/g,'\\\"');
-            srcStr = srcStr.replace(/\`/g,'\\\`');
-            quot = quot || '"';
-            srcStr  = quot + srcStr + quot;
-            return srcStr;
-        }
-
         /**
          * 函数调用
          * @param foo   函数

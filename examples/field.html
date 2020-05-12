@@ -3,9 +3,8 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-	<script src='../js/bin/nodom-2.0.js'></script>
 	<title>field</title>
-    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
 	
 	<style>
 		.cls1{
@@ -35,27 +34,29 @@
 	</div>
 </body>
 	<script>
-		let mod = new Module({
-			el:'div',
-			root:true,
-			data:{
-				name:'yanglei',
-				sexy:'M',
-				married:1,
-				edu:2,
-				edus:[
-					{eduId:1,eduName:'高中'},
-					{eduId:2,eduName:'本科'},
-					{eduId:3,eduName:'硕士研究生'},
-					{eduId:4,eduName:'博士研究生'}
-				]
-			},
-			methods:{
-				change:function(e,module){
-					this.data.married = 0;
+		nodom.newApp({
+			module:{
+				el:'div',
+				root:true,
+				data:{
+					name:'yanglei',
+					sexy:'M',
+					married:1,
+					edu:2,
+					edus:[
+						{eduId:1,eduName:'高中'},
+						{eduId:2,eduName:'本科'},
+						{eduId:3,eduName:'硕士研究生'},
+						{eduId:4,eduName:'博士研究生'}
+					]
 				},
-				change1:function(e,module){
-					this.data.name='yanglei123';
+				methods:{
+					change:function(e,module){
+						this.data.married = 0;
+					},
+					change1:function(e,module){
+						this.data.name='yanglei123';
+					}
 				}
 			}
 		});

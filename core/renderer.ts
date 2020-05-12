@@ -18,7 +18,7 @@ namespace nodom {
                 return;
             }
             //如果已经在列表中，不再添加
-            if (this.waitList.indexOf(module.name) === -1) {
+            if (!this.waitList.includes(module.name)) {
                 //计算优先级
                 this.waitList.push(module.name);
             }
@@ -36,10 +36,13 @@ namespace nodom {
          */
         static render() {
             //调用队列渲染
-            for (let i = 0; i < this.waitList.length; i++) {
+            for (let i=0; i<this.waitList.length; i++) {
                 let m = ModuleFactory.get(this.waitList[i]);
+                
+                //渲染成功，从队列移除
                 if (!m || m.render()) {
-                	this.waitList.splice(i--, 1);
+                    this.waitList.shift();
+                    i--;
                 }
             }
         }

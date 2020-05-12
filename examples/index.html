@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>index</title>
-    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
 
     <style>
         p {
@@ -57,23 +57,24 @@
     </div>
 </body>
 <script>
-    let mod = new Module({
-        el: '.code',
-        root: true,
-        data: {
-            commodities: [{
-                name: 'T恤',
-                price: 150,
-                discount: 0.9
-            }, {
-                name: '短裤',
-                price: '80',
-                discount: 0.75
-            }, {
-                name: '外套',
-                price: 200,
-                discount: 0.6
-            }]
+    nodom.newApp({
+        module:{
+            el: '.code',
+            data: {
+                commodities: [{
+                    name: 'T恤',
+                    price: 150,
+                    discount: 0.9
+                }, {
+                    name: '短裤',
+                    price: '80',
+                    discount: 0.75
+                }, {
+                    name: '外套',
+                    price: 200,
+                    discount: 0.6
+                }]
+            }
         }
     });
 

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>model</title>
-    <script type="text/javascript" src="../js/bin/nodom-2.0.js"></script>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
 
     <style>
         .code {
@@ -46,21 +46,22 @@
     </div>
 </body>
 <script>
-    let mod = new Module({
-        el: '.view',
-        root: true,
-        data: {
-            user: {
-                name: {
-                    firstName: 'Xiaoming',
-                    lastName: 'Zhang'
-                },
-                order: {
-                    foods: {
-                        food1: { name: '酸菜鱼', price: 40 },
-                        food2: { name: '麻婆豆腐', price: 15 },
-                        food3: { name: '回锅肉', price: 28 },
-                        food4: { name: '番茄蛋汤', price: 8 }
+    nodom.newApp({
+        module:{
+            el: '.view',
+            data: {
+                user: {
+                    name: {
+                        firstName: 'Xiaoming',
+                        lastName: 'Zhang'
+                    },
+                    order: {
+                        foods: {
+                            food1: { name: '酸菜鱼', price: 40 },
+                            food2: { name: '麻婆豆腐', price: 15 },
+                            food3: { name: '回锅肉', price: 28 },
+                            food4: { name: '番茄蛋汤', price: 8 }
+                        }
                     }
                 }
             }
