@@ -840,12 +840,7 @@ var nodom;
                     }
                     if (params.changeProps) {
                         params.changeProps.forEach((p) => {
-                            if (el.tagName === 'INPUT' && p.k === 'value') {
-                                el.value = p.v;
-                            }
-                            else {
-                                el.setAttribute(p.k, p.v);
-                            }
+                            el.setAttribute(p.k, p.v);
                         });
                     }
                     break;
@@ -1103,7 +1098,7 @@ var nodom;
                     re.changeProps = [];
                     re.removeProps = [];
                     nodom.Util.getOwnProps(dst.props).forEach((k) => {
-                        if (!this.props[k]) {
+                        if (!this.props.hasOwnProperty(k)) {
                             re.removeProps.push(k);
                         }
                     });
@@ -3549,7 +3544,7 @@ var nodom;
                 if (!directive.extra) {
                     directive.extra = true;
                     el.addEventListener('focus', function () {
-                        directive.params.enabled = true;
+                        setTimeout(() => { directive.params.enabled = true; }, 0);
                     });
                     el.addEventListener('blur', function () {
                         nodom.Renderer.add(module);

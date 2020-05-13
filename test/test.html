@@ -23,46 +23,14 @@
 
 <body>
     <div class="view">
-        <button e-click='change'>change</button>
-        <div class='imgct' scrollX='{{x}}' scrollY='{{y}}'>
-            <img x-repeat='rows' src='{{img}}'/>
-        </div>
+        <button onclick='change()'>change</button>
+        <input type='text' id='i1' required>
     </div>
 </body>
 <script>
-    
-
-    let mod = new Module({
-        el: '.view',
-        root: true,
-        data: {
-            rows:[
-                {img:'imgs/1.jpg'},
-                {img:'imgs/2.jpg'},
-                {img:'imgs/3.jpg'},
-                {img:'imgs/4.jpg'},
-                {img:'imgs/5.jpg'},
-                {img:'imgs/6.jpg'},
-                {img:'imgs/7.jpg'},
-                {img:'imgs/8.jpg'},
-                {img:'imgs/1.jpg'},
-                {img:'imgs/2.jpg'},
-                {img:'imgs/3.jpg'},
-                {img:'imgs/4.jpg'},
-                {img:'imgs/5.jpg'},
-                {img:'imgs/6.jpg'},
-                {img:'imgs/7.jpg'},
-                {img:'imgs/8.jpg'}
-            ]
-        },
-        methods:{
-            change:function(){
-                let ct = document.querySelector('.imgct');
-                ct.scroll(0,300);
-            }
-        }
-    });
-
+   function change(){
+       document.querySelector('#i1').setAttribute('required','');
+   }
 </script>
 
 </html>

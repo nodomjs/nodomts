@@ -411,7 +411,7 @@ namespace nodom {
                     directive.extra = true;
                     //添加focus和blur事件
                     el.addEventListener('focus', function () {
-                        directive.params.enabled = true;
+                        setTimeout(()=>{directive.params.enabled = true;},0);
                     });
                     el.addEventListener('blur', function () {
                         Renderer.add(module);

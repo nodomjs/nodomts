@@ -204,7 +204,6 @@ namespace nodom {
             if (!el) {
                 return;
             }
-
             switch (type) {
             case 'fresh': //首次渲染
                 if (this.tagName) {
@@ -249,11 +248,11 @@ namespace nodom {
                 //修改属性
                 if(params.changeProps){
                     params.changeProps.forEach((p) => {
-                        if (el.tagName === 'INPUT' && p.k === 'value') { //文本框单独处理
-                            (<HTMLInputElement>el).value = p.v;
-                        } else {
+                        // if (el.tagName === 'INPUT' && p.k === 'value') { //文本框单独处理
+                        //     (<HTMLInputElement>el).value = p.v;
+                        // } else {
                             el.setAttribute(p.k, p.v);
-                        }
+                        // }
                     });
                 }
                 break;
@@ -640,9 +639,9 @@ namespace nodom {
                     //待删除属性
                     re.removeProps = [];
 
-					//删除或增加的属性的属性
+					//删除或增加的属性
 					Util.getOwnProps(dst.props).forEach((k)=>{
-						if (!this.props[k]) {
+						if (!this.props.hasOwnProperty(k)) {
                             re.removeProps.push(k);
                         }
 					})
