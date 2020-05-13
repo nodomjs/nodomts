@@ -296,7 +296,7 @@ namespace nodom {
             
             //如果已存在templateStr，则直接编译
             if (!Util.isEmpty(templateStr)) {
-                this.virtualDom = Compiler.compile(this, templateStr);
+                this.virtualDom = Compiler.compile(templateStr);
             }
 
             //数据信息
@@ -325,7 +325,7 @@ namespace nodom {
                         head.removeChild(script);
                         break;
                     case 'template':
-                        this.virtualDom = Compiler.compile(this, file.trim());
+                        this.virtualDom = Compiler.compile(file.trim());
                         break;
                     case 'compiled': //预编译后的js文件
                         let arr = Serializer.deserialize(file, this);

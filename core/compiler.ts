@@ -7,30 +7,28 @@ namespace nodom {
     export class Compiler {
         /**
          * 编译
-         * @param element   待编译element
-         * @return          虚拟element
+         * @param elementStr    待编译html串
+         * @returns             虚拟element
          */
-        static compile(module:Module, elementStr:string) {
+        static compile(elementStr:string):Element {
             const div = Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new Element();
             oe.root = true;
             //调用编译
             for (let i = 0; i < div.childNodes.length; i++) {
-                this.compileDom(module, div.childNodes[i], oe);
+                this.compileDom(div.childNodes[i], oe);
             }
-
             return oe;
         }
 
         /**
          * 编译dom
-         * @param module        模块
          * @param ele           待编译element
          * @param parent        父节点（virtualdom）   
          */
 
-        static compileDom(module:Module, ele:Node, parent:Element) {
+        static compileDom(ele:Node, parent:Element) {
             const me = this;
             let oe = new Element();
             //注视标志
@@ -45,14 +43,14 @@ namespace nodom {
                     let v = attr.value.trim();
                     if (attr.name.startsWith('x-')) { //指令
                         //添加到dom指令集
-                        oe.directives.push(new Directive(attr.name.substr(2), v, oe, module, el));
+                        oe.directives.push(new Directive(attr.name.substr(2), v, oe, el));
                     } else if (attr.name.startsWith('e-')) { //事件
                         let en = attr.name.substr(2);
                         oe.events[en] = new NodomEvent(en, attr.value.trim());
                     } else {
                         let isExpr:boolean = false;
                         if (v !== '') {
-                            let ra = me.compileExpression(module, v);
+                            let ra = me.compileExpression(v);
                             if (Util.isArray(ra)) {
                                 oe.exprProps[attr.name] = ra;
                                 isExpr = true;
@@ -66,7 +64,7 @@ namespace nodom {
                 let subEls = [];
                 //子节点编译
                 ele.childNodes.forEach((nd:Node)=> {
-                    subEls.push(me.compileDom(module, nd, oe));
+                    subEls.push(me.compileDom(nd, oe));
                 });
 
                 //指令按优先级排序
@@ -79,10 +77,9 @@ namespace nodom {
                 if (txt === "") { //内容为空不加入树
                     return;
                 }
-                let expA = me.compileExpression(module, txt);
+                let expA = me.compileExpression(txt);
                 if (typeof expA === 'string') { //无表达式
                     oe.textContent = expA;
-                    
                 } else { //含表达式
                     oe.expressions = expA;
                 }
@@ -105,7 +102,7 @@ namespace nodom {
          * @param exprStr   含表达式的串
          * @return          处理后的字符串和表达式数组
          */
-        static compileExpression(module, exprStr) {
+        static compileExpression(exprStr:string) {
             if (/\{\{.+?\}\}/.test(exprStr) === false) {
                 return exprStr;
             }
@@ -122,10 +119,9 @@ namespace nodom {
                 }
 
                 //实例化表达式对象
-                let exp = new Expression(re[0].substring(2, re[0].length - 2), module);
+                let exp = new Expression(re[0].substring(2, re[0].length - 2));
                 //加入工厂
-                module.expressionFactory.add(exp.id, exp);
-                retA.push(exp.id);
+                retA.push(exp);
                 oIndex = ind + re[0].length;
             }
             //最后的字符串

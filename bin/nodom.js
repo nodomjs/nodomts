@@ -507,8 +507,7 @@ var nodom;
             let args = arguments;
             let index = 0;
             for (;;) {
-                let ps = '\{' + index + '\}';
-                if (src.indexOf(ps) !== -1) {
+                if (src.indexOf('\{' + index + '\}') !== -1) {
                     reg = new RegExp('\\{' + index + '\\}', 'g');
                     src = src.replace(reg, args[index + 1]);
                     index++;
@@ -517,7 +516,6 @@ var nodom;
                     break;
                 }
             }
-            console.log(src);
             return src;
         }
         static apply(foo, obj, args) {
@@ -560,17 +558,17 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Compiler {
-        static compile(module, elementStr) {
+        static compile(elementStr) {
             const div = nodom.Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new nodom.Element();
             oe.root = true;
             for (let i = 0; i < div.childNodes.length; i++) {
-                this.compileDom(module, div.childNodes[i], oe);
+                this.compileDom(div.childNodes[i], oe);
             }
             return oe;
         }
-        static compileDom(module, ele, parent) {
+        static compileDom(ele, parent) {
             const me = this;
             let oe = new nodom.Element();
             let isComment = false;
@@ -582,7 +580,7 @@ var nodom;
                         let attr = el.attributes[i];
                         let v = attr.value.trim();
                         if (attr.name.startsWith('x-')) {
-                            oe.directives.push(new nodom.Directive(attr.name.substr(2), v, oe, module, el));
+                            oe.directives.push(new nodom.Directive(attr.name.substr(2), v, oe, el));
                         }
                         else if (attr.name.startsWith('e-')) {
                             let en = attr.name.substr(2);
@@ -591,7 +589,7 @@ var nodom;
                         else {
                             let isExpr = false;
                             if (v !== '') {
-                                let ra = me.compileExpression(module, v);
+                                let ra = me.compileExpression(v);
                                 if (nodom.Util.isArray(ra)) {
                                     oe.exprProps[attr.name] = ra;
                                     isExpr = true;
@@ -604,7 +602,7 @@ var nodom;
                     }
                     let subEls = [];
                     ele.childNodes.forEach((nd) => {
-                        subEls.push(me.compileDom(module, nd, oe));
+                        subEls.push(me.compileDom(nd, oe));
                     });
                     oe.directives.sort((a, b) => {
                         return nodom.DirectiveManager.getType(a.type).prio - nodom.DirectiveManager.getType(b.type).prio;
@@ -615,7 +613,7 @@ var nodom;
                     if (txt === "") {
                         return;
                     }
-                    let expA = me.compileExpression(module, txt);
+                    let expA = me.compileExpression(txt);
                     if (typeof expA === 'string') {
                         oe.textContent = expA;
                     }
@@ -632,7 +630,7 @@ var nodom;
             }
             return oe;
         }
-        static compileExpression(module, exprStr) {
+        static compileExpression(exprStr) {
             if (/\{\{.+?\}\}/.test(exprStr) === false) {
                 return exprStr;
             }
@@ -646,9 +644,8 @@ var nodom;
                     let s = exprStr.substring(oIndex, ind);
                     retA.push(s);
                 }
-                let exp = new nodom.Expression(re[0].substring(2, re[0].length - 2), module);
-                module.expressionFactory.add(exp.id, exp);
-                retA.push(exp.id);
+                let exp = new nodom.Expression(re[0].substring(2, re[0].length - 2));
+                retA.push(exp);
                 oIndex = ind + re[0].length;
             }
             if (oIndex < exprStr.length - 1) {
@@ -662,14 +659,14 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Directive {
-        constructor(type, value, vdom, module, el) {
+        constructor(type, value, vdom, el) {
             this.id = nodom.Util.genId();
             this.type = type;
             if (nodom.Util.isString(value)) {
                 this.value = value.trim();
             }
             if (type !== undefined) {
-                nodom.Util.apply(nodom.DirectiveManager.init, nodom.DirectiveManager, [this, vdom, module, el]);
+                nodom.Util.apply(nodom.DirectiveManager.init, nodom.DirectiveManager, [this, vdom, el]);
             }
         }
         exec(value) {
@@ -949,8 +946,8 @@ var nodom;
             let value = '';
             let model = module.modelFactory.get(this.modelId);
             exprArr.forEach((v) => {
-                if (typeof v === 'number') {
-                    let v1 = module.expressionFactory.get(v).val(model);
+                if (v instanceof nodom.Expression) {
+                    let v1 = v.val(model);
                     if (v1 instanceof DocumentFragment || nodom.Util.isEl(v1)) {
                         this.type = 'html';
                         return v1;
@@ -1178,15 +1175,10 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Expression {
-        constructor(exprStr, module) {
-            this.modelMap = {};
+        constructor(exprStr) {
             this.replaceMap = new Map();
             this.fields = [];
             this.id = nodom.Util.genId();
-            if (module) {
-                this.moduleName = module.name;
-                module.expressionFactory.add(this.id, this);
-            }
             if (exprStr) {
                 this.execString = this.compile(exprStr);
             }
@@ -1952,7 +1944,7 @@ var nodom;
                     }
                 }
                 if (!nodom.Util.isEmpty(templateStr)) {
-                    this.virtualDom = nodom.Compiler.compile(this, templateStr);
+                    this.virtualDom = nodom.Compiler.compile(templateStr);
                 }
                 if (config.data) {
                     if (nodom.Util.isObject(config.data)) {
@@ -1978,7 +1970,7 @@ var nodom;
                                 head.removeChild(script);
                                 break;
                             case 'template':
-                                this.virtualDom = nodom.Compiler.compile(this, file.trim());
+                                this.virtualDom = nodom.Compiler.compile(file.trim());
                                 break;
                             case 'compiled':
                                 let arr = nodom.Serializer.deserialize(file, this);
@@ -3236,7 +3228,7 @@ var nodom;
 (function (nodom) {
     nodom.DirectiveManager.addType('model', {
         prio: 1,
-        init: (directive, dom, module, el) => {
+        init: (directive, dom, el) => {
             let value = directive.value;
             if (nodom.Util.isString(value)) {
                 let arr = new Array();
@@ -3280,7 +3272,7 @@ var nodom;
     });
     nodom.DirectiveManager.addType('repeat', {
         prio: 2,
-        init: (directive, dom, module, el) => {
+        init: (directive, dom, el) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
@@ -3294,8 +3286,8 @@ var nodom;
             else {
                 modelName = value;
             }
-            if (!dom.hasDirective('mocel')) {
-                dom.directives.push(new nodom.Directive('model', modelName, dom, module));
+            if (!dom.hasDirective('model')) {
+                dom.directives.push(new nodom.Directive('model', modelName, dom));
             }
             directive.value = modelName;
         },
@@ -3339,12 +3331,12 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('if', {
-        init: (directive, dom, module, el) => {
+        init: (directive, dom, el) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
             }
-            let expr = new nodom.Expression(value, module);
+            let expr = new nodom.Expression(value);
             directive.value = expr;
         },
         handle: (directive, dom, module, parent) => {
@@ -3379,7 +3371,7 @@ var nodom;
     });
     nodom.DirectiveManager.addType('else', {
         name: 'else',
-        init: (directive, dom, module, el) => {
+        init: (directive, dom, el) => {
             return;
         },
         handle: (directive, dom, module, parent) => {
@@ -3387,12 +3379,12 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('show', {
-        init: (directive, dom, module, el) => {
+        init: (directive, dom, el) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-show");
             }
-            let expr = new nodom.Expression(value, module);
+            let expr = new nodom.Expression(value);
             directive.value = expr;
         },
         handle: (directive, dom, module, parent) => {
@@ -3407,7 +3399,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('class', {
-        init: (directive, dom, module, el) => {
+        init: (directive, dom, el) => {
             let obj = eval('(' + directive.value + ')');
             if (!nodom.Util.isObject(obj)) {
                 return;
@@ -3415,7 +3407,7 @@ var nodom;
             let robj = {};
             nodom.Util.getOwnProps(obj).forEach(function (key) {
                 if (nodom.Util.isString(obj[key])) {
-                    robj[key] = new nodom.Expression(obj[key], module);
+                    robj[key] = new nodom.Expression(obj[key]);
                 }
                 else {
                     robj[key] = obj[key];
@@ -3450,47 +3442,8 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('field', {
-        init: (directive, dom, module, el) => {
-            let dv = directive.value;
-            let field = dv;
-            let tgname = dom.tagName.toLowerCase();
-            let type = dom.props['type'];
-            let eventName = 'input';
-            if (tgname === 'input' && (type === 'checkbox' || type === 'radio')) {
-                eventName = 'change';
-            }
-            dom.props['name'] = field;
-            let method = '$nodomGenMethod' + nodom.Util.genId();
-            module.methodFactory.add(method, function (e, module, view, dom) {
-                let type = dom.props['type'];
-                let model = module.modelFactory.get(dom.modelId);
-                let field = dom.getDirective('field').value;
-                let v = view.value;
-                if (type === 'checkbox') {
-                    if (dom.props['yes-value'] == v) {
-                        v = dom.props['no-value'];
-                    }
-                    else {
-                        v = dom.props['yes-value'];
-                    }
-                }
-                else if (type === 'radio') {
-                    if (!view.checked) {
-                        v = undefined;
-                    }
-                }
-                this.data[field] = v;
-                if (type !== 'radio') {
-                    dom.props['value'] = v;
-                    view.value = v;
-                }
-            });
-            dom.events[eventName] = new nodom.NodomEvent(eventName, method);
-            setTimeout(() => {
-                if (!dom.exprProps.hasOwnProperty('value') && !dom.props.hasOwnProperty('value')) {
-                    dom.exprProps['value'] = new nodom.Expression(field, module);
-                }
-            }, 0);
+        init: (directive, dom, el) => {
+            dom.props['name'] = directive.value;
         },
         handle: (directive, dom, module, parent) => {
             const type = dom.props['type'];
@@ -3524,10 +3477,39 @@ var nodom;
                     inputEl.value = dataValue;
                 }, 0);
             }
+            if (!directive.extra) {
+                let eventName = tgname === 'input' && (type === 'text' || type === 'checkbox' || type === 'radio') ? 'input' : 'change';
+                let method = '$nodomGenMethod' + nodom.Util.genId();
+                directive.extra = method;
+                module.methodFactory.add(method, function (e, module, view, dom) {
+                    let type = dom.props['type'];
+                    let field = dom.getDirective('field').value;
+                    let v = view.value;
+                    if (type === 'checkbox') {
+                        if (dom.props['yes-value'] == v) {
+                            v = dom.props['no-value'];
+                        }
+                        else {
+                            v = dom.props['yes-value'];
+                        }
+                    }
+                    else if (type === 'radio') {
+                        if (!view.checked) {
+                            v = undefined;
+                        }
+                    }
+                    this.data[field] = v;
+                    if (type !== 'radio') {
+                        dom.props['value'] = v;
+                        view.value = v;
+                    }
+                });
+                dom.events[eventName] = new nodom.NodomEvent(eventName, method);
+            }
         }
     });
     nodom.DirectiveManager.addType('validity', {
-        init: (directive, dom, module, el) => {
+        init: (directive, dom, el) => {
             let ind, fn, method;
             let value = directive.value;
             if ((ind = value.indexOf('|')) !== -1) {
@@ -3560,23 +3542,26 @@ var nodom;
                     });
                 }
             }, 0);
-            module.addFirstRenderOperation(function () {
-                const m = this;
+        },
+        handle: (directive, dom, module, parent) => {
+            setTimeout(() => {
                 const el = module.container.querySelector("[name='" + directive.value + "']");
-                if (el) {
+                if (!directive.extra) {
+                    directive.extra = true;
                     el.addEventListener('focus', function () {
                         directive.params.enabled = true;
                     });
                     el.addEventListener('blur', function () {
-                        nodom.Renderer.add(m);
+                        nodom.Renderer.add(module);
                     });
                 }
-            });
-        },
-        handle: (directive, dom, module, parent) => {
-            const el = module.container.querySelector("[name='" + directive.value + "']");
+            }, 0);
             if (!directive.params.enabled) {
                 dom.dontRender = true;
+                return;
+            }
+            const el = module.container.querySelector("[name='" + directive.value + "']");
+            if (!el) {
                 return;
             }
             let chds = [];

@@ -4,8 +4,8 @@ module.exports = function (grunt) {
       options:{
         compile:true,
         comments:false,
-        target:'es6',
-        module:'umd',
+        target:'es2015',
+        module:'cmd',
       },     
       dev:{
         src:[

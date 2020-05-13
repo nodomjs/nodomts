@@ -45,22 +45,26 @@ namespace nodom {
          * 附加参数
          */
         params:any;
+
+        /**
+         * 附加操作
+         */
+        extra:any;
         /**
          * 构造方法
          * @param type  	类型
          * @param value 	指令值
          * @param vdom 		指令所属虚拟dom
-         * @param module 	模块	
          * @param el 		指令所属html element
          */
-        constructor(type:string, value:string, vdom:Element, module:Module, el?:HTMLElement) {
+        constructor(type:string, value:string, vdom:Element, el?:HTMLElement) {
 			this.id = Util.genId();
 			this.type = type;
             if (Util.isString(value)) {
                 this.value = value.trim();
             }
             if (type !== undefined) {
-                Util.apply(DirectiveManager.init, DirectiveManager, [this, vdom, module, el]);
+                Util.apply(DirectiveManager.init, DirectiveManager, [this, vdom, el]);
             }
         }
 

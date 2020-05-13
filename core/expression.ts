@@ -10,11 +10,6 @@ namespace nodom {
 		id:number;
 
 		/**
-		 * 模块名
-		 */
-		moduleName:string;
-
-		/**
 		 * 字段数组
 		 */
 		fields:Array<string>;
@@ -31,7 +26,7 @@ namespace nodom {
 		/**
 		 * 一个expression可能被多次使用，以modelid进行区分，针对不同的模型id构建对象{modelId:{fieldValue:,value:}
 		 */
-		modelMap:object={};
+		// modelMap:object={};
 
         //替代串
         static REP_STR:string='$$NODOM_TMPSTR';
@@ -43,16 +38,15 @@ namespace nodom {
 		
         /**
          * @param exprStr	表达式串
-		 * @param module 	模块
          */
-        constructor(exprStr:string, module:Module) {
+        constructor(exprStr:string) {
             //旧值
             this.fields = []; // 字段数组
             this.id = Util.genId();
-            if (module) {
-                this.moduleName = module.name;
-                module.expressionFactory.add(this.id, this);
-            }
+            // if (module) {
+            //     this.moduleName = module.name;
+            //     module.expressionFactory.add(this.id, this);
+            // }
 
             if (exprStr) {
                 this.execString = this.compile(exprStr);

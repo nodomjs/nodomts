@@ -97,7 +97,7 @@ namespace nodom {
 		/**
 		 * 表达式集合
 		 */
-		expressions:Array<Expression>=[];
+		expressions:Array<Expression|string>=[];
 		
 		/**
          * 改变的属性数组
@@ -392,16 +392,15 @@ namespace nodom {
          * 表达式预处理，添加到expression计算队列
          */
         handleExpression(exprArr, module) {
-            
             if (this.dontRender) {
                 return;
             }
             let value = '';
             let model = module.modelFactory.get(this.modelId);
             exprArr.forEach((v) => {
-                if (typeof v === 'number') { //处理表达式
+                if (v instanceof Expression) { //处理表达式
                     // 统一添加到表达式计算队列
-                    let v1 = module.expressionFactory.get(v).val(model);
+                    let v1 = v.val(model);
                     //html或 fragment
                     if (v1 instanceof DocumentFragment || Util.isEl(v1)) {
                         // 设置类型
@@ -655,7 +654,6 @@ namespace nodom {
                             re.changeProps.push({k:k,v:this.props[k]});
                         }
 					});
-					
                     if (re.changeProps.length > 0 || re.removeProps.length > 0) {
                         change = true;
                         re.type = 'upd';

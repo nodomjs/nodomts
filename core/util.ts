@@ -646,8 +646,7 @@ namespace nodom{
             let args = arguments;
             let index = 0;
             for(;;){
-                let ps = '\{' + index + '\}';
-                if(src.indexOf(ps) !== -1){
+                if(src.indexOf('\{' + index + '\}') !== -1){
                     reg = new RegExp('\\{' + index + '\\}','g');
                     src = src.replace(reg,args[index+1]);
                     index++;
@@ -655,7 +654,6 @@ namespace nodom{
                     break;
                 }
             }
-            console.log(src);
             return src;
         }
         
