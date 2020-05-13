@@ -642,20 +642,20 @@ namespace nodom{
          * @returns 转换后的消息
          */
         static compileStr(src:string,p1?:any,p2?:any,p3?:any,p4?:any,p5?:any):string{
-            let reg:RegExp = new RegExp(/\{.+?\}/);
-            let r:RegExpExecArray;
+            let reg:RegExp;
             let args = arguments;
-            while((r=reg.exec(src))!==null){
-                let rep;
-                let sIndex = r[0].substr(1,r[0].length-2);
-                let pIndex = parseInt(sIndex)+1;
-                if(args[pIndex] !== undefined){
-                    rep = args[pIndex];
+            let index = 0;
+            for(;;){
+                let ps = '\{' + index + '\}';
+                if(src.indexOf(ps) !== -1){
+                    reg = new RegExp('\\{' + index + '\\}','g');
+                    src = src.replace(reg,args[index+1]);
+                    index++;
                 }else{
-                    rep = '';
+                    break;
                 }
-                src = src.replace(reg,rep);
             }
+            console.log(src);
             return src;
         }
         

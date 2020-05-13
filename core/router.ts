@@ -160,18 +160,6 @@ namespace nodom {
 
             let showPath:string; 				//实际要显示的路径
 
-            //如果是history popstate，则不加入history
-            // if (this.startStyle !== 2 && showPath) {
-            //     //子路由，替换state
-            //     if (this.showPath && showPath.indexOf(this.showPath) === 0) {
-            //         history.replaceState(path, '', Application.routerPrePath + showPath);
-            //     } else { //路径push进history
-            //         history.pushState(path, '', Application.routerPrePath + showPath);
-            //     }
-            //     //设置显示路径
-            //     this.showPath = showPath;
-            // }
-
             if (diff[2].length === 0) { //路由相同，参数不同
                 let route:Route = diff[0];
                 let proute:Route = diff[3];
@@ -200,6 +188,9 @@ namespace nodom {
                     }
 
                     let module = ModuleFactory.get(route.module);
+                    if(!module){
+                        throw new NodomError('notexist1',TipWords.module,route.module);
+                    }
                     //保留container参数
                     module.containerParam = {
                         module: parentModule.name,

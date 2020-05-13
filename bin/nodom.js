@@ -503,21 +503,21 @@ var nodom;
             return format;
         }
         static compileStr(src, p1, p2, p3, p4, p5) {
-            let reg = new RegExp(/\{.+?\}/);
-            let r;
+            let reg;
             let args = arguments;
-            while ((r = reg.exec(src)) !== null) {
-                let rep;
-                let sIndex = r[0].substr(1, r[0].length - 2);
-                let pIndex = parseInt(sIndex) + 1;
-                if (args[pIndex] !== undefined) {
-                    rep = args[pIndex];
+            let index = 0;
+            for (;;) {
+                let ps = '\{' + index + '\}';
+                if (src.indexOf(ps) !== -1) {
+                    reg = new RegExp('\\{' + index + '\\}', 'g');
+                    src = src.replace(reg, args[index + 1]);
+                    index++;
                 }
                 else {
-                    rep = '';
+                    break;
                 }
-                src = src.replace(reg, rep);
             }
+            console.log(src);
             return src;
         }
         static apply(foo, obj, args) {
@@ -2247,7 +2247,7 @@ var nodom;
                 this.message = "未知错误";
                 return;
             }
-            let params = [];
+            let params = [msg];
             if (p1) {
                 params.push(p1);
             }
@@ -2685,6 +2685,9 @@ var nodom;
                             throw new nodom.NodomError('notexist', nodom.TipWords.routeView);
                         }
                         let module = nodom.ModuleFactory.get(route.module);
+                        if (!module) {
+                            throw new nodom.NodomError('notexist1', nodom.TipWords.module, route.module);
+                        }
                         module.containerParam = {
                             module: parentModule.name,
                             selector: "[key='" + parentModule.routerKey + "']"

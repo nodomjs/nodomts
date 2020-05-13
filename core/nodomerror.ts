@@ -12,7 +12,7 @@ namespace nodom{
                 this.message = "未知错误";
                 return;
             }
-            let params:Array<string> = [];
+            let params:Array<string> = [msg];
             if(p1){
                 params.push(p1);
             }
