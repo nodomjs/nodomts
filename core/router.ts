@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 
 namespace nodom {
 	/**
@@ -696,7 +696,7 @@ namespace nodom {
             }
             // 表达式处理
             if (value && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
-                let expr = new Expression(value.substring(2, value.length - 2), module);
+                let expr = new Expression(value.substring(2, value.length - 2));
                 dom.exprProps['path'] = expr;
                 directive.value = expr;
             } else {

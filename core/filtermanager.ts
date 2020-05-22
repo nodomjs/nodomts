@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 namespace nodom {
     /**
      * filter类型命名规则：以小写字母a-z命名，其它字母不允许

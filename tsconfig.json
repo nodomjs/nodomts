@@ -1,19 +1,16 @@
 {
     "compilerOptions": {
-      "sourceMap": true,
-      "noImplicitAny": false,
-      "noUnusedLocals":false,
-      "noUnusedParameters": false,
-      "removeComments":true,
-      "moduleResolution": "node",
-      "module": "commonJs",
+      "module":"commonjs",
       "target": "es6",
+      "sourceMap": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
       "outDir":"./dist",
       "declaration": true,
       "declarationDir":"./dist/types"
     },
     "include":[
-      "./core/**/*.ts"
+       "**/*.ts"
     ],
     "exclude": [
         "./node_modules"

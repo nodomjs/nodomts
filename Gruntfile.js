@@ -1,14 +1,16 @@
+
 module.exports = function (grunt) {  
   grunt.initConfig({  
     ts:{
       options:{
         compile:true,
         comments:false,
-        target:'es2015',
-        module:'cmd',
+        target:'es6',
+        module:"cmd"
       },     
       dev:{
         src:[
+          // 'core/**/*.ts',
           './core/nodom.ts',
             './core/util.ts',
             './core/application.ts',
@@ -37,16 +39,16 @@ module.exports = function (grunt) {
             './core/scheduler.ts',
             './core/serializer.ts',
             './core/extend/directiveinit.ts',
-            './core/extend/exposemethods.ts',
             './core/extend/filterinit.ts',
-            './core/locales/msg_zh.ts'
+            './core/locales/msg_zh.ts',
+            './core/defineelement.ts',
+            './core/defineelementmanager.ts'
         ],
         out:'bin/nodom.js',
         options:{
           module:'commonjs'
         }
       }
-      
     }
   });  
   grunt.loadNpmTasks('grunt-ts');  

@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 namespace nodom {
 	/**
 	 * 渲染器

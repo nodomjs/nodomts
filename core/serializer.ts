@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 namespace nodom{
 	/**
 	 *  编译器
@@ -59,7 +59,6 @@ namespace nodom{
 				});
 			}
 		}
-
 
 		/**
 		 * 反序列化

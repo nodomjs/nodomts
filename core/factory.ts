@@ -1,4 +1,5 @@
 /// <reference path="nodom.ts" />
+
 namespace nodom {
 	/**
      * 工厂基类

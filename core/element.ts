@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 namespace nodom {
 	
     /**
@@ -55,7 +55,6 @@ namespace nodom {
 		 * key，全局唯一
 		 */
 		key:string;
-
         /**
          * 是不是虚拟dom跟节点
          */
@@ -88,7 +87,6 @@ namespace nodom {
          * {prop1:value1,...}
 		 */
 		exprProps:object = {};
-
 		/**
 		 * 事件集合,{eventName1:nodomEvent1,...}
 		 */
@@ -99,16 +97,6 @@ namespace nodom {
 		 */
 		expressions:Array<Expression|string>=[];
 		
-		/**
-         * 改变的属性数组
-         * {prop1:value1,...}
-         */
-        // changeProps:Array<object>;
-
-        /**
-         * 移除的属性名数组
-         */
-        // removeProps:Array<string>;
 		/**
 		 * 子element
 		 */
@@ -133,7 +121,14 @@ namespace nodom {
 		/**
 		 * 是否找到（dom比较时使用）
 		 */
-		finded:boolean;
+        finded:boolean;
+        
+        /**
+         * 额外数据
+         * @param tag 
+         */
+        extraData:object;
+
 		/**
 		 * @param tag 标签名
 		 */
@@ -156,6 +151,20 @@ namespace nodom {
                     this.modelId = parent.modelId;
                 }
             }
+
+            //添加额外数据
+            if(this.extraData){
+                let model:Model = module.modelFactory.get(this.modelId);
+                if(!model){
+                    model = new Model(this.extraData,module);
+                    this.modelId = model.id;
+                }else{
+                    Util.getOwnProps(this.extraData).forEach((item)=>{
+                        model.set(item,this.extraData[item]);
+                    });
+                }
+            }
+            
             if (this.tagName !== undefined) { //element
                 this.handleProps(module);
                 //某些指令可能会终止渲染，如果返回false，则不继续渲染
@@ -248,11 +257,7 @@ namespace nodom {
                 //修改属性
                 if(params.changeProps){
                     params.changeProps.forEach((p) => {
-                        // if (el.tagName === 'INPUT' && p.k === 'value') { //文本框单独处理
-                        //     (<HTMLInputElement>el).value = p.v;
-                        // } else {
-                            el.setAttribute(p.k, p.v);
-                        // }
+                        el.setAttribute(p.k, p.v);
                     });
                 }
                 break;
@@ -342,6 +347,9 @@ namespace nodom {
                 }
             });
 
+            //附加数据
+            dst['extraData'] = this['extraData'];
+
 			for(let d of this.directives){
 				dst.directives.push(d);
 			}
@@ -374,7 +382,6 @@ namespace nodom {
          * 
          */
         handleDirectives(module, parent) {
-            
             if (this.dontRender) {
                 return false;
             }
@@ -390,12 +397,12 @@ namespace nodom {
         /**
          * 表达式预处理，添加到expression计算队列
          */
-        handleExpression(exprArr, module) {
+        handleExpression(exprArr:Array<Expression|string>, module:Module) {
             if (this.dontRender) {
                 return;
             }
+            let model:Model = module.modelFactory.get(this.modelId);
             let value = '';
-            let model = module.modelFactory.get(this.modelId);
             exprArr.forEach((v) => {
                 if (v instanceof Expression) { //处理表达式
                     // 统一添加到表达式计算队列
@@ -418,7 +425,6 @@ namespace nodom {
          * 处理属性（带表达式）
          */
         handleProps(module) {
-            
             if (this.dontRender) {
                 return;
             }

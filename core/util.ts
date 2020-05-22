@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 namespace nodom{
     /**
      * @description 基础服务库
@@ -671,4 +671,3 @@ namespace nodom{
         }
     }
 }
-

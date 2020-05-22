@@ -1,4 +1,5 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
+
 namespace nodom {
     /**
      * 指令类

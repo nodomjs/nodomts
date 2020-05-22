@@ -492,4 +492,3 @@ namespace nodom {
     ExternalEvent.touches['swipeup'] = ExternalEvent.touches['swipe'];
     ExternalEvent.touches['swipedown'] = ExternalEvent.touches['swipe'];
 }
-

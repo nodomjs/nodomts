@@ -3,3 +3,23 @@
 
 2020-5-13
 field指令，设置value为表达式时异常
+
+2020-5-18
+编译指令
+tsc --outFile nodom.js ./core/nodom.ts ./core/util.ts ./core/application.ts ./core/factory.ts ./core/compiler.ts ./core/directive.ts ./core/directivefactory.ts ./core/directivemanager.ts ./core/element.ts ./core/expression.ts ./core/expressionfactory.ts ./core/filter.ts ./core/filterfactory.ts ./core/filtermanager.ts ./core/linker.ts ./core/messagequeue.ts ./core/methodfactory.ts ./core/model.ts ./core/modelfactory.ts ./core/module.ts ./core/modulefactory.ts ./core/nodomerror.ts ./core/nodomevent.ts ./core/renderer.ts ./core/router.ts ./core/scheduler.ts ./core/serializer.ts ./core/extend/directiveinit.ts ./core/extend/filterinit.ts ./core/locales/msg_zh.ts
+
+2020-05-15
+开始插件组
+大概计划
+1、panel
+2、window
+3、dialog
+4、grid
+5、pager
+6、menu
+7、accordion
+8、tree
+9、row editing
+10、subgrid
+11、combolist
+12、combotree

@@ -5,54 +5,44 @@ module.exports = function (grunt) {
         },  
         dist: {  
           src: [
-            './dist/nodom.js',
-            './dist/util.js',
-            './dist/application.js',
-            './dist/factory.js',
-            './dist/compiler.js',
-            './dist/directive.js',
-            './dist/directivefactory.js',
-            './dist/directivemanager.js',
-            './dist/element.js',
-            './dist/expression.js',
-            './dist/expressionfactory.js',
-            './dist/filter.js',
-            './dist/filterfactory.js',
-            './dist/filtermanager.js',
-            './dist/linker.js',
-            './dist/messagequeue.js',
-            './dist/methodfactory.js',
-            './dist/model.js',
-            './dist/modelfactory.js',
-            './dist/module.js',
-            './dist/modulefactory.js',
-            './dist/nodomerror.js',
-            './dist/nodomevent.js',
-            './dist/renderer.js',
-            './dist/router.js',
-            './dist/scheduler.js',
-            './dist/serializer.js',
-            './dist/extend/directiveinit.js',
-            './dist/extend/exposemethods.js',
-            './dist/extend/filterinit.js',
-            './dist/locales/msg_zh.js'
+            './dist/types/nodom.d.ts',
+            './dist/types/util.d.ts',
+            './dist/types/application.d.ts',
+            './dist/types/factory.d.ts',
+            './dist/types/compiler.d.ts',
+            './dist/types/directive.d.ts',
+            './dist/types/directivefactory.d.ts',
+            './dist/types/directivemanager.d.ts',
+            './dist/types/element.d.ts',
+            './dist/types/expression.d.ts',
+            './dist/types/expressionfactory.d.ts',
+            './dist/types/filter.d.ts',
+            './dist/types/filterfactory.d.ts',
+            './dist/types/filtermanager.d.ts',
+            './dist/types/linker.d.ts',
+            './dist/types/messagequeue.d.ts',
+            './dist/types/methodfactory.d.ts',
+            './dist/types/model.d.ts',
+            './dist/types/modelfactory.d.ts',
+            './dist/types/module.d.ts',
+            './dist/types/modulefactory.d.ts',
+            './dist/types/nodomerror.d.ts',
+            './dist/types/nodomevent.d.ts',
+            './dist/types/renderer.d.ts',
+            './dist/types/router.d.ts',
+            './dist/types/scheduler.d.ts',
+            './dist/types/serializer.d.ts',
+            './dist/types/extend/directiveinit.d.ts',
+            './dist/types/extend/filterinit.d.ts',
+            './dist/types/locales/msg_zh.d.ts'
             
           ],
-          dest: 'bin/nodom.js' 
-        }
-      },
-      uglify: {   //压缩
-        options:{
-          mangle:false
-        },
-        build: {  
-          src: 'bin/nodom.js',
-          dest: 'bin/nodom.min.js'
+          dest: 'bin/nodom.d.ts' 
         }
       }  
     });  
-    grunt.loadNpmTasks('grunt-contrib-uglify');  
+    //grunt.loadNpmTasks('grunt-contrib-uglify');  
     grunt.loadNpmTasks('grunt-contrib-concat');  
       
-    grunt.registerTask('default', ['concat','uglify']); 
+    grunt.registerTask('default', ['concat']); 
   }  

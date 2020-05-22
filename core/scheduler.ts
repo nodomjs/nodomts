@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 namespace nodom{
 	/**
 	 * 调度器，用于每次空闲的待操作序列调度
@@ -54,4 +54,3 @@ namespace nodom{
 		}
 	}
 }
-

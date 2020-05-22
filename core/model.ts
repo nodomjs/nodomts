@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 namespace nodom {
     /**
      * 模型类
@@ -30,7 +30,7 @@ namespace nodom {
             this.data = data;
             this.fields = {};
             // modelId
-            this.id = nodom.Util.genId();
+            this.id = Util.genId();
             //添加到model工厂
             if (module) {
                 this.moduleName = module.name;
@@ -124,7 +124,7 @@ namespace nodom {
                 let module:Module = ModuleFactory.get(this.moduleName);
                 //添加自定义事件，绑定改变事件
                 watcher.forEach((item) => {
-                    data[item] = ()=> {
+                    data[item] = function(){
                         let args = [];
                         switch (item) {
                         case 'push':
@@ -146,10 +146,8 @@ namespace nodom {
                             }
                             break;
                         case 'pop':
-                            // module.deleteData(data[data.length - 1].$modelId);
                             break;
                         case 'shift':
-                            // module.deleteData(data[0].$modelId);
                             break;
                         }
                         this.update(data);

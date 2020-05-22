@@ -1,9 +1,9 @@
-/**
- * 资源管理器
- * 用于管理url资源的加载状态管理
- */
 namespace nodom {
-    class ResourceManager{
+    /**
+     * 资源管理器
+     * 用于管理url资源的加载状态管理
+     */
+    export class ResourceManager{
         /**
          * 资源map，key为url，值为整数，1表示正在加载，2表示已加载完成
          */

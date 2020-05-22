@@ -1,4 +1,4 @@
-/// <reference path="../nodom.ts" />
+// / <reference path="../nodom.ts" />
 /*
  * 消息js文件 中文文件
  */
@@ -25,7 +25,8 @@ namespace nodom{
 		routeView:'路由容器',
 		plugin:'插件',
 		resource:'资源',
-		root:'根'
+		root:'根',
+		element:'元素'
 	}
 	/**
 	 * 异常信息

@@ -21,7 +21,7 @@ namespace nodom{
         Scheduler.addTask(Renderer.render,Renderer);
         //启动调度器
         Scheduler.start();
-        let module = createModule(config.module,true);
+        let module = this.createModule(config.module,true);
         await module.active();
         return module;
     }

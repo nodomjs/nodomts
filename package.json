@@ -1,31 +1,45 @@
 {
-  "name": "nodomts",
+  "name": "nodom",
   "version": "0.0.1",
-  "description": "nodom-ts",
-  "main": "webpack.config.js",
+  "description": "一个前端mvvm框架",
+  "main": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/types/**/*.d.ts"
+  ],
   "scripts": {
-    "build": "webpack"
+    "build": "tsc",
+    "clean": "rm -rf dist"
   },
-  "author": "fieldyang(fieldyang@163.com)",
-  "dependencies": {
-    "@babel/polyfill": "^7.8.7",
-    "awesome-typescript-loader": "^5.2.1",
-    "webpack-cli": "^3.3.10"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nodomjs/nodom.git"
   },
   "keywords": [
     "nodom",
-    "mvvm"
+    "typescript",
+    "mvvm framework"
   ],
+  "author": "fieldyang <fieldyang@163.com>",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nodomjs/nodom/issues"
+  },
+  "homepage": "https://github.com/nodomjs/nodom#readme",
+  "dependencies": {
+    "grunt-ts": "^6.0.0-beta.22"
+  },
   "devDependencies": {
-    "@types/webpack": "^4.41.12",
-    "clean-webpack-plugin": "^3.0.0",
-    "grunt-contrib-concat": "^1.0.1",
-    "grunt-contrib-uglify": "^4.0.1",
-    "load-grunt-tasks": "^5.1.0",
-    "ts-node": "^8.5.4",
-    "typescript": "^3.7.2",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10"
+    "grunt": "^1.1.0",
+    "typescript": "^3.9.3"
+  },
+  "engines": {},
+  "contributors": [
+    "杨雷 <fieldyang@163.com>"
+  ],
+  "directories": {
+    "example": "examples",
+    "test": "test"
   }
 }

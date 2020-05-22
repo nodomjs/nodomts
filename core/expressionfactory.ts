@@ -1,4 +1,5 @@
 /// <reference path="nodom.ts" />
+
 namespace nodom {
     /**
      * 表达式工厂

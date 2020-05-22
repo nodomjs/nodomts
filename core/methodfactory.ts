@@ -1,4 +1,4 @@
-/// <reference path="nodom.ts" />
+// / <reference path="nodom.ts" />
 namespace nodom {
 	/**
      * 方法工厂，每个模块一个
@@ -13,7 +13,7 @@ namespace nodom {
         invoke(name:string, params:Array<any>) {
             const foo = this.get(name);
             if (!Util.isFunction(foo)) {
-                throw new NodomError(nodom.ErrorMsgs.notexist1, TipWords.method, name);
+                throw new NodomError(ErrorMsgs.notexist1, TipWords.method, name);
             }
             return Util.apply(foo, this.module.model, params);
         }

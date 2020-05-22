@@ -1,4 +1,5 @@
 /// <reference path="nodom.ts" />
+
 namespace nodom {
     /**
      * 指令管理器
@@ -70,10 +71,10 @@ namespace nodom {
          */
         static init(directive:Directive, dom:Element, module:Module, el:HTMLElement) {
             let dt = this.directiveTypes.get(directive.type);
-            if (dt === undefined) {
-                throw new NodomError('notexist1', TipWords.directiveType, name);
+            if (dt) {
+                // throw new NodomError('notexist1', TipWords.directiveType, directive.type);
+                return dt.init(directive, dom, module, el);
             }
-            return dt.init(directive, dom, module, el);
         }
 
         /**
@@ -88,7 +89,6 @@ namespace nodom {
             if (!this.directiveTypes.has(directive.type)) {
                 throw new NodomError('notexist1', TipWords.directiveType, directive.type);
             }
-
             //调用
             return Util.apply(this.directiveTypes.get(directive.type).handle, null, [directive,dom,module,parent]);
         }

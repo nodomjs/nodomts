@@ -1,13 +1,14 @@
-/// <reference path="nodom.ts" />
-/**
- * @description 异常处理类
- * @since       0.0.1
- */
+// / <reference path="nodom.ts" />
+
 namespace nodom{
+    /**
+     * @description 异常处理类
+     * @since       0.0.1
+     */
     export class NodomError extends Error{
         constructor(errorName:string,p1?:string,p2?:string,p3?:string,p4?:string){
             super(errorName);
-            let msg:string = nodom.ErrorMsgs[errorName];
+            let msg:string = ErrorMsgs[errorName];
             if(msg === undefined){
                 this.message = "未知错误";
                 return;
