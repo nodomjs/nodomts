@@ -566,13 +566,10 @@ var nodom;
             div.innerHTML = elementStr;
             let oe = new nodom.Element();
             oe.root = true;
-            for (let i = 0; i < div.childNodes.length; i++) {
-                this.compileDom(div.childNodes[i], oe);
-            }
+            this.handleChildren(oe, div);
             return oe;
         }
-        static compileDom(ele, parent) {
-            const me = this;
+        static compileDom(ele) {
             let oe;
             let isComment = false;
             switch (ele.nodeType) {
@@ -586,10 +583,7 @@ var nodom;
                 case Node.TEXT_NODE:
                     oe = new nodom.Element();
                     let txt = ele.textContent;
-                    if (txt.trim() === "") {
-                        return;
-                    }
-                    let expA = me.compileExpression(txt);
+                    let expA = this.compileExpression(txt);
                     if (typeof expA === 'string') {
                         oe.textContent = expA;
                     }
@@ -601,14 +595,25 @@ var nodom;
                     isComment = true;
                     break;
             }
-            if (!isComment && parent) {
-                parent.children.push(oe);
+            if (!isComment) {
+                return oe;
             }
-            return oe;
         }
         static handleEl(el) {
             let oe = new nodom.Element();
             oe.tagName = el.tagName;
+            this.handleAttributes(oe, el);
+            this.handleChildren(oe, el);
+            return oe;
+        }
+        static handleDefineEl(el) {
+            let de = nodom.DefineElementManager.get(el.tagName);
+            if (!de) {
+                return;
+            }
+            return de.init(el);
+        }
+        static handleAttributes(oe, el) {
             for (let i = 0; i < el.attributes.length; i++) {
                 let attr = el.attributes[i];
                 let v = attr.value.trim();
@@ -633,21 +638,17 @@ var nodom;
                     }
                 }
             }
-            let subEls = [];
-            el.childNodes.forEach((nd) => {
-                subEls.push(this.compileDom(nd, oe));
-            });
             oe.directives.sort((a, b) => {
                 return nodom.DirectiveManager.getType(a.type).prio - nodom.DirectiveManager.getType(b.type).prio;
             });
-            return oe;
         }
-        static handleDefineEl(el) {
-            let de = nodom.DefineElementManager.get(el.tagName);
-            if (!de) {
-                return;
-            }
-            return de.init(el);
+        static handleChildren(oe, el) {
+            el.childNodes.forEach((nd) => {
+                let o = this.compileDom(nd);
+                if (o) {
+                    oe.children.push(o);
+                }
+            });
         }
         static compileExpression(exprStr) {
             if (/\{\{.+?\}\}/.test(exprStr) === false) {
@@ -776,6 +777,9 @@ var nodom;
             this.key = nodom.Util.genId() + '';
         }
         render(module, parent) {
+            if (this.dontRender) {
+                return;
+            }
             if (parent) {
                 this.parentKey = parent.key;
                 if (!this.modelId) {
@@ -801,17 +805,14 @@ var nodom;
             else {
                 this.handleTextContent(module);
             }
-            if (!this.dontRender) {
-                for (let i = 0; i < this.children.length; i++) {
-                    let item = this.children[i];
-                    item.render(module, this);
-                    if (item.dontRender) {
-                        this.removeChild(item);
-                        i--;
-                    }
+            for (let i = 0; i < this.children.length; i++) {
+                let item = this.children[i];
+                item.render(module, this);
+                if (item.dontRender) {
+                    this.removeChild(item);
+                    i--;
                 }
             }
-            return true;
         }
         renderToHtml(module, params) {
             let el;
@@ -1383,7 +1384,6 @@ var nodom;
                 }
                 let module = nodom.ModuleFactory.get(model.moduleName);
                 let fieldObj = model.data;
-                console.log(model, fieldObj);
                 let valueArr = [];
                 this.fields.forEach((field) => {
                     valueArr.push(fieldObj[field]);
@@ -3508,9 +3508,15 @@ var nodom;
             if (type === 'radio') {
                 if (dataValue == value) {
                     dom.props['checked'] = 'checked';
+                    setTimeout(() => {
+                        module.container.querySelector("[key='" + dom.key + "']").checked = true;
+                    }, 0);
                 }
                 else {
                     delete dom.props['checked'];
+                    setTimeout(() => {
+                        module.container.querySelector("[key='" + dom.key + "']").checked = false;
+                    }, 0);
                 }
             }
             else if (type === 'checkbox') {
@@ -3518,10 +3524,16 @@ var nodom;
                 if (dataValue == yv) {
                     dom.props['checked'] = 'checked';
                     dom.props['value'] = yv;
+                    setTimeout(() => {
+                        module.container.querySelector("[key='" + dom.key + "']").checked = true;
+                    }, 0);
                 }
                 else {
                     delete dom.props['checked'];
                     dom.props['value'] = dom.props['no-value'];
+                    setTimeout(() => {
+                        module.container.querySelector("[key='" + dom.key + "']").checked = false;
+                    }, 0);
                 }
             }
             else if (tgname === 'select') {
@@ -3529,6 +3541,12 @@ var nodom;
                 setTimeout(() => {
                     let inputEl = module.container.querySelector("[key='" + dom.key + "']");
                     inputEl.value = dataValue;
+                }, 0);
+            }
+            else {
+                setTimeout(() => {
+                    let inputEl = module.container.querySelector("[key='" + dom.key + "']");
+                    inputEl.value = value;
                 }, 0);
             }
             if (!directive.extra) {

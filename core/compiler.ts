@@ -11,14 +11,11 @@ namespace nodom {
          * @returns             虚拟element
          */
         static compile(elementStr:string):Element {
-            const div = Util.newEl('div');
+            const div:HTMLElement = Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new Element();
             oe.root = true;
-            //调用编译
-            for (let i = 0; i < div.childNodes.length; i++) {
-                this.compileDom(div.childNodes[i], oe);
-            }
+            this.handleChildren(oe,div);
             return oe;
         }
 
@@ -28,10 +25,8 @@ namespace nodom {
          * @param parent        父节点（virtualdom）   
          */
 
-        static compileDom(ele:Node, parent:Element) {
-            const me = this;
+        static compileDom(ele:Node) {
             let oe:Element;
-           
             //注视标志
             let isComment = false;
             switch (ele.nodeType) {
@@ -45,10 +40,7 @@ namespace nodom {
             case Node.TEXT_NODE: //文本节点
                 oe = new Element();
                 let txt = ele.textContent;
-                if (txt.trim() === "") { //内容为空不加入树
-                    return;
-                }
-                let expA = me.compileExpression(txt);
+                let expA = this.compileExpression(txt);
                 if (typeof expA === 'string') { //无表达式
                     oe.textContent = expA;
                 } else { //含表达式
@@ -59,12 +51,10 @@ namespace nodom {
                 isComment = true;
                 break;
             }
-
             //添加到子节点,comment节点不需要    
-            if (!isComment && parent) {
-                parent.children.push(oe);
+            if (!isComment) {
+                return oe;
             }
-            return oe;
         }
 
         /**
@@ -75,6 +65,31 @@ namespace nodom {
         static handleEl(el:HTMLElement){
             let oe:Element = new Element();
             oe.tagName = el.tagName;
+            this.handleAttributes(oe,el);
+            this.handleChildren(oe,el);
+            return oe;
+        }
+
+        /**
+         * 处理插件
+         * @param oe 新建的虚拟dom
+         * @param el 待处理的html element
+         * @returns  如果识别自定义el，则返回true
+         */
+        static handleDefineEl(el:HTMLElement):Element{
+            let de:IDefineElement = DefineElementManager.get(el.tagName);
+            if(!de){
+                return;
+            }
+            return de.init(el);
+        }
+
+        /**
+         * 处理属性
+         * @param oe 新建的虚拟dom
+         * @param el 待处理的html element
+         */
+        static handleAttributes(oe:Element,el:HTMLElement){
             //遍历attributes
             for (let i = 0; i < el.attributes.length; i++) {
                 let attr = el.attributes[i];
@@ -99,31 +114,25 @@ namespace nodom {
                     }
                 }
             }
-            let subEls = [];
-            //子节点编译
-            el.childNodes.forEach((nd:Node)=> {
-                subEls.push(this.compileDom(nd, oe));
-            });
-
             //指令按优先级排序
             oe.directives.sort((a, b) => {
                 return DirectiveManager.getType(a.type).prio - DirectiveManager.getType(b.type).prio;
             });
-            return oe;
         }
 
         /**
-         * 处理插件
+         * 处理子节点
          * @param oe 新建的虚拟dom
          * @param el 待处理的html element
-         * @returns  如果识别自定义el，则返回true
          */
-        static handleDefineEl(el:HTMLElement):Element{
-            let de:IDefineElement = DefineElementManager.get(el.tagName);
-            if(!de){
-                return;
-            }
-            return de.init(el);
+        static handleChildren(oe:Element,el:HTMLElement){
+            //子节点编译
+            el.childNodes.forEach((nd:Node)=> {
+                let o = this.compileDom(nd);
+                if(o){
+                    oe.children.push(o);
+                }
+            });
         }
         /**
          * 处理含表达式串

@@ -16,7 +16,7 @@ declare namespace nodom {
          * @param ele           待编译element
          * @param parent        父节点（virtualdom）
          */
-        static compileDom(ele: Node, parent: Element): Element;
+        static compileDom(ele: Node, parent?: Element): Element;
         /**
          * 处理element
          * @param oe 新建的虚拟dom
@@ -30,6 +30,18 @@ declare namespace nodom {
          * @returns  如果识别自定义el，则返回true
          */
         static handleDefineEl(el: HTMLElement): Element;
+        /**
+         * 处理属性
+         * @param oe 新建的虚拟dom
+         * @param el 待处理的html element
+         */
+        static handleAttributes(oe: Element, el: HTMLElement): void;
+        /**
+         * 处理子节点
+         * @param oe 新建的虚拟dom
+         * @param el 待处理的html element
+         */
+        static handleChildren(oe: any, el: any): void;
         /**
          * 处理含表达式串
          * @param exprStr   含表达式的串

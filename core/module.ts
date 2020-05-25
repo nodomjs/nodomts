@@ -367,13 +367,13 @@ namespace nodom {
          * 模型渲染
          * @return false 渲染失败 true 渲染成功
          */
-        render() {
+        render():boolean {
             //容器没就位或state不为active则不渲染，返回渲染失败
             if (this.state !== 3 || !this.virtualDom || !this.hasContainer()) {
                 return false;
             }
             //克隆新的树
-            let root = this.virtualDom.clone();
+            let root:Element = this.virtualDom.clone();
 
             if (this.firstRender) {
                 //model无数据，如果存在dataUrl，则需要加载数据

@@ -292,7 +292,6 @@ namespace nodom {
 			}
             let module:Module = ModuleFactory.get(model.moduleName);
             let fieldObj:object = model.data;
-            console.log(model,fieldObj);
             let valueArr = [];
             this.fields.forEach((field) => {
                 valueArr.push(fieldObj[field]);

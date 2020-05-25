@@ -5,31 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Document</title>
-    <script src='../js/bin/nodom-2.0.js'></script>
-
-    <style>
-        img{
-            width:300px;
-        }
-
-        .imgct{
-            width:301px;
-            overflow-x:hidden;
-            overflow-y:auto;
-            height:400px;
-        }
-    </style>
+    
+    
 </head>
 
 <body>
     <div class="view">
         <button onclick='change()'>change</button>
-        <input type='text' id='i1' required>
+        <button onclick='change1()'>change1</button>
+        <input id='i1' type='checkbox'>选中
     </div>
 </body>
 <script>
    function change(){
-       document.querySelector('#i1').setAttribute('required','');
+       document.querySelector('#i1').checked = true;
+   }
+   function change1(){
+    document.querySelector('#i1').checked = false;
    }
 </script>
 

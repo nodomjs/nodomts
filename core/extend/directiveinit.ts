@@ -300,8 +300,14 @@ namespace nodom {
             if (type === 'radio') {
                 if (dataValue == value) {
                     dom.props['checked'] = 'checked';
+                    setTimeout(()=>{
+                        (<HTMLInputElement>module.container.querySelector("[key='"+dom.key+"']")).checked = true;
+                    },0);
                 } else {
                     delete dom.props['checked'];
+                    setTimeout(()=>{
+                        (<HTMLInputElement>module.container.querySelector("[key='"+dom.key+"']")).checked = false;
+                    },0);
                 }
             } else if (type === 'checkbox') {
                 //设置状态和value
@@ -310,9 +316,15 @@ namespace nodom {
                 if (dataValue == yv) {
                     dom.props['checked'] = 'checked';
                     dom.props['value'] = yv;
+                    setTimeout(()=>{
+                        (<HTMLInputElement>module.container.querySelector("[key='"+dom.key+"']")).checked = true;
+                    },0);
                 } else { //当前值为no-value
                     delete dom.props['checked'];
                     dom.props['value'] = dom.props['no-value'];
+                    setTimeout(()=>{
+                        (<HTMLInputElement>module.container.querySelector("[key='"+dom.key+"']")).checked = false;
+                    },0);
                 }
             } else if (tgname === 'select') { //下拉框
                 dom.props['value'] = dataValue;
@@ -320,6 +332,12 @@ namespace nodom {
                 setTimeout(()=>{
                     let inputEl:HTMLInputElement = module.container.querySelector("[key='" + dom.key + "']");
                     inputEl.value = dataValue;
+                }, 0);
+            }else{
+                //value可能无法渲染，需要直接设置到input element
+                setTimeout(() => {
+                    let inputEl = <HTMLInputElement>module.container.querySelector("[key='" + dom.key + "']");
+                    inputEl.value = value;
                 }, 0);
             }
 

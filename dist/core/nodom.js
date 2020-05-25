@@ -46,7 +46,6 @@ var nodom;
      * @param main 		是否根模块
      */
     function createModule(config, main) {
-        console.log(nodom.Module);
         if (nodom.Util.isArray(config)) {
             for (let item of config) {
                 new nodom.Module(item);

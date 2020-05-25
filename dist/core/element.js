@@ -78,9 +78,15 @@ var nodom;
             //添加额外数据
             if (this.extraData) {
                 let model = module.modelFactory.get(this.modelId);
-                nodom.Util.getOwnProps(this.extraData).forEach((item) => {
-                    model.set(item, this.extraData[item]);
-                });
+                if (!model) {
+                    model = new nodom.Model(this.extraData, module);
+                    this.modelId = model.id;
+                }
+                else {
+                    nodom.Util.getOwnProps(this.extraData).forEach((item) => {
+                        model.set(item, this.extraData[item]);
+                    });
+                }
             }
             if (this.tagName !== undefined) { //element
                 this.handleProps(module);
@@ -264,6 +270,8 @@ var nodom;
                     dst[p] = this[p];
                 }
             });
+            //附加数据
+            dst['extraData'] = this['extraData'];
             for (let d of this.directives) {
                 dst.directives.push(d);
             }

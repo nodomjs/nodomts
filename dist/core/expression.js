@@ -256,7 +256,6 @@ var nodom;
                 }
                 let module = nodom.ModuleFactory.get(model.moduleName);
                 let fieldObj = model.data;
-                console.log(model, fieldObj);
                 let valueArr = [];
                 this.fields.forEach((field) => {
                     valueArr.push(fieldObj[field]);

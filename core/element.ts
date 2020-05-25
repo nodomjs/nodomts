@@ -143,6 +143,9 @@ namespace nodom {
          * @param parent 	父节点
          */
         render(module:Module, parent?:Element) {
+            if(this.dontRender){
+                return;
+            }
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
@@ -173,20 +176,17 @@ namespace nodom {
                 this.handleTextContent(module);
             }
 
-            //dontrender 为false才渲染子节点
-            if (!this.dontRender) {
+            // dontrender 为false才渲染子节点
                 //子节点渲染
-                for (let i = 0; i < this.children.length; i++) {
-                    let item = this.children[i];
-                    item.render(module, this);
-                    //dontRender 删除
-                    if (item.dontRender) {
-                        this.removeChild(item);
-                        i--;
-                    }
+            for (let i = 0; i < this.children.length; i++) {
+                let item = this.children[i];
+                item.render(module, this);
+                //dontRender 删除
+                if (item.dontRender) {
+                    this.removeChild(item);
+                    i--;
                 }
             }
-            return true;
         }
         /**
          * 渲染到html element
@@ -338,8 +338,8 @@ namespace nodom {
         /**
          * 克隆
          */
-        clone() {
-            let dst = new Element();
+        clone():Element{
+            let dst:Element = new Element();
             //简单属性
 			Util.getOwnProps(this).forEach((p) => {
                 if (typeof this[p] !== 'object') {
@@ -349,8 +349,7 @@ namespace nodom {
 
             //附加数据
             dst['extraData'] = this['extraData'];
-
-			for(let d of this.directives){
+            for(let d of this.directives){
 				dst.directives.push(d);
 			}
 			//普通属性
