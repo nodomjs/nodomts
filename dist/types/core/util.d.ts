@@ -21,7 +21,7 @@ declare namespace nodom {
          * @param   参数数组
          * @returns 返回对象
          */
-        static merge(): any;
+        static merge(o1?,o2?,o3?,o4?,o5?,o6?): any;
         /**
          * 把obj2对象所有属性赋值给obj1
          */

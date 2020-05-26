@@ -113,6 +113,10 @@ declare namespace nodom {
          */
         extraData: object;
         /**
+         * 自定义element类型名
+         */
+        defineType: string;
+        /**
          * @param tag 标签名
          */
         constructor(tag?: string);
@@ -121,7 +125,7 @@ declare namespace nodom {
          * @param module 	模块
          * @param parent 	父节点
          */
-        render(module: Module, parent?: Element): boolean;
+        render(module: Module, parent?: Element): void;
         /**
          * 渲染到html element
          * @param module 	模块

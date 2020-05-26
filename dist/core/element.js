@@ -67,6 +67,9 @@ var nodom;
          * @param parent 	父节点
          */
         render(module, parent) {
+            if (this.dontRender) {
+                return;
+            }
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
@@ -96,20 +99,17 @@ var nodom;
             else { //textContent
                 this.handleTextContent(module);
             }
-            //dontrender 为false才渲染子节点
-            if (!this.dontRender) {
-                //子节点渲染
-                for (let i = 0; i < this.children.length; i++) {
-                    let item = this.children[i];
-                    item.render(module, this);
-                    //dontRender 删除
-                    if (item.dontRender) {
-                        this.removeChild(item);
-                        i--;
-                    }
+            // dontrender 为false才渲染子节点
+            //子节点渲染
+            for (let i = 0; i < this.children.length; i++) {
+                let item = this.children[i];
+                item.render(module, this);
+                //dontRender 删除
+                if (item.dontRender) {
+                    this.removeChild(item);
+                    i--;
                 }
             }
-            return true;
         }
         /**
          * 渲染到html element

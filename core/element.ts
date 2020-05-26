@@ -129,6 +129,10 @@ namespace nodom {
          */
         extraData:object;
 
+        /**
+         * 自定义element类型名
+         */
+        defineType:string;
 		/**
 		 * @param tag 标签名
 		 */

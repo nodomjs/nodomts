@@ -25,7 +25,6 @@ var nodom;
          * @param parent        父节点（virtualdom）
          */
         static compileDom(ele) {
-            const me = this;
             let oe;
             //注视标志
             let isComment = false;
@@ -40,7 +39,7 @@ var nodom;
                 case Node.TEXT_NODE: //文本节点
                     oe = new nodom.Element();
                     let txt = ele.textContent;
-                    let expA = me.compileExpression(txt);
+                    let expA = this.compileExpression(txt);
                     if (typeof expA === 'string') { //无表达式
                         oe.textContent = expA;
                     }

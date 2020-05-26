@@ -84,7 +84,7 @@ namespace nodom{
          * @param   参数数组
          * @returns 返回对象
          */
-        static merge(){
+        static merge(o1?:object,o2?:object,o3?:object,o4?:object,o5?:object,o6?:object){
             for(let i=0;i<arguments.length;i++){
                 if(!this.isObject(arguments[i])){
                     throw new NodomError('invoke','this.merge',i+'','object');    
