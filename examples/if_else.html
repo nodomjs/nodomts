@@ -24,7 +24,7 @@
 
 <body>
     <div class="view">
-        <div x-if='show'>hello</div>
+        <div x-if='show instanceof Boolean'>hello</div>
         <div class="tip">单个if指令</div>
         <div class="code">
             <div class="introduce">如果discount<0.8，显示价格</div> <div x-if="discount<0.8">价格：{{price}}</div>
@@ -69,11 +69,10 @@
                 price: 200,
                 age: 20,
                 grade: 73,
-                show:false
+                show:true
             }
         }
     });
-
 </script>
 
 </html>

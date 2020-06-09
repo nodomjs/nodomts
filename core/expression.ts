@@ -43,11 +43,6 @@ namespace nodom {
             //旧值
             this.fields = []; // 字段数组
             this.id = Util.genId();
-            // if (module) {
-            //     this.moduleName = module.name;
-            //     module.expressionFactory.add(this.id, this);
-            // }
-
             if (exprStr) {
                 this.execString = this.compile(exprStr);
             }
@@ -319,7 +314,12 @@ namespace nodom {
          * @returns         true/false
          */
         addField(field:string):boolean{
-            if(field === '' || field.startsWith(Expression.REP_STR) || Util.isNumberString(field)){
+            //js 保留字
+            const jsKeyWords = ['true','false','undefined','null','typeof',
+                    'Object','Function','Array','Number', 'Date',
+                    'instanceof','NaN'];
+            
+            if(field === '' || jsKeyWords.includes(field) || field.startsWith(Expression.REP_STR) || Util.isNumberString(field)){
                 return false;
             }
             //多级字段只保留第一级，如 x.y只保留x

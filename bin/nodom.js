@@ -1457,7 +1457,10 @@ var nodom;
                 }
             }
             addField(field) {
-                if (field === '' || field.startsWith(Expression.REP_STR) || nodom.Util.isNumberString(field)) {
+                const jsKeyWords = ['true', 'false', 'undefined', 'null', 'typeof',
+                    'Object', 'Function', 'Array', 'Number', 'Date',
+                    'instanceof', 'NaN'];
+                if (field === '' || jsKeyWords.includes(field) || field.startsWith(Expression.REP_STR) || nodom.Util.isNumberString(field)) {
                     return false;
                 }
                 let ind;
