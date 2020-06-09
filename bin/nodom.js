@@ -941,7 +941,7 @@ var nodom;
         }
         clone() {
             let dst = new Element();
-            let notCopyProps = ['directives', 'props', 'exprProps', 'events'];
+            let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
             nodom.Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
                     return;
@@ -1062,14 +1062,13 @@ var nodom;
             }
         }
         add(dom) {
+            dom.parent = this;
             this.children.push(dom);
         }
         remove(module, delHtml) {
-            if (this.parentKey !== undefined) {
-                let p = module.renderTree.query(this.parentKey);
-                if (p) {
-                    p.removeChild(this);
-                }
+            let parent = this.getParent(module);
+            if (parent) {
+                parent.removeChild(this);
             }
             if (delHtml && module && module.container) {
                 let el = module.container.querySelector("[key='" + this.key + "']");
@@ -1088,6 +1087,14 @@ var nodom;
             let ind;
             if (nodom.Util.isArray(this.children) && (ind = this.children.indexOf(dom)) !== -1) {
                 this.children.splice(ind, 1);
+            }
+        }
+        getParent(module) {
+            if (this.parent) {
+                return this.parent;
+            }
+            if (this.parentKey) {
+                return module.renderTree.query(this.parentKey);
             }
         }
         replace(dst) {

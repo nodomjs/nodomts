@@ -76,6 +76,7 @@ var nodom;
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
+                // this.parent = parent;
                 // 设置modelId
                 if (!this.modelId) {
                     this.modelId = parent.modelId;
@@ -270,14 +271,16 @@ var nodom;
          */
         clone() {
             let dst = new Element();
+            //不直接拷贝属性集
+            let notCopyProps = ['directives', 'props', 'exprProps', 'events', 'children'];
             //简单属性
             nodom.Util.getOwnProps(this).forEach((p) => {
-                if (typeof this[p] !== 'object') {
-                    dst[p] = this[p];
+                if (notCopyProps.includes(p)) {
+                    return;
                 }
+                dst[p] = this[p];
             });
-            //附加数据
-            dst['extraData'] = this['extraData'];
+            //指令
             for (let d of this.directives) {
                 dst.directives.push(d);
             }
@@ -293,8 +296,7 @@ var nodom;
             nodom.Util.getOwnProps(this.events).forEach((k) => {
                 dst.events[k] = this.events[k].clone();
             });
-            //表达式
-            dst.expressions = this.expressions;
+            //子节点
             for (let i = 0; i < this.children.length; i++) {
                 if (!this.children[i]) {
                     this.children.splice(i--, 1);
@@ -439,6 +441,7 @@ var nodom;
          * @param dom 	子节点
          */
         add(dom) {
+            dom.parent = this;
             this.children.push(dom);
         }
         /**
@@ -448,11 +451,9 @@ var nodom;
          */
         remove(module, delHtml) {
             // 从父树中移除
-            if (this.parentKey !== undefined) {
-                let p = module.renderTree.query(this.parentKey);
-                if (p) {
-                    p.removeChild(this);
-                }
+            let parent = this.getParent(module);
+            if (parent) {
+                parent.removeChild(this);
             }
             // 删除html dom节点
             if (delHtml && module && module.container) {
@@ -479,6 +480,19 @@ var nodom;
             // 移除
             if (nodom.Util.isArray(this.children) && (ind = this.children.indexOf(dom)) !== -1) {
                 this.children.splice(ind, 1);
+            }
+        }
+        /**
+         * 获取parent
+         * @param module 模块
+         * @returns      父element
+         */
+        getParent(module) {
+            if (this.parent) {
+                return this.parent;
+            }
+            if (this.parentKey) {
+                return module.renderTree.query(this.parentKey);
             }
         }
         /**

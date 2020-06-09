@@ -204,6 +204,12 @@ declare namespace nodom {
          */
         removeChild(dom: Element): void;
         /**
+         * 获取parent
+         * @param module 模块
+         * @returns      父element
+         */
+        getParent(module: Module): Element;
+        /**
          * 替换目标节点
          * @param dst 	目标节点
          */

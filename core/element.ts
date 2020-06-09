@@ -161,6 +161,7 @@ namespace nodom {
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
+                // this.parent = parent;
                 // 设置modelId
                 if (!this.modelId) {
                     this.modelId = parent.modelId;
@@ -357,7 +358,7 @@ namespace nodom {
         clone():Element{
             let dst:Element = new Element();
             //不直接拷贝属性集
-            let notCopyProps:string[] = ['directives','props','exprProps','events'];
+            let notCopyProps:string[] = ['parent','directives','props','exprProps','events','children'];
             //简单属性
 			Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
@@ -537,6 +538,7 @@ namespace nodom {
          * @param dom 	子节点
          */
         add(dom) {
+            dom.parent = this;
             this.children.push(dom);
         }
         /**
@@ -546,13 +548,11 @@ namespace nodom {
          */
         remove(module:Module, delHtml?:boolean) {
             // 从父树中移除
-            if (this.parentKey !== undefined) {
-                let p = module.renderTree.query(this.parentKey);
-                if (p) {
-                    p.removeChild(this);
-                }
+            let parent:Element = this.getParent(module);
+            if(parent){
+                parent.removeChild(this);
             }
-
+                    
             // 删除html dom节点
             if (delHtml && module && module.container) {
                 let el = module.container.querySelector("[key='" + this.key + "']");
@@ -581,6 +581,20 @@ namespace nodom {
             // 移除
             if (Util.isArray(this.children) && (ind = this.children.indexOf(dom)) !== -1) {
                 this.children.splice(ind, 1);
+            }
+        }
+
+        /**
+         * 获取parent
+         * @param module 模块 
+         * @returns      父element
+         */
+        getParent(module:Module):Element{
+            if(this.parent){
+                return this.parent;
+            }
+            if(this.parentKey){
+                return module.renderTree.query(this.parentKey);    
             }
         }
 
