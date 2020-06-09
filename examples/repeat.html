@@ -52,7 +52,7 @@
         <div class="code">
             会员折扣：{{discount*10}}折
             <div x-repeat="foods">
-                菜名：{{name}}，价格：{{price}}，会员价：{{price*discount}}
+                菜名：{{name}}，价格：{{price}}，会员价：{{price*discount.data}}
             </div>
         </div>
     </div>
@@ -63,7 +63,7 @@
         module:{
             el: '.view',
             data: {
-                discount: 0.9,
+                discount:{data: 0.9},
                 foods: [{
                     name: '夫妻肺片',
                     price: 25

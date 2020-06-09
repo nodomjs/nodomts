@@ -23,6 +23,28 @@ var nodom;
             static get(tagName) {
                 return this.elementMap.get(tagName);
             }
+            /**
+             * 执行自定义元素前置渲染
+             * @param module    模块
+             * @param dom       虚拟dom
+             */
+            static beforeRender(module, dom) {
+                let de = this.get(dom.defineType);
+                if (de && de.beforeRender) {
+                    de.beforeRender(module, dom);
+                }
+            }
+            /**
+             * 执行自定义元素后置渲染
+             * @param module    模块
+             * @param dom       虚拟dom
+             */
+            static afterRender(module, dom) {
+                let de = this.get(dom.defineType);
+                if (de && de.afterRender) {
+                    de.afterRender(module, dom);
+                }
+            }
         }
         DefineElementManager.elementMap = new Map();
         return DefineElementManager;

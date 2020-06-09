@@ -150,6 +150,9 @@ namespace nodom {
             if(this.dontRender){
                 return;
             }
+            if(this.defineType){
+                DefineElementManager.beforeRender(module,this);
+            }
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
@@ -190,6 +193,10 @@ namespace nodom {
                     this.removeChild(item);
                     i--;
                 }
+            }
+
+            if(this.defineType){
+                DefineElementManager.afterRender(module,this);
             }
         }
         /**
@@ -373,10 +380,13 @@ namespace nodom {
             
             //表达式
             dst.expressions = this.expressions;
-
-            this.children.forEach((d) => {
-                dst.children.push(d.clone());
-            });
+            for(let i=0;i<this.children.length;i++){
+                if(!this.children[i]){
+                    this.children.splice(i--,1);
+                }else{
+                    dst.children.push(this.children[i].clone());
+                }
+            }
             return dst;
         }
 
@@ -394,8 +404,6 @@ namespace nodom {
             }
             return true;
         }
-
-
 
         /**
          * 表达式预处理，添加到expression计算队列
@@ -495,8 +503,7 @@ namespace nodom {
          * @param directiveType 	指令类型名
          * @return true/false
          */
-        hasDirective(directiveType) {
-            
+        hasDirective(directiveType):boolean {
             for (let i = 0; i < this.directives.length; i++) {
                 if (this.directives[i].type === directiveType) {
                     return true;
@@ -595,6 +602,64 @@ namespace nodom {
         contains(dom) {
             for (; dom !== undefined && dom !== this; dom = dom.parent);
             return dom !== undefined;
+        }
+
+        /**
+         * 添加css class
+         * @param cls class名
+         */
+        addClass(cls:string){
+            let clazz = this.props['class'];
+            let finded:boolean = false;
+            if(!clazz){
+                clazz = cls;
+            }else{
+                let sa:string[] = clazz.split(' ');
+                let s:string;
+                for(let i=0;i<sa.length;i++){
+                    if(s === ''){
+                        sa.splice(i--,1);
+                        continue;
+                    }
+                    //找到则不再处理
+                    if(sa[i] === cls){
+                        finded = true;
+                        break;
+                    }
+                }
+                if(!finded){
+                    sa.push(cls);
+                }
+                clazz = sa.join(' ');
+            }
+            this.props['class'] = clazz;
+        }
+
+        /**
+         * 删除css class
+         * @param cls class名
+         */
+        removeClass(cls:string){
+            let clazz = this.props['class'];
+            if(!clazz){
+                return;
+            }else{
+                let sa:string[] = clazz.split(' ');
+                let s:string;
+                for(let i=0;i<sa.length;i++){
+                    if(s === ''){
+                        sa.splice(i--,1);
+                        continue;
+                    }
+                    //找到则删除
+                    if(sa[i] === cls){
+                        sa.splice(i,1);
+                        break;
+                    }
+                }
+                clazz = sa.join(' ');
+            }
+            this.props['class'] = clazz;
         }
 
         /**

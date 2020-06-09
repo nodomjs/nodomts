@@ -210,6 +210,16 @@ declare namespace nodom {
          */
         contains(dom: any): boolean;
         /**
+         * 添加css class
+         * @param cls class名
+         */
+        addClass(cls: string): void;
+        /**
+         * 删除css class
+         * @param cls class名
+         */
+        removeClass(cls: string): void;
+        /**
          * 查找子孙节点
          * @param key 	element key
          * @returns		虚拟dom/undefined

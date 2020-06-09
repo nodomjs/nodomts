@@ -39,7 +39,7 @@ declare namespace nodom {
         /**
          * 指令初始化
          */
-        static init(directive: Directive, dom: Element, module: Module, el: HTMLElement): any;
+        static init(directive: Directive, dom: Element, el: HTMLElement): any;
         /**
          * 执行指令
          * @param directive     指令

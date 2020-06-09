@@ -19,7 +19,7 @@ var nodom;
                 this.value = value.trim();
             }
             if (type !== undefined) {
-                nodom.Util.apply(nodom.DirectiveManager.init, nodom.DirectiveManager, [this, vdom, el]);
+                nodom.DirectiveManager.init(this, vdom, el);
             }
         }
         /**

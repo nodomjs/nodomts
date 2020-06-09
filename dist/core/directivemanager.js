@@ -58,11 +58,11 @@ var nodom;
             /**
              * 指令初始化
              */
-            static init(directive, dom, module, el) {
+            static init(directive, dom, el) {
                 let dt = this.directiveTypes.get(directive.type);
                 if (dt) {
                     // throw new NodomError('notexist1', TipWords.directiveType, directive.type);
-                    return dt.init(directive, dom, module, el);
+                    return dt.init(directive, dom, el);
                 }
             }
             /**

@@ -65,7 +65,7 @@ namespace nodom {
                 this.value = value.trim();
             }
             if (type !== undefined) {
-                Util.apply(DirectiveManager.init, DirectiveManager, [this, vdom, el]);
+                DirectiveManager.init(this,vdom,el);
             }
         }
 

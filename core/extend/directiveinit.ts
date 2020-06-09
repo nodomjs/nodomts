@@ -79,7 +79,7 @@ namespace nodom {
 
             // 增加model指令
             if (!dom.hasDirective('model')) {
-                dom.directives.push(new Directive('model', modelName, dom));
+                dom.directives.push(new Directive('model', modelName, dom, el));
             }
 
             directive.value = modelName;
@@ -182,9 +182,13 @@ namespace nodom {
                 if (indelse > 0) {
                     parent.children[indelse].dontRender = true;
                 }
-            } else if (indelse > 0) { //为假则进入else渲染
+            } else{
                 //替换if
                 dom.dontRender = true;
+                //为假则进入else渲染
+                if (indelse > 0) { 
+                    parent.children[indelse].dontRender = false;
+                }
             }
             return true;
         }

@@ -69,11 +69,11 @@ namespace nodom {
         /**
          * 指令初始化
          */
-        static init(directive:Directive, dom:Element, module:Module, el:HTMLElement) {
+        static init(directive:Directive, dom:Element, el:HTMLElement) {
             let dt = this.directiveTypes.get(directive.type);
             if (dt) {
                 // throw new NodomError('notexist1', TipWords.directiveType, directive.type);
-                return dt.init(directive, dom, module, el);
+                return dt.init(directive, dom, el);
             }
         }
 

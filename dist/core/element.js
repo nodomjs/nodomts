@@ -70,6 +70,9 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
+            if (this.defineType) {
+                nodom.DefineElementManager.beforeRender(module, this);
+            }
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
@@ -109,6 +112,9 @@ var nodom;
                     this.removeChild(item);
                     i--;
                 }
+            }
+            if (this.defineType) {
+                nodom.DefineElementManager.afterRender(module, this);
             }
         }
         /**
@@ -494,6 +500,64 @@ var nodom;
             for (; dom !== undefined && dom !== this; dom = dom.parent)
                 ;
             return dom !== undefined;
+        }
+        /**
+         * 添加css class
+         * @param cls class名
+         */
+        addClass(cls) {
+            let clazz = this.props['class'];
+            let finded = false;
+            if (!clazz) {
+                clazz = cls;
+            }
+            else {
+                let sa = clazz.split(' ');
+                let s;
+                for (let i = 0; i < sa.length; i++) {
+                    if (s === '') {
+                        sa.splice(i--, 1);
+                        continue;
+                    }
+                    //找到则不再处理
+                    if (sa[i] === cls) {
+                        finded = true;
+                        break;
+                    }
+                }
+                if (!finded) {
+                    sa.push(cls);
+                }
+                clazz = sa.join(' ');
+            }
+            this.props['class'] = clazz;
+        }
+        /**
+         * 删除css class
+         * @param cls class名
+         */
+        removeClass(cls) {
+            let clazz = this.props['class'];
+            if (!clazz) {
+                return;
+            }
+            else {
+                let sa = clazz.split(' ');
+                let s;
+                for (let i = 0; i < sa.length; i++) {
+                    if (s === '') {
+                        sa.splice(i--, 1);
+                        continue;
+                    }
+                    //找到则删除
+                    if (sa[i] === cls) {
+                        sa.splice(i, 1);
+                        break;
+                    }
+                }
+                clazz = sa.join(' ');
+            }
+            this.props['class'] = clazz;
         }
         /**
          * 查找子孙节点

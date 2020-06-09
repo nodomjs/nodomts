@@ -76,7 +76,7 @@ var nodom;
             }
             // 增加model指令
             if (!dom.hasDirective('model')) {
-                dom.directives.push(new nodom.Directive('model', modelName, dom));
+                dom.directives.push(new nodom.Directive('model', modelName, dom, el));
             }
             directive.value = modelName;
         },
@@ -116,7 +116,7 @@ var nodom;
                 }
             }
             // 不渲染该节点
-            dom.dontRender = true;
+            dom.dontRender = false;
             return false;
             function setKey(node, key, id) {
                 node.key = key + '_' + id;

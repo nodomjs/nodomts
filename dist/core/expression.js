@@ -258,11 +258,22 @@ var nodom;
                 let fieldObj = model.data;
                 let valueArr = [];
                 this.fields.forEach((field) => {
-                    valueArr.push(fieldObj[field]);
+                    valueArr.push(getFieldValue(module, fieldObj, field));
                 });
                 //module作为第一个参数
                 valueArr.unshift(module);
                 return this.execFunc.apply(null, valueArr);
+                /**
+                 * 获取字段值
+                 * @param dataObj: 数据对象
+                 * @param field
+                 */
+                function getFieldValue(module, dataObj, field) {
+                    if (dataObj.hasOwnProperty(field)) {
+                        return dataObj[field];
+                    }
+                    return module.model.query(field);
+                }
             }
             /**
              * 添加字段到fields

@@ -16,7 +16,7 @@ namespace nodom {
         /**
          * 模型对应数据
          */
-        data: object;
+        data: any;
         /**
          * 模型字段集
          */
