@@ -116,7 +116,7 @@ var nodom;
                 }
             }
             // 不渲染该节点
-            dom.dontRender = false;
+            dom.dontRender = true;
             return false;
             function setKey(node, key, id) {
                 node.key = key + '_' + id;
@@ -169,9 +169,13 @@ var nodom;
                     parent.children[indelse].dontRender = true;
                 }
             }
-            else if (indelse > 0) { //为假则进入else渲染
+            else {
                 //替换if
                 dom.dontRender = true;
+                //为假则进入else渲染
+                if (indelse > 0) {
+                    parent.children[indelse].dontRender = false;
+                }
             }
             return true;
         }

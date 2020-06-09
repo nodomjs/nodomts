@@ -295,9 +295,14 @@ var nodom;
             });
             //表达式
             dst.expressions = this.expressions;
-            this.children.forEach((d) => {
-                dst.children.push(d.clone());
-            });
+            for (let i = 0; i < this.children.length; i++) {
+                if (!this.children[i]) {
+                    this.children.splice(i--, 1);
+                }
+                else {
+                    dst.children.push(this.children[i].clone());
+                }
+            }
             return dst;
         }
         /**

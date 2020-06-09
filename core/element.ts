@@ -124,10 +124,15 @@ namespace nodom {
         finded:boolean;
         
         /**
-         * 额外数据
+         * 扩展数据，渲染时和绑定数据合并
          * @param tag 
          */
         extraData:object;
+
+        /**
+         * 暂存数据，不纳入渲染流程
+         */
+        tmpData:object;
 
         /**
          * 自定义element类型名
@@ -351,15 +356,17 @@ namespace nodom {
          */
         clone():Element{
             let dst:Element = new Element();
+            //不直接拷贝属性集
+            let notCopyProps:string[] = ['directives','props','exprProps','events'];
             //简单属性
 			Util.getOwnProps(this).forEach((p) => {
-                if (typeof this[p] !== 'object') {
-                    dst[p] = this[p];
+                if (notCopyProps.includes(p)) {
+                    return;
                 }
+                dst[p] = this[p];
             });
 
-            //附加数据
-            dst['extraData'] = this['extraData'];
+            //指令
             for(let d of this.directives){
 				dst.directives.push(d);
 			}
@@ -378,8 +385,7 @@ namespace nodom {
                 dst.events[k] = this.events[k].clone();
             });
             
-            //表达式
-            dst.expressions = this.expressions;
+            //子节点
             for(let i=0;i<this.children.length;i++){
                 if(!this.children[i]){
                     this.children.splice(i--,1);

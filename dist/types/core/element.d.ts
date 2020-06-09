@@ -108,10 +108,14 @@ declare namespace nodom {
          */
         finded: boolean;
         /**
-         * 额外数据
+         * 扩展数据，渲染时和绑定数据合并
          * @param tag
          */
         extraData: object;
+        /**
+         * 暂存数据，不纳入渲染流程
+         */
+        tmpData: object;
         /**
          * 自定义element类型名
          */

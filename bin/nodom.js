@@ -941,12 +941,13 @@ var nodom;
         }
         clone() {
             let dst = new Element();
+            let notCopyProps = ['directives', 'props', 'exprProps', 'events'];
             nodom.Util.getOwnProps(this).forEach((p) => {
-                if (typeof this[p] !== 'object') {
-                    dst[p] = this[p];
+                if (notCopyProps.includes(p)) {
+                    return;
                 }
+                dst[p] = this[p];
             });
-            dst['extraData'] = this['extraData'];
             for (let d of this.directives) {
                 dst.directives.push(d);
             }
@@ -959,7 +960,6 @@ var nodom;
             nodom.Util.getOwnProps(this.events).forEach((k) => {
                 dst.events[k] = this.events[k].clone();
             });
-            dst.expressions = this.expressions;
             for (let i = 0; i < this.children.length; i++) {
                 if (!this.children[i]) {
                     this.children.splice(i--, 1);
