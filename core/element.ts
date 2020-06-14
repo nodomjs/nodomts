@@ -89,8 +89,9 @@ namespace nodom {
 		exprProps:object = {};
 		/**
 		 * 事件集合,{eventName1:nodomEvent1,...}
+         * 一个事件名，可以绑定多个事件对象
 		 */
-		events:object={};
+		events:Map<string,NodomEvent|NodomEvent[]> = new Map();
 
 		/**
 		 * 表达式集合
@@ -367,10 +368,11 @@ namespace nodom {
                 dst[p] = this[p];
             });
 
-            //指令
+            //指令复制
             for(let d of this.directives){
-				dst.directives.push(d);
-			}
+                dst.directives.push(d);
+            }
+            
 			//普通属性
             Util.getOwnProps(this.props).forEach((k)=>{
 				dst.props[k] = this.props[k];
@@ -382,9 +384,20 @@ namespace nodom {
 		    });
 
             //事件
-            Util.getOwnProps(this.events).forEach((k)=>{
-                dst.events[k] = this.events[k].clone();
-            });
+            for(let key of this.events.keys()){
+                let evt = this.events.get(key);
+                //数组需要单独clone
+                if(Util.isArray(evt)){
+                    let a:NodomEvent[] = [];
+                    for(let e of <NodomEvent[]>evt){
+                        a.push(e.clone());
+                    }
+                    dst.events.set(key,a);
+                }else{
+                    dst.events.set(key,(<NodomEvent>evt).clone());
+                }
+            }
+                
             
             //子节点
             for(let i=0;i<this.children.length;i++){
@@ -405,9 +418,8 @@ namespace nodom {
             if (this.dontRender) {
                 return false;
             }
-            const dirs = this.directives;
-            for (let i = 0; i < dirs.length && !this.dontRender; i++) {
-                DirectiveManager.exec(dirs[i], this, module, parent);
+            for(let d of this.directives.values()){
+                DirectiveManager.exec(d, this, module, parent);
             }
             return true;
         }
@@ -475,31 +487,53 @@ namespace nodom {
          * @param parent    父virtual dom
          * @param parentEl  父html element
          */
-        handleEvents(module, el, parent, parentEl) {
-            if (Util.isEmpty(this.events)) {
+        handleEvents(module:Module,el:Node,parent:Element,parentEl?:Node) {
+            if (this.events.size === 0) {
                 return;
             }
-            Util.getOwnProps(this.events).forEach((k) => {
-                let ev:NodomEvent = this.events[k];
-                if (ev.delg && parent) { //代理到父对象
-                    ev.delegateTo(module, this, el, parent, parentEl);
-                } else {
-                    ev.bind(module, this, el);
+            for(let evt of this.events.values()){
+                if(Util.isArray(evt)){
+                    for(let evo of <NodomEvent[]>evt){
+                        bind(evo,module,this,el,parent,parentEl);    
+                    }
+                }else{
+                    let ev:NodomEvent = <NodomEvent>evt;
+                    bind(ev,module,this,el,parent,parentEl);
                 }
-            });
+            }
+
+            /**
+             * 绑定事件
+             * @param e         event object 
+             * @param module    module
+             * @param dom       绑定的虚拟dom
+             * @param el        绑定的html element
+             * @param parent    父虚拟dom
+             * @param parentEl  父html element
+             */
+            function bind(e:NodomEvent,module:Module,dom:Element,el:Node,parent:Element,parentEl?:Node){
+                if (e.delg && parent) { //代理到父对象
+                    e.delegateTo(module, dom, <HTMLElement>el, parent, <HTMLElement>parentEl);
+                } else {
+                    e.bind(module, dom, <HTMLElement>el);
+                }
+            }
         }
 
         /**
          * 移除指令
          * @param directives 	待删除的指令集
          */
-        removeDirectives(delDirectives) {
-            
-            for (let i = this.directives.length - 1; i >= 0; i--) {
-                let d = this.directives[i];
-                for (let j = 0; j < delDirectives.length; j++) {
-                    if (d.type === delDirectives[j]) {
-                        this.directives.splice(i, 1);
+        removeDirectives(directives:string[]) {
+            for(let i=0;i<this.directives.length;i++){
+                if(directives.length === 0){
+                    break;   
+                }
+                for(let j=0;j<directives.length;j++){
+                    if(directives[j].includes(this.directives[i].type)){
+                        this.directives.splice(i--,1);
+                        directives.splice(j--,1);
+                        break;
                     }
                 }
             }
@@ -511,12 +545,7 @@ namespace nodom {
          * @return true/false
          */
         hasDirective(directiveType):boolean {
-            for (let i = 0; i < this.directives.length; i++) {
-                if (this.directives[i].type === directiveType) {
-                    return true;
-                }
-            }
-            return false;
+            return this.directives.find(item=>item.type === directiveType) !== undefined;
         }
 
         /**
@@ -524,13 +553,8 @@ namespace nodom {
          * @param directiveType 	指令类型名
          * @return directive
          */
-        getDirective(directiveType) {
-            
-            for (let i = 0; i < this.directives.length; i++) {
-                if (this.directives[i].type === directiveType) {
-                    return this.directives[i];
-                }
-            }
+        getDirective(directiveType):Directive {
+            return this.directives.find(item=>item.type === directiveType);
         }
 
         /**
@@ -810,6 +834,46 @@ namespace nodom {
                         });
                     }
                 }
+            }
+        }
+
+        /**
+         * 添加事件
+         * @param event         事件对象
+         */
+        addEvent(event:NodomEvent){
+            //如果已经存在，则改为event数组，即同名event可以多个执行方法
+            if(this.events.has(event.name)){
+                let ev = this.events.get(event.name);
+                let evs:NodomEvent[];
+                if(Util.isArray(ev)){
+                    evs = <NodomEvent[]>ev;
+                }else{
+                    evs = [<NodomEvent>ev];
+                }
+                evs.push(event);
+                this.events.set(event.name,evs);
+            }else{
+                this.events.set(event.name,event);
+            }
+        }
+
+        /**
+         * 添加指令
+         * @param directive     指令对象
+         */
+        addDirective(directive:Directive){
+            let finded:boolean = false;
+            for(let i=0;i<this.directives.length;i++){
+                //如果存在相同类型，则直接替换
+                if(this.directives[i].type === directive.type){
+                    this.directives[i] = directive;
+                    finded = true;
+                    break;
+                }
+            }
+            if(!finded){
+                this.directives.push(directive);
             }
         }
     }

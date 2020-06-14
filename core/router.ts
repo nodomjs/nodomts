@@ -703,17 +703,15 @@ namespace nodom {
                 dom.props['path'] =  value;
             }
             //添加click事件
-            let method = '$nodomGenMethod' + Util.genId();
-            module.methodFactory.add(method,
-               async (e, module, view,dom) => {
+            dom.addEvent(new NodomEvent('click', '', 
+                async (dom,model,module,e) => {
                     let path:string = dom.props['path'];
                     if (Util.isEmpty(path)) {
                         return;
                     }
                     Router.addPath(path);
                 }
-            );
-            dom.events['click'] = new NodomEvent('click', method);
+            ));
         },
 
         handle: (directive:Directive, dom:Element, module:Module, parent:Element) => {

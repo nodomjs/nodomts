@@ -6,7 +6,7 @@ field指令，设置value为表达式时异常
 
 2020-5-18
 编译指令
-tsc --outFile nodom.js ./core/nodom.ts ./core/util.ts ./core/application.ts ./core/factory.ts ./core/compiler.ts ./core/directive.ts ./core/directivefactory.ts ./core/directivemanager.ts ./core/element.ts ./core/expression.ts ./core/expressionfactory.ts ./core/filter.ts ./core/filterfactory.ts ./core/filtermanager.ts ./core/linker.ts ./core/messagequeue.ts ./core/methodfactory.ts ./core/model.ts ./core/modelfactory.ts ./core/module.ts ./core/modulefactory.ts ./core/nodomerror.ts ./core/nodomevent.ts ./core/renderer.ts ./core/router.ts ./core/scheduler.ts ./core/serializer.ts ./core/extend/directiveinit.ts ./core/extend/filterinit.ts ./core/locales/msg_zh.ts
+
 
 2020-05-15
 开始插件组
@@ -23,3 +23,20 @@ tsc --outFile nodom.js ./core/nodom.ts ./core/util.ts ./core/application.ts ./co
 10、subgrid
 11、combolist
 12、combotree
+
+
+2020-06-11
+expression 表达式默认获取本级model数据，如果要获取根model数据，则需要在字段前加$$符号
+事件代理有错
+2020-06-12
+需要增加多个同名事件添加的问题
+需要增加onFirstBeforeRenderToHtml(首次虚拟dom渲染后，渲染到html之前) onBeforeRenderToHtml(虚拟dom渲染后，渲染到html之前)
+模块事件包括
+onBeforeFirstRender 首次渲染前
+onBeforeFirstRenderToHtml 首次渲染到html前，虚拟dom渲染后
+onFirstRender 首次渲染后
+
+事件对象接口参数
+dom,model,module,e。this指向事件对象nodomevent
+
+ 

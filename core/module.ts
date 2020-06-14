@@ -398,7 +398,7 @@ namespace nodom {
                     this.renderTree = root;
                     //渲染
                     root.render(this, null);
-
+                    this.doModuleEvent('onBeforeRenderToHtml');
                     // 比较节点
                     root.compare(oldTree, this.renderDoms);
                     // 删除
@@ -409,6 +409,7 @@ namespace nodom {
                             this.renderDoms.splice(i, 1);
                         }
                     }
+
                     // 渲染
                     this.renderDoms.forEach((item) => {
                         item.node.renderToHtml(this, item);
@@ -447,6 +448,7 @@ namespace nodom {
             }
 
             root.render(this, null);
+            this.doModuleEvent('onBeforeFirstRenderToHTML');
             //渲染到html
             if (root.children) {
                 root.children.forEach((item) => {

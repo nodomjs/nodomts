@@ -268,7 +268,10 @@ var nodom;
                     if (dataObj.hasOwnProperty(field)) {
                         return dataObj[field];
                     }
-                    return module.model.query(field);
+                    //$开头，则从根开始找
+                    if (field.startsWith('$$')) {
+                        return module.model.query(field.substr(2));
+                    }
                 }
             }
             /**

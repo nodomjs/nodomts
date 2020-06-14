@@ -99,7 +99,7 @@ namespace nodom {
                     oe.directives.push(new Directive(attr.name.substr(2), v, oe, el));
                 } else if (attr.name.startsWith('e-')) { //事件
                     let en = attr.name.substr(2);
-                    oe.events[en] = new NodomEvent(en, attr.value.trim());
+                    oe.addEvent(new NodomEvent(en, attr.value.trim()));
                 } else {
                     let isExpr:boolean = false;
                     if (v !== '') {

@@ -24,7 +24,7 @@ declare namespace nodom {
         /**
          * 事件处理函数名(需要在模块methods中定义)
          */
-        handler: string;
+        handler: string | Function;
         /**
          * 代理到父对象
          */
@@ -64,8 +64,9 @@ declare namespace nodom {
         /**
          * @param eventName     事件名
          * @param eventStr      事件串,以“:”分割,中间不能有空格,结构为: 方法名[:delg(代理到父对象):nopopo(禁止冒泡):once(只执行一次):capture(useCapture)]
+         * @param handler       事件执行函数，如果方法不在module methods中定义，则可以直接申明，eventStr第一个参数失效，即eventStr可以是":delg:nopopo..."
          */
-        constructor(eventName: string, eventStr?: string);
+        constructor(eventName: string, eventStr?: string, handler?: Function);
         /**
          * 事件触发
          * @param e     事件
@@ -77,8 +78,7 @@ declare namespace nodom {
          * 绑定事件
          * @param module    模块
          * @param dom       虚拟dom
-         * @param el        element
-         
+         * @param el        html element
          */
         bind(module: Module, dom: Element, el: HTMLElement): void;
         /**
@@ -95,12 +95,12 @@ declare namespace nodom {
          * 添加子事件
          * @param ev    事件
          */
-        addSubEvt(ev: any): void;
+        addChild(ev: any): void;
         /**
          * 移除子事件
          * @param ev    子事件
          */
-        removeSubEvt(ev: any): void;
+        removeChild(ev: any): void;
         clone(): NodomEvent;
     }
     /****************扩展事件*********************/

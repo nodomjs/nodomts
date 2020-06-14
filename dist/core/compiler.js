@@ -97,7 +97,7 @@ var nodom;
                 }
                 else if (attr.name.startsWith('e-')) { //事件
                     let en = attr.name.substr(2);
-                    oe.events[en] = new nodom.NodomEvent(en, attr.value.trim());
+                    oe.addEvent(new nodom.NodomEvent(en, attr.value.trim()));
                 }
                 else {
                     let isExpr = false;

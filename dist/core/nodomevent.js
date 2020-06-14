@@ -17,8 +17,9 @@ var nodom;
         /**
          * @param eventName     事件名
          * @param eventStr      事件串,以“:”分割,中间不能有空格,结构为: 方法名[:delg(代理到父对象):nopopo(禁止冒泡):once(只执行一次):capture(useCapture)]
+         * @param handler       事件执行函数，如果方法不在module methods中定义，则可以直接申明，eventStr第一个参数失效，即eventStr可以是":delg:nopopo..."
          */
-        constructor(eventName, eventStr) {
+        constructor(eventName, eventStr, handler) {
             this.name = eventName;
             //如果事件串不为空，则不需要处理
             if (eventStr) {
@@ -44,6 +45,10 @@ var nodom;
                         }
                     }
                 });
+            }
+            //新增事件方法（不在methods中定义）
+            if (handler) {
+                this.handler = handler;
             }
             //设备类型  1:触屏，2:非触屏	
             let dtype = 'ontouchend' in document ? 1 : 2;
@@ -95,22 +100,25 @@ var nodom;
             if (!dom) {
                 dom = module.renderTree.query(this.domKey);
             }
-            if (!el) {
-                el = module.container.querySelector("[key='" + this.domKey + "']");
-            }
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
-                handleSelf(this, e, model, module, el, dom);
-                handleDelg(this, e, model, module, el, dom);
+                handleSelf(this, e, model, module, dom);
+                handleDelg(this, e, dom);
             }
             else {
-                if (handleDelg(this, e, model, module, el, dom)) {
-                    handleSelf(this, e, model, module, el, dom);
+                if (handleDelg(this, e, dom)) {
+                    handleSelf(this, e, model, module, dom);
                 }
             }
             //判断是否清除事件
-            if (this.events !== undefined && this.events[this.name].length === 0 && this.handler === undefined) {
+            if (this.events !== undefined &&
+                this.events.has(this.name) &&
+                this.events.get(this.name).length === 0 &&
+                this.handler === undefined) {
+                if (!el) {
+                    el = module.container.querySelector("[key='" + this.domKey + "']");
+                }
                 if (ExternalEvent.touches[this.name]) {
                     ExternalEvent.unregist(this, el);
                 }
@@ -122,28 +130,30 @@ var nodom;
             }
             /**
              * 处理自有事件
-             * @param eobj      nodom event对象
+             * @param eObj      nodom event对象
              * @param e         事件
-             * @param model     模型
-             * @param module    模块
-             * @param el        事件element
+             * @param dom       虚拟dom
+             * @returns         true 允许冒泡 false 禁止冒泡
              */
-            function handleDelg(eObj, e, model, module, el, dom) {
+            function handleDelg(eObj, e, dom) {
                 //代理事件执行
                 if (eObj.events === undefined) {
                     return true;
                 }
-                let arr = eObj.events[eObj.name];
+                //事件target对应的key
+                let eKey = e.target.getAttribute('key');
+                let arr = eObj.events.get(eObj.name);
                 if (nodom.Util.isArray(arr)) {
                     if (arr.length > 0) {
                         for (let i = 0; i < arr.length; i++) {
+                            let sdom = dom.query(arr[i].domKey);
                             // 找到对应的子事件执行
-                            if (arr[i].el && arr[i].el.contains(e.target)) {
+                            if (eKey === sdom.key || sdom.query(eKey)) {
                                 //执行
                                 arr[i].fire(e);
                                 //执行一次，需要移除
                                 if (arr[i].once) {
-                                    eObj.removeSubEvt(arr[i]);
+                                    eObj.removeChild(arr[i]);
                                 }
                                 //禁止冒泡
                                 if (arr[i].nopopo) {
@@ -164,21 +174,24 @@ var nodom;
              * @param e         事件
              * @param model     模型
              * @param module    模块
-             * @param el        事件element
+             * @param dom       虚拟dom
              */
-            function handleSelf(eObj, e, model, module, el, dom) {
-                let foo = module.methodFactory.get(eObj.handler);
+            function handleSelf(eObj, e, model, module, dom) {
+                if (typeof eObj.handler === 'string') {
+                    eObj.handler = module.methodFactory.get(eObj.handler);
+                }
+                if (!eObj.handler) {
+                    return;
+                }
                 //自有事件
-                if (nodom.Util.isFunction(foo)) {
-                    //禁止冒泡
-                    if (eObj.nopopo) {
-                        e.stopPropagation();
-                    }
-                    nodom.Util.apply(foo, model, [e, module, el, dom]);
-                    //事件只执行一次，则删除handler
-                    if (eObj.once) {
-                        delete eObj.handler;
-                    }
+                //禁止冒泡
+                if (eObj.nopopo) {
+                    e.stopPropagation();
+                }
+                nodom.Util.apply(eObj.handler, eObj, [dom, model, module, e]);
+                //事件只执行一次，则删除handler
+                if (eObj.once) {
+                    delete eObj.handler;
                 }
             }
         }
@@ -186,8 +199,7 @@ var nodom;
          * 绑定事件
          * @param module    模块
          * @param dom       虚拟dom
-         * @param el        element
-         
+         * @param el        html element
          */
         bind(module, dom, el) {
             this.moduleName = module.name;
@@ -220,19 +232,29 @@ var nodom;
                 parentEl = document.body;
             }
             //父节点如果没有这个事件，则新建，否则直接指向父节点相应事件
-            if (!parent.events.hasOwnProperty(this.name)) {
+            if (!parent.events.has(this.name)) {
                 let ev = new NodomEvent(this.name);
                 ev.bind(module, parent, parentEl);
-                parent.events[this.name] = ev;
+                parent.events.set(this.name, ev);
             }
-            //添加子事件
-            parent.events[this.name].addSubEvt(this);
+            //为父对象事件添加子事件
+            let evt = parent.events.get(this.name);
+            let ev;
+            if (nodom.Util.isArray(evt) && evt.length > 0) {
+                ev = evt[0];
+            }
+            else {
+                ev = evt;
+            }
+            if (ev) {
+                ev.addChild(this);
+            }
         }
         /**
          * 添加子事件
          * @param ev    事件
          */
-        addSubEvt(ev) {
+        addChild(ev) {
             if (!this.events) {
                 this.events = new Map();
             }
@@ -246,7 +268,7 @@ var nodom;
          * 移除子事件
          * @param ev    子事件
          */
-        removeSubEvt(ev) {
+        removeChild(ev) {
             if (this.events === undefined || this.events[ev.name] === undefined) {
                 return;
             }
@@ -260,7 +282,7 @@ var nodom;
         }
         clone() {
             let evt = new NodomEvent(this.name);
-            let arr = ['delg', 'once', 'nopopo', 'useCapture', 'handler', 'handleEvent', 'module'];
+            let arr = ['delg', 'once', 'nopopo', 'capture', 'handler', 'handleEvent', 'module'];
             arr.forEach((item) => {
                 evt[item] = this[item];
             });

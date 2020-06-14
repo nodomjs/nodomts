@@ -606,15 +606,13 @@ var nodom;
                 dom.props['path'] = value;
             }
             //添加click事件
-            let method = '$nodomGenMethod' + nodom.Util.genId();
-            module.methodFactory.add(method, (e, module, view, dom) => __awaiter(this, void 0, void 0, function* () {
+            dom.addEvent(new nodom.NodomEvent('click', '', (dom, model, module, e) => __awaiter(this, void 0, void 0, function* () {
                 let path = dom.props['path'];
                 if (nodom.Util.isEmpty(path)) {
                     return;
                 }
                 Router.addPath(path);
-            }));
-            dom.events['click'] = new nodom.NodomEvent('click', method);
+            })));
         },
         handle: (directive, dom, module, parent) => {
             if (dom.props.hasOwnProperty('active')) {

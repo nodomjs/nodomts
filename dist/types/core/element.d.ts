@@ -77,8 +77,9 @@ declare namespace nodom {
         exprProps: object;
         /**
          * 事件集合,{eventName1:nodomEvent1,...}
+         * 一个事件名，可以绑定多个事件对象
          */
-        events: object;
+        events: Map<string, NodomEvent | NodomEvent[]>;
         /**
          * 表达式集合
          */
@@ -166,12 +167,12 @@ declare namespace nodom {
          * @param parent    父virtual dom
          * @param parentEl  父html element
          */
-        handleEvents(module: any, el: any, parent: any, parentEl: any): void;
+        handleEvents(module: Module, el: Node, parent: Element, parentEl?: Node): void;
         /**
          * 移除指令
          * @param directives 	待删除的指令集
          */
-        removeDirectives(delDirectives: any): void;
+        removeDirectives(directives: string[]): void;
         /**
          * 是否有某个类型的指令
          * @param directiveType 	指令类型名
@@ -242,5 +243,15 @@ declare namespace nodom {
          * 			changeProps:改变属性,[{k:prop1,v:value1},...],removeProps:删除属性,[prop1,prop2,...]}
          */
         compare(dst: Element, retArr: Array<ChangedDom>, parentNode?: Element): void;
+        /**
+         * 添加事件
+         * @param event         事件对象
+         */
+        addEvent(event: NodomEvent): void;
+        /**
+         * 添加指令
+         * @param directive     指令对象
+         */
+        addDirective(directive: Directive): void;
     }
 }
