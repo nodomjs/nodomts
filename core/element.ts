@@ -76,14 +76,20 @@ namespace nodom {
 		/**
 		 * 指令集
 		 */
-		directives:Array<Directive> = [];
+        directives:Array<Directive> = [];
+        
+        /**
+         * 直接属性 不是来自于attribute，而是直接作用于html element，如el.checked,el.value等
+         */
+        asserts:Map<string,any> = new Map();
+
 		/**
-		 * 属性集合
+		 * 属性集合，来源于attribute
          * {prop1:value1,...}
 		 */
 		props:object = {};
 		/**
-		 * 含表达式的属性集合
+		 * 含表达式的属性集合，来源于property
          * {prop1:value1,...}
 		 */
 		exprProps:object = {};
@@ -231,6 +237,7 @@ namespace nodom {
             if (!el) {
                 return;
             }
+            this.handleAsserts(el);
             switch (type) {
             case 'fresh': //首次渲染
                 if (this.tagName) {
@@ -314,6 +321,7 @@ namespace nodom {
                 
                 el.setAttribute('key', vdom.key);
                 vdom.handleEvents(module, el, parent, parentEl);
+                vdom.handleAsserts(el);
                 return el;
             }
 
@@ -359,7 +367,7 @@ namespace nodom {
         clone():Element{
             let dst:Element = new Element();
             //不直接拷贝属性集
-            let notCopyProps:string[] = ['parent','directives','props','exprProps','events','children'];
+            let notCopyProps:string[] = ['parent','directives','asserts','props','exprProps','events','children'];
             //简单属性
 			Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
@@ -371,6 +379,12 @@ namespace nodom {
             //指令复制
             for(let d of this.directives){
                 dst.directives.push(d);
+            }
+
+            //asserts
+            //指令复制
+            for(let key of this.asserts.keys()){
+                dst.asserts.set(key,this.asserts.get(key));
             }
             
 			//普通属性
@@ -468,6 +482,18 @@ namespace nodom {
             });
         }
 
+        /**
+         * 处理assert，在渲染到html时执行
+         * @param el    dom对应的html element
+         */
+        handleAsserts(el:HTMLElement){
+            if(!this.tagName && !el){
+                return;
+            }
+            for(let key of this.asserts.keys()){
+                el[key] = this.asserts.get(key);
+            }
+        }
         /**
          * 处理文本（表达式）
          */

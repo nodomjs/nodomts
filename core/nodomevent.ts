@@ -154,11 +154,11 @@ namespace nodom {
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
-                handleSelf(this,e, model, module, dom);
+                handleSelf(this,e, model, module, dom, el);
                 handleDelg(this,e,dom);
             } else {
                 if (handleDelg(this,e,dom)) {
-                    handleSelf(this,e, model, module, dom);
+                    handleSelf(this,e, model, module, dom, el);
                 }
             }
             
@@ -228,7 +228,7 @@ namespace nodom {
              * @param module    模块
              * @param dom       虚拟dom
              */
-            function handleSelf(eObj:NodomEvent,e:Event, model:Model, module:Module, dom:Element) {
+            function handleSelf(eObj:NodomEvent,e:Event, model:Model, module:Module, dom:Element,el?:HTMLElement) {
                 if(typeof eObj.handler === 'string'){
                     eObj.handler = module.methodFactory.get(eObj.handler);
                 } 
@@ -240,7 +240,7 @@ namespace nodom {
                 if (eObj.nopopo) {
                     e.stopPropagation();
                 }
-                Util.apply(<Function>eObj.handler, eObj, [dom,model,module,e]);
+                Util.apply(<Function>eObj.handler, eObj, [dom,model,module,e,el]);
                 //事件只执行一次，则删除handler
                 if (eObj.once) {
                     delete eObj.handler;
