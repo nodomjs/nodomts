@@ -1393,14 +1393,12 @@ var nodom;
                         r = this.judgeAndHandleFunc(arrOperator, arrOperand, opr);
                         if (r !== undefined) {
                             if (r.startsWith('$module')) {
-                                retStr = r + retStr.substr(1);
+                                opd = '';
                             }
-                            else if (opr !== '') {
-                                if (!this.addField(opr)) {
-                                    opr = this.recoveryString(opr);
-                                }
-                                retStr = r + opd + opr + retStr;
+                            if (opr !== '' && !this.addField(opr)) {
+                                opr = this.recoveryString(opr);
                             }
+                            retStr = r + opd + opr + retStr;
                             if (arrOperand.length > 0) {
                                 retStr = arrOperand.pop() + retStr;
                             }
@@ -1448,7 +1446,7 @@ var nodom;
                 if (sp && sp !== '') {
                     arrOperator.pop();
                     if (sp.startsWith('$')) {
-                        return '$module.methodFactory.get("' + sp.substr(1) + '").apply($module)';
+                        return '$module.methodFactory.get("' + sp.substr(1) + '").call($module,';
                     }
                     else {
                         return sp;

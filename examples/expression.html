@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>filter</title>
+    <!-- <script type="text/javascript" src="../js/require.js"></script> -->
+    <script type="text/javascript" src="../bin/nodom.js"></script>
+
+    <style>
+        
+    </style>
+</head>
+
+<body>
+    <div class="view">
+        <div>价格：{{(Math.round((price * discount)))|currency + 'hello'}}</div>
+        <div>折扣：{{$cacDis(price*discount)}}</div>
+        <div>描述：{{30 +$addStr('hello' + desc) + 20}}</div>
+    </div>
+</body>
+<script>
+    
+    nodom.newApp({
+        module:{
+            el: '.view',
+            data: {
+                price: 236.83,
+                discount:0.12,
+                desc:'world'
+            },
+            methods: {
+                cacDis:(data)=>{
+                    console.log(data);
+                    return data*10;
+                },
+                addStr:(data)=>{
+                    return data;
+                }
+            }
+        }
+    });
+    
+</script>
+
+</html>
