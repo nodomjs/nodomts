@@ -90,6 +90,7 @@ var nodom;
          * 为对象添加setter
          */
         addSetterGetter(data) {
+            const excludes = ['$modelId'];
             if (nodom.Util.isObject(data)) {
                 nodom.Util.getOwnProps(data).forEach((p) => {
                     let v = data[p];
@@ -98,7 +99,9 @@ var nodom;
                     }
                     else {
                         this.update(p, v);
-                        this.defineProp(data, p);
+                        if (!excludes.includes(p)) {
+                            this.defineProp(data, p);
+                        }
                     }
                 });
             }

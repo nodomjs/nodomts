@@ -5,20 +5,11 @@ namespace nodom{
      */
     export interface IDefineElement{
         /**
-         * 虚拟dom
-         */
-        dom?:Element;
-        /**
-         * tag name
-         */
-        tagName:string;
-        /**
          * 编译方法
          */
         init:Function;
-
         /**
-         * 前置方法
+         * 前置渲染方法
          */
         afterRender?:Function;
         /**
@@ -33,21 +24,22 @@ namespace nodom{
     export class DefineElementManager{
         static elementMap:Map<string,IDefineElement> = new Map();
         /**
-         * 添加自定义元素
-         * @param cfg 
+         * 添加自定义元素类
+         * @param name  元素名
+         * @param cfg   元素类
          */
-        static add(cfg:IDefineElement){
-            if(this.elementMap.has(cfg.tagName)){
-                throw new NodomError('exist1',TipWords.element,cfg.tagName);
+        static add(name:string,cfg:any){
+            if(this.elementMap.has(name)){
+                throw new NodomError('exist1',TipWords.element,name);
             }
-            this.elementMap.set(cfg.tagName,cfg);
+            this.elementMap.set(name,cfg);
         }
 
         /**
-         * 获取自定义元素
+         * 获取自定义元素类
          * @param tagName 元素名
          */
-        static get(tagName:string):IDefineElement{
+        static get(tagName:string):any{
             return this.elementMap.get(tagName);
         }
 
@@ -57,7 +49,7 @@ namespace nodom{
          * @param dom       虚拟dom
          */
         static beforeRender(module:Module,dom:Element){
-            let de:IDefineElement = this.get(dom.defineType);
+            let de:IDefineElement = dom.defineElement;
             if(de && de.beforeRender){
                 de.beforeRender(module,dom);
             }
@@ -69,7 +61,7 @@ namespace nodom{
          * @param dom       虚拟dom
          */
         static afterRender(module:Module,dom:Element){
-            let de:IDefineElement = this.get(dom.defineType);
+            let de:IDefineElement = dom.defineElement;
             if(de && de.afterRender){
                 de.afterRender(module,dom);
             }

@@ -66,12 +66,16 @@ declare namespace nodom {
          */
         directives: Array<Directive>;
         /**
-         * 属性集合
+         * 直接属性 不是来自于attribute，而是直接作用于html element，如el.checked,el.value等
+         */
+        assets: Map<string, any>;
+        /**
+         * 属性集合，来源于attribute
          * {prop1:value1,...}
          */
         props: object;
         /**
-         * 含表达式的属性集合
+         * 含表达式的属性集合，来源于property
          * {prop1:value1,...}
          */
         exprProps: object;
@@ -118,9 +122,9 @@ declare namespace nodom {
          */
         tmpData: object;
         /**
-         * 自定义element类型名
+         * 自定义element对象
          */
-        defineType: string;
+        defineElement: IDefineElement;
         /**
          * @param tag 标签名
          */
@@ -156,6 +160,11 @@ declare namespace nodom {
          * 处理属性（带表达式）
          */
         handleProps(module: any): void;
+        /**
+         * 处理asset，在渲染到html时执行
+         * @param el    dom对应的html element
+         */
+        handleAssets(el: HTMLElement): void;
         /**
          * 处理文本（表达式）
          */

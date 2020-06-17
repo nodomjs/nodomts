@@ -108,6 +108,7 @@ namespace nodom {
          * 为对象添加setter
          */
         addSetterGetter(data:any) {
+            const excludes = ['$modelId'];
             if (Util.isObject(data)) {
                 Util.getOwnProps(data).forEach((p)=>{
                     let v = data[p];
@@ -115,7 +116,9 @@ namespace nodom {
                         new Model(v, ModuleFactory.get(this.moduleName));
                     } else {
                         this.update(p, v);
-                        this.defineProp(data, p);
+                        if(!excludes.includes(p)){
+                            this.defineProp(data, p);
+                        }
                     }
                 });
             } else if (Util.isArray(data)) {

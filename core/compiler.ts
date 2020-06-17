@@ -77,11 +77,11 @@ namespace nodom {
          * @returns  如果识别自定义el，则返回true
          */
         static handleDefineEl(el:HTMLElement):Element{
-            let de:IDefineElement = DefineElementManager.get(el.tagName);
+            let de:any = DefineElementManager.get(el.tagName);
             if(!de){
                 return;
             }
-            return de.init(el);
+            return Reflect.construct(de,[]).init(el);
         }
 
         /**

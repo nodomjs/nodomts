@@ -39,4 +39,6 @@ onFirstRender 首次渲染后
 事件对象接口参数
 dom,model,module,e。this指向事件对象nodomevent
 
+2020-06-15
+element构造器是否对自定义元素进行处理
  

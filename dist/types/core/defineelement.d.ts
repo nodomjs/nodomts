@@ -5,19 +5,11 @@ declare namespace nodom {
      */
     interface IDefineElement {
         /**
-         * 虚拟dom
-         */
-        dom?: Element;
-        /**
-         * tag name
-         */
-        tagName: string;
-        /**
          * 编译方法
          */
         init: Function;
         /**
-         * 前置方法
+         * 前置渲染方法
          */
         afterRender?: Function;
         /**
@@ -31,15 +23,16 @@ declare namespace nodom {
     class DefineElementManager {
         static elementMap: Map<string, IDefineElement>;
         /**
-         * 添加自定义元素
-         * @param cfg
+         * 添加自定义元素类
+         * @param name  元素名
+         * @param cfg   元素类
          */
-        static add(cfg: IDefineElement): void;
+        static add(name: string, cfg: any): void;
         /**
-         * 获取自定义元素
+         * 获取自定义元素类
          * @param tagName 元素名
          */
-        static get(tagName: string): IDefineElement;
+        static get(tagName: string): any;
         /**
          * 执行自定义元素前置渲染
          * @param module    模块

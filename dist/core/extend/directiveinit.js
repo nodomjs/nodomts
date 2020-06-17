@@ -276,6 +276,36 @@ var nodom;
     nodom.DirectiveManager.addType('field', {
         init: (directive, dom, el) => {
             dom.props['name'] = directive.value;
+            let eventName = dom.props['tagName'] === 'input' && ['text', 'checkbox', 'radio'].includes(dom.props['type']) ? 'input' : 'change';
+            dom.addEvent(new nodom.NodomEvent(eventName, '', function (dom, model, module, e, el) {
+                if (!el) {
+                    return;
+                }
+                let type = dom.props['type'];
+                let field = dom.getDirective('field').value;
+                let v = el.value;
+                //根据选中状态设置checkbox的value
+                if (type === 'checkbox') {
+                    if (dom.props['yes-value'] == v) {
+                        v = dom.props['no-value'];
+                    }
+                    else {
+                        v = dom.props['yes-value'];
+                    }
+                }
+                else if (type === 'radio') {
+                    if (!el.checked) {
+                        v = undefined;
+                    }
+                }
+                //修改字段值
+                model.data[field] = v;
+                //修改value值，该节点不重新渲染
+                if (type !== 'radio') {
+                    dom.props['value'] = v;
+                    el.value = v;
+                }
+            }));
         },
         handle: (directive, dom, module, parent) => {
             const type = dom.props['type'];
@@ -284,86 +314,32 @@ var nodom;
             const dataValue = model.data[directive.value];
             let value = dom.props['value'];
             if (type === 'radio') {
-                if (dataValue == value) {
-                    dom.props['checked'] = 'checked';
-                    setTimeout(() => {
-                        module.container.querySelector("[key='" + dom.key + "']").checked = true;
-                    }, 0);
+                if (dataValue + '' === value) {
+                    dom.assets.set('checked', true);
                 }
                 else {
-                    delete dom.props['checked'];
-                    setTimeout(() => {
-                        module.container.querySelector("[key='" + dom.key + "']").checked = false;
-                    }, 0);
+                    dom.assets.set('checked', false);
                 }
             }
             else if (type === 'checkbox') {
                 //设置状态和value
                 let yv = dom.props['yes-value'];
                 //当前值为yes-value
-                if (dataValue == yv) {
-                    dom.props['checked'] = 'checked';
+                if (dataValue + '' === yv) {
                     dom.props['value'] = yv;
-                    setTimeout(() => {
-                        module.container.querySelector("[key='" + dom.key + "']").checked = true;
-                    }, 0);
+                    dom.assets.set('checked', true);
                 }
                 else { //当前值为no-value
-                    delete dom.props['checked'];
                     dom.props['value'] = dom.props['no-value'];
-                    setTimeout(() => {
-                        module.container.querySelector("[key='" + dom.key + "']").checked = false;
-                    }, 0);
+                    dom.assets.set('checked', false);
                 }
             }
             else if (tgname === 'select') { //下拉框
                 dom.props['value'] = dataValue;
-                //option可能没生成，延迟赋值
-                setTimeout(() => {
-                    let inputEl = module.container.querySelector("[key='" + dom.key + "']");
-                    inputEl.value = dataValue;
-                }, 0);
+                dom.assets.set('value', dataValue);
             }
             else {
-                //value可能无法渲染，需要直接设置到input element
-                setTimeout(() => {
-                    let inputEl = module.container.querySelector("[key='" + dom.key + "']");
-                    inputEl.value = value;
-                }, 0);
-            }
-            if (!directive.extra) {
-                let eventName = tgname === 'input' && (type === 'text' || type === 'checkbox' || type === 'radio') ? 'input' : 'change';
-                //增加自定义方法
-                let method = '$nodomGenMethod' + nodom.Util.genId();
-                directive.extra = method;
-                module.methodFactory.add(method, function (e, module, view, dom) {
-                    let type = dom.props['type'];
-                    let field = dom.getDirective('field').value;
-                    let v = view.value;
-                    //根据选中状态设置checkbox的value
-                    if (type === 'checkbox') {
-                        if (dom.props['yes-value'] == v) {
-                            v = dom.props['no-value'];
-                        }
-                        else {
-                            v = dom.props['yes-value'];
-                        }
-                    }
-                    else if (type === 'radio') {
-                        if (!view.checked) {
-                            v = undefined;
-                        }
-                    }
-                    //修改字段值
-                    this.data[field] = v;
-                    //修改value值，该节点不重新渲染
-                    if (type !== 'radio') {
-                        dom.props['value'] = v;
-                        view.value = v;
-                    }
-                });
-                //追加事件
-                dom.events[eventName] = new nodom.NodomEvent(eventName, method);
+                dom.assets.set('value', value);
             }
         }
     });

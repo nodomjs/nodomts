@@ -33,12 +33,16 @@ var nodom;
              */
             this.directives = [];
             /**
-             * 属性集合
+             * 直接属性 不是来自于attribute，而是直接作用于html element，如el.checked,el.value等
+             */
+            this.assets = new Map();
+            /**
+             * 属性集合，来源于attribute
              * {prop1:value1,...}
              */
             this.props = {};
             /**
-             * 含表达式的属性集合
+             * 含表达式的属性集合，来源于property
              * {prop1:value1,...}
              */
             this.exprProps = {};
@@ -61,6 +65,13 @@ var nodom;
             this.dontRender = false;
             this.tagName = tag; //标签
             this.key = nodom.Util.genId() + '';
+            //自定义标签需要初始化
+            // if(tag){
+            //     let de:IDefineElement = DefineElementManager.get(tag);
+            //     if(de){
+            //         return de.init();
+            //     }
+            // }
         }
         /**
          * 渲染到virtualdom树
@@ -71,7 +82,7 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            if (this.defineType) {
+            if (this.defineElement) {
                 nodom.DefineElementManager.beforeRender(module, this);
             }
             // 设置父对象
@@ -115,7 +126,7 @@ var nodom;
                     i--;
                 }
             }
-            if (this.defineType) {
+            if (this.defineElement) {
                 nodom.DefineElementManager.afterRender(module, this);
             }
         }
@@ -146,6 +157,7 @@ var nodom;
             if (!el) {
                 return;
             }
+            this.handleAssets(el);
             switch (type) {
                 case 'fresh': //首次渲染
                     if (this.tagName) {
@@ -230,6 +242,7 @@ var nodom;
                 });
                 el.setAttribute('key', vdom.key);
                 vdom.handleEvents(module, el, parent, parentEl);
+                vdom.handleAssets(el);
                 return el;
             }
             /**
@@ -273,7 +286,7 @@ var nodom;
         clone() {
             let dst = new Element();
             //不直接拷贝属性集
-            let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
+            let notCopyProps = ['parent', 'directives', 'assets', 'props', 'exprProps', 'events', 'children'];
             //简单属性
             nodom.Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
@@ -284,6 +297,11 @@ var nodom;
             //指令复制
             for (let d of this.directives) {
                 dst.directives.push(d);
+            }
+            //assets
+            //指令复制
+            for (let key of this.assets.keys()) {
+                dst.assets.set(key, this.assets.get(key));
             }
             //普通属性
             nodom.Util.getOwnProps(this.props).forEach((k) => {
@@ -375,6 +393,18 @@ var nodom;
                     this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
                 }
             });
+        }
+        /**
+         * 处理asset，在渲染到html时执行
+         * @param el    dom对应的html element
+         */
+        handleAssets(el) {
+            if (!this.tagName && !el) {
+                return;
+            }
+            for (let key of this.assets.keys()) {
+                el[key] = this.assets.get(key);
+            }
         }
         /**
          * 处理文本（表达式）

@@ -611,7 +611,7 @@ var nodom;
             if (!de) {
                 return;
             }
-            return de.init(el);
+            return Reflect.construct(de, []).init(el);
         }
         static handleAttributes(oe, el) {
             for (let i = 0; i < el.attributes.length; i++) {
@@ -767,7 +767,7 @@ var nodom;
     class Element {
         constructor(tag) {
             this.directives = [];
-            this.asserts = new Map();
+            this.assets = new Map();
             this.props = {};
             this.exprProps = {};
             this.events = new Map();
@@ -781,7 +781,7 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            if (this.defineType) {
+            if (this.defineElement) {
                 nodom.DefineElementManager.beforeRender(module, this);
             }
             if (parent) {
@@ -817,7 +817,7 @@ var nodom;
                     i--;
                 }
             }
-            if (this.defineType) {
+            if (this.defineElement) {
                 nodom.DefineElementManager.afterRender(module, this);
             }
         }
@@ -840,7 +840,7 @@ var nodom;
             if (!el) {
                 return;
             }
-            this.handleAsserts(el);
+            this.handleAssets(el);
             switch (type) {
                 case 'fresh':
                     if (this.tagName) {
@@ -912,7 +912,7 @@ var nodom;
                 });
                 el.setAttribute('key', vdom.key);
                 vdom.handleEvents(module, el, parent, parentEl);
-                vdom.handleAsserts(el);
+                vdom.handleAssets(el);
                 return el;
             }
             function newText(text, dom) {
@@ -944,7 +944,7 @@ var nodom;
         }
         clone() {
             let dst = new Element();
-            let notCopyProps = ['parent', 'directives', 'asserts', 'props', 'exprProps', 'events', 'children'];
+            let notCopyProps = ['parent', 'directives', 'assets', 'props', 'exprProps', 'events', 'children'];
             nodom.Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
                     return;
@@ -954,8 +954,8 @@ var nodom;
             for (let d of this.directives) {
                 dst.directives.push(d);
             }
-            for (let key of this.asserts.keys()) {
-                dst.asserts.set(key, this.asserts.get(key));
+            for (let key of this.assets.keys()) {
+                dst.assets.set(key, this.assets.get(key));
             }
             nodom.Util.getOwnProps(this.props).forEach((k) => {
                 dst.props[k] = this.props[k];
@@ -1029,12 +1029,12 @@ var nodom;
                 }
             });
         }
-        handleAsserts(el) {
+        handleAssets(el) {
             if (!this.tagName && !el) {
                 return;
             }
-            for (let key of this.asserts.keys()) {
-                el[key] = this.asserts.get(key);
+            for (let key of this.assets.keys()) {
+                el[key] = this.assets.get(key);
             }
         }
         handleTextContent(module) {
@@ -1908,6 +1908,7 @@ var nodom;
             }
         }
         addSetterGetter(data) {
+            const excludes = ['$modelId'];
             if (nodom.Util.isObject(data)) {
                 nodom.Util.getOwnProps(data).forEach((p) => {
                     let v = data[p];
@@ -1916,7 +1917,9 @@ var nodom;
                     }
                     else {
                         this.update(p, v);
-                        this.defineProp(data, p);
+                        if (!excludes.includes(p)) {
+                            this.defineProp(data, p);
+                        }
                     }
                 });
             }
@@ -2443,28 +2446,34 @@ var nodom;
         constructor(eventName, eventStr, handler) {
             this.name = eventName;
             if (eventStr) {
-                eventStr.split(':').forEach((item, i) => {
-                    item = item.trim();
-                    if (i === 0) {
-                        this.handler = item;
-                    }
-                    else {
-                        switch (item) {
-                            case 'delg':
-                                this.delg = true;
-                                break;
-                            case 'nopopo':
-                                this.nopopo = true;
-                                break;
-                            case 'once':
-                                this.once = true;
-                                break;
-                            case 'capture':
-                                this.capture = true;
-                                break;
+                let tp = typeof eventStr;
+                if (tp === 'string') {
+                    eventStr.split(':').forEach((item, i) => {
+                        item = item.trim();
+                        if (i === 0) {
+                            this.handler = item;
                         }
-                    }
-                });
+                        else {
+                            switch (item) {
+                                case 'delg':
+                                    this.delg = true;
+                                    break;
+                                case 'nopopo':
+                                    this.nopopo = true;
+                                    break;
+                                case 'once':
+                                    this.once = true;
+                                    break;
+                                case 'capture':
+                                    this.capture = true;
+                                    break;
+                            }
+                        }
+                    });
+                }
+                else if (tp === 'function') {
+                    handler = eventStr;
+                }
             }
             if (handler) {
                 this.handler = handler;
@@ -3689,33 +3698,33 @@ var nodom;
             const type = dom.props['type'];
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
-            const dataValue = model.data[directive.value] + '';
+            const dataValue = model.data[directive.value];
             let value = dom.props['value'];
             if (type === 'radio') {
-                if (dataValue == value) {
-                    dom.asserts.set('checked', true);
+                if (dataValue + '' === value) {
+                    dom.assets.set('checked', true);
                 }
                 else {
-                    dom.asserts.set('checked', false);
+                    dom.assets.set('checked', false);
                 }
             }
             else if (type === 'checkbox') {
                 let yv = dom.props['yes-value'];
-                if (dataValue == yv) {
+                if (dataValue + '' === yv) {
                     dom.props['value'] = yv;
-                    dom.asserts.set('checked', true);
+                    dom.assets.set('checked', true);
                 }
                 else {
                     dom.props['value'] = dom.props['no-value'];
-                    dom.asserts.set('checked', false);
+                    dom.assets.set('checked', false);
                 }
             }
             else if (tgname === 'select') {
                 dom.props['value'] = dataValue;
-                dom.asserts.set('value', dataValue);
+                dom.assets.set('value', dataValue);
             }
             else {
-                dom.asserts.set('value', value);
+                dom.assets.set('value', value);
             }
         }
     });
@@ -4130,23 +4139,23 @@ var nodom;
 (function (nodom) {
     let DefineElementManager = (() => {
         class DefineElementManager {
-            static add(cfg) {
-                if (this.elementMap.has(cfg.tagName)) {
-                    throw new nodom.NodomError('exist1', nodom.TipWords.element, cfg.tagName);
+            static add(name, cfg) {
+                if (this.elementMap.has(name)) {
+                    throw new nodom.NodomError('exist1', nodom.TipWords.element, name);
                 }
-                this.elementMap.set(cfg.tagName, cfg);
+                this.elementMap.set(name, cfg);
             }
             static get(tagName) {
                 return this.elementMap.get(tagName);
             }
             static beforeRender(module, dom) {
-                let de = this.get(dom.defineType);
+                let de = dom.defineElement;
                 if (de && de.beforeRender) {
                     de.beforeRender(module, dom);
                 }
             }
             static afterRender(module, dom) {
-                let de = this.get(dom.defineType);
+                let de = dom.defineElement;
                 if (de && de.afterRender) {
                     de.afterRender(module, dom);
                 }

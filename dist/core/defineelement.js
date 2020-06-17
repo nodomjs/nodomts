@@ -7,17 +7,18 @@ var nodom;
     let DefineElementManager = /** @class */ (() => {
         class DefineElementManager {
             /**
-             * 添加自定义元素
-             * @param cfg
+             * 添加自定义元素类
+             * @param name  元素名
+             * @param cfg   元素类
              */
-            static add(cfg) {
-                if (this.elementMap.has(cfg.tagName)) {
-                    throw new nodom.NodomError('exist1', nodom.TipWords.element, cfg.tagName);
+            static add(name, cfg) {
+                if (this.elementMap.has(name)) {
+                    throw new nodom.NodomError('exist1', nodom.TipWords.element, name);
                 }
-                this.elementMap.set(cfg.tagName, cfg);
+                this.elementMap.set(name, cfg);
             }
             /**
-             * 获取自定义元素
+             * 获取自定义元素类
              * @param tagName 元素名
              */
             static get(tagName) {
@@ -29,7 +30,7 @@ var nodom;
              * @param dom       虚拟dom
              */
             static beforeRender(module, dom) {
-                let de = this.get(dom.defineType);
+                let de = dom.defineElement;
                 if (de && de.beforeRender) {
                     de.beforeRender(module, dom);
                 }
@@ -40,7 +41,7 @@ var nodom;
              * @param dom       虚拟dom
              */
             static afterRender(module, dom) {
-                let de = this.get(dom.defineType);
+                let de = dom.defineElement;
                 if (de && de.afterRender) {
                     de.afterRender(module, dom);
                 }

@@ -330,30 +330,30 @@ namespace nodom {
             const type:string = dom.props['type'];
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
-            const dataValue = model.data[directive.value] + '';
+            const dataValue = model.data[directive.value];
             let value = dom.props['value'];
             if (type === 'radio') {
-                if (dataValue == value) {
-                    dom.asserts.set('checked',true);
+                if (dataValue+'' === value) {
+                    dom.assets.set('checked',true);
                 } else {
-                    dom.asserts.set('checked',false);
+                    dom.assets.set('checked',false);
                 }
             } else if (type === 'checkbox') {
                 //设置状态和value
                 let yv = dom.props['yes-value'];
                 //当前值为yes-value
-                if (dataValue == yv) {
+                if (dataValue+'' === yv) {
                     dom.props['value'] = yv;
-                    dom.asserts.set('checked',true);
+                    dom.assets.set('checked',true);
                 } else { //当前值为no-value
                     dom.props['value'] = dom.props['no-value'];
-                    dom.asserts.set('checked',false);
+                    dom.assets.set('checked',false);
                 }
             } else if (tgname === 'select') { //下拉框
                 dom.props['value'] = dataValue;
-                dom.asserts.set('value',dataValue);
+                dom.assets.set('value',dataValue);
             }else{
-                dom.asserts.set('value',value);
+                dom.assets.set('value',value);
             }
         }    
     });

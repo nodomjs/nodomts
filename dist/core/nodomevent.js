@@ -16,35 +16,42 @@ var nodom;
     class NodomEvent {
         /**
          * @param eventName     事件名
-         * @param eventStr      事件串,以“:”分割,中间不能有空格,结构为: 方法名[:delg(代理到父对象):nopopo(禁止冒泡):once(只执行一次):capture(useCapture)]
+         * @param eventStr      事件串或事件处理函数,以“:”分割,中间不能有空格,结构为: 方法名[:delg(代理到父对象):nopopo(禁止冒泡):once(只执行一次):capture(useCapture)]
+         *                      如果为函数，则替代第三个参数
          * @param handler       事件执行函数，如果方法不在module methods中定义，则可以直接申明，eventStr第一个参数失效，即eventStr可以是":delg:nopopo..."
          */
         constructor(eventName, eventStr, handler) {
             this.name = eventName;
             //如果事件串不为空，则不需要处理
             if (eventStr) {
-                eventStr.split(':').forEach((item, i) => {
-                    item = item.trim();
-                    if (i === 0) { //事件方法
-                        this.handler = item;
-                    }
-                    else { //事件附加参数
-                        switch (item) {
-                            case 'delg':
-                                this.delg = true;
-                                break;
-                            case 'nopopo':
-                                this.nopopo = true;
-                                break;
-                            case 'once':
-                                this.once = true;
-                                break;
-                            case 'capture':
-                                this.capture = true;
-                                break;
+                let tp = typeof eventStr;
+                if (tp === 'string') {
+                    eventStr.split(':').forEach((item, i) => {
+                        item = item.trim();
+                        if (i === 0) { //事件方法
+                            this.handler = item;
                         }
-                    }
-                });
+                        else { //事件附加参数
+                            switch (item) {
+                                case 'delg':
+                                    this.delg = true;
+                                    break;
+                                case 'nopopo':
+                                    this.nopopo = true;
+                                    break;
+                                case 'once':
+                                    this.once = true;
+                                    break;
+                                case 'capture':
+                                    this.capture = true;
+                                    break;
+                            }
+                        }
+                    });
+                }
+                else if (tp === 'function') {
+                    handler = eventStr;
+                }
             }
             //新增事件方法（不在methods中定义）
             if (handler) {
@@ -103,12 +110,12 @@ var nodom;
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
-                handleSelf(this, e, model, module, dom);
+                handleSelf(this, e, model, module, dom, el);
                 handleDelg(this, e, dom);
             }
             else {
                 if (handleDelg(this, e, dom)) {
-                    handleSelf(this, e, model, module, dom);
+                    handleSelf(this, e, model, module, dom, el);
                 }
             }
             //判断是否清除事件
@@ -176,7 +183,7 @@ var nodom;
              * @param module    模块
              * @param dom       虚拟dom
              */
-            function handleSelf(eObj, e, model, module, dom) {
+            function handleSelf(eObj, e, model, module, dom, el) {
                 if (typeof eObj.handler === 'string') {
                     eObj.handler = module.methodFactory.get(eObj.handler);
                 }
@@ -188,7 +195,7 @@ var nodom;
                 if (eObj.nopopo) {
                     e.stopPropagation();
                 }
-                nodom.Util.apply(eObj.handler, eObj, [dom, model, module, e]);
+                nodom.Util.apply(eObj.handler, eObj, [dom, model, module, e, el]);
                 //事件只执行一次，则删除handler
                 if (eObj.once) {
                     delete eObj.handler;

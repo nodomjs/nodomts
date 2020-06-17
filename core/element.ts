@@ -81,7 +81,7 @@ namespace nodom {
         /**
          * 直接属性 不是来自于attribute，而是直接作用于html element，如el.checked,el.value等
          */
-        asserts:Map<string,any> = new Map();
+        assets:Map<string,any> = new Map();
 
 		/**
 		 * 属性集合，来源于attribute
@@ -142,15 +142,22 @@ namespace nodom {
         tmpData:object;
 
         /**
-         * 自定义element类型名
+         * 自定义element对象
          */
-        defineType:string;
+        defineElement:IDefineElement;
 		/**
 		 * @param tag 标签名
 		 */
         constructor(tag?:string) {
             this.tagName = tag; //标签
             this.key = Util.genId()+'';
+            //自定义标签需要初始化
+            // if(tag){
+            //     let de:IDefineElement = DefineElementManager.get(tag);
+            //     if(de){
+            //         return de.init();
+            //     }
+            // }
         }
 
         /**
@@ -162,7 +169,7 @@ namespace nodom {
             if(this.dontRender){
                 return;
             }
-            if(this.defineType){
+            if(this.defineElement){
                 DefineElementManager.beforeRender(module,this);
             }
             // 设置父对象
@@ -208,7 +215,7 @@ namespace nodom {
                 }
             }
 
-            if(this.defineType){
+            if(this.defineElement){
                 DefineElementManager.afterRender(module,this);
             }
         }
@@ -237,7 +244,7 @@ namespace nodom {
             if (!el) {
                 return;
             }
-            this.handleAsserts(el);
+            this.handleAssets(el);
             switch (type) {
             case 'fresh': //首次渲染
                 if (this.tagName) {
@@ -321,7 +328,7 @@ namespace nodom {
                 
                 el.setAttribute('key', vdom.key);
                 vdom.handleEvents(module, el, parent, parentEl);
-                vdom.handleAsserts(el);
+                vdom.handleAssets(el);
                 return el;
             }
 
@@ -367,7 +374,7 @@ namespace nodom {
         clone():Element{
             let dst:Element = new Element();
             //不直接拷贝属性集
-            let notCopyProps:string[] = ['parent','directives','asserts','props','exprProps','events','children'];
+            let notCopyProps:string[] = ['parent','directives','assets','props','exprProps','events','children'];
             //简单属性
 			Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
@@ -381,10 +388,10 @@ namespace nodom {
                 dst.directives.push(d);
             }
 
-            //asserts
+            //assets
             //指令复制
-            for(let key of this.asserts.keys()){
-                dst.asserts.set(key,this.asserts.get(key));
+            for(let key of this.assets.keys()){
+                dst.assets.set(key,this.assets.get(key));
             }
             
 			//普通属性
@@ -483,15 +490,15 @@ namespace nodom {
         }
 
         /**
-         * 处理assert，在渲染到html时执行
+         * 处理asset，在渲染到html时执行
          * @param el    dom对应的html element
          */
-        handleAsserts(el:HTMLElement){
+        handleAssets(el:HTMLElement){
             if(!this.tagName && !el){
                 return;
             }
-            for(let key of this.asserts.keys()){
-                el[key] = this.asserts.get(key);
+            for(let key of this.assets.keys()){
+                el[key] = this.assets.get(key);
             }
         }
         /**

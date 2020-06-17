@@ -63,10 +63,11 @@ declare namespace nodom {
         extParams: any;
         /**
          * @param eventName     事件名
-         * @param eventStr      事件串,以“:”分割,中间不能有空格,结构为: 方法名[:delg(代理到父对象):nopopo(禁止冒泡):once(只执行一次):capture(useCapture)]
+         * @param eventStr      事件串或事件处理函数,以“:”分割,中间不能有空格,结构为: 方法名[:delg(代理到父对象):nopopo(禁止冒泡):once(只执行一次):capture(useCapture)]
+         *                      如果为函数，则替代第三个参数
          * @param handler       事件执行函数，如果方法不在module methods中定义，则可以直接申明，eventStr第一个参数失效，即eventStr可以是":delg:nopopo..."
          */
-        constructor(eventName: string, eventStr?: string, handler?: Function);
+        constructor(eventName: string, eventStr?: string | Function, handler?: Function);
         /**
          * 事件触发
          * @param e     事件
