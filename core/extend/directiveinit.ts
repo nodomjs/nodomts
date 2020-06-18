@@ -87,17 +87,15 @@ namespace nodom {
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             const modelFac = module.modelFactory;
             let rows = modelFac.get(dom.modelId + '').data;
-            //有过滤器，处理数据集合
-            if (directive.filter !== undefined) {
-                rows = directive.filter.exec(rows, module);
-            }
-
             // 无数据，不渲染
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
                 return true;
             }
-
+            //有过滤器，处理数据集合
+            if (directive.filter !== undefined) {
+                rows = directive.filter.exec(rows, module);
+            }
             let chds = [];
             let key = dom.key;
 

@@ -46,7 +46,7 @@
         <div class="code">
             <p>number过滤器用于限定数字的小数位数，使用方式：value|number:digits，digits为小数位数</p>
             <div>保留3位小数：{{number1|number:3}}</div>
-            <div>不保留小数：{{number1}}</div>
+            <div>不保留小数：{{number1|number:0}}</div>
         </div>
         <div class="tip">tolowercase/touppercase用法</div>
         <div class="code">
@@ -73,7 +73,7 @@
         </div>
         <div class="tip">select用法</div>
         <div class="code">
-            <p>select过滤器用于过滤数组元素，主要配合repeat指令使用。使用方式：arr|orderBy:method:param。其中method可取odd(奇数序号数组元素)、even(偶数序号数组元素)、v(数组元素为对象且对象中值为包含v的数组元素)、{prop:v}(数组元素为对象且对象中prop键对应值包含v的数组元素),range(数组索引范围)、index(包含index指定的数组索引)、func(自定义函数过滤数组元素，该函数在模块的methods中定义)
+            <p>select过滤器用于过滤数组元素，主要配合repeat指令使用。使用方式：arr|select:method:param。其中method可取odd(奇数序号数组元素)、even(偶数序号数组元素)、v(数组元素为对象且对象中值为包含v的数组元素)、{prop:v}(数组元素为对象且对象中prop键对应值包含v的数组元素),range(数组索引范围)、index(包含index指定的数组索引)、func(自定义函数过滤数组元素，该函数在模块的methods中定义)
             </p>
             odd用法
             <ul>
@@ -114,7 +114,7 @@
             data: {
                 date1: (new Date()).getTime(),
                 price1: 236.83,
-                number1: 1223,
+                number1: 1223.2345,
                 name: 'Hello world!',
                 rows: [
                     { name: 'yang', addr: 'chengdu' },
