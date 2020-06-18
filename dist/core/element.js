@@ -345,7 +345,7 @@ var nodom;
             return true;
         }
         /**
-         * 表达式预处理，添加到expression计算队列
+         * 表达式处理，添加到expression计算队列
          */
         handleExpression(exprArr, module) {
             if (this.dontRender) {
@@ -355,15 +355,8 @@ var nodom;
             let value = '';
             exprArr.forEach((v) => {
                 if (v instanceof nodom.Expression) { //处理表达式
-                    // 统一添加到表达式计算队列
                     let v1 = v.val(model);
-                    //html或 fragment
-                    if (v1 instanceof DocumentFragment || nodom.Util.isEl(v1)) {
-                        // 设置类型
-                        this.type = 'html';
-                        return v1;
-                    }
-                    value += v1;
+                    value += v1 !== undefined ? v1 : '';
                 }
                 else {
                     value += v;

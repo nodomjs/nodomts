@@ -268,20 +268,5 @@ var nodom;
         //方法调用
         return nodom.Util.apply(handler[type], this, params);
     });
-    /**
-     * html过滤器
-     */
-    nodom.FilterManager.addType('html', (value) => {
-        if (nodom.Util.isEmpty(value)) {
-            return '';
-        }
-        let div = nodom.Util.newEl('div');
-        div.innerHTML = value;
-        let frag = document.createDocumentFragment();
-        for (let i = 0; i < div.childNodes.length; i++) {
-            frag.appendChild(div.childNodes[i]);
-        }
-        return frag;
-    });
 })(nodom || (nodom = {}));
 //# sourceMappingURL=filterinit.js.map

@@ -5,6 +5,10 @@ namespace nodom{
      */
     export interface IDefineElement{
         /**
+         * tag name
+         */
+        tagName?:string;
+        /**
          * 编译方法
          */
         init:Function;

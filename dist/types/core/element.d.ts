@@ -153,7 +153,7 @@ declare namespace nodom {
          */
         handleDirectives(module: any, parent: any): boolean;
         /**
-         * 表达式预处理，添加到expression计算队列
+         * 表达式处理，添加到expression计算队列
          */
         handleExpression(exprArr: Array<Expression | string>, module: Module): string;
         /**

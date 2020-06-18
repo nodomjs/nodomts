@@ -115,7 +115,6 @@ var nodom;
                     }
                 }
             }
-            console.log(chds);
             // 不渲染该节点
             dom.dontRender = true;
             return false;
