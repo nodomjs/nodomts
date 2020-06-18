@@ -101,13 +101,12 @@ namespace nodom {
 
             // 移除指令
             dom.removeDirectives(['model', 'repeat']);
-
             for (let i = 0; i < rows.length; i++) {
                 let node = dom.clone();
                 //设置modelId
                 node.modelId = rows[i].$modelId;
                 //设置key
-                setKey(node, key, node.modelId);
+                setKey(node, key, i);
                 rows[i].$index = i;
                 chds.push(node);
             }
@@ -122,7 +121,6 @@ namespace nodom {
                     }
                 }
             }
-
             // 不渲染该节点
             dom.dontRender = true;
             return false;

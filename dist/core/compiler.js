@@ -79,7 +79,7 @@ var nodom;
             if (!de) {
                 return;
             }
-            return Reflect.construct(de, [el]);
+            return Reflect.construct(de, []).init(el);
         }
         /**
          * 处理属性

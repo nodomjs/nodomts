@@ -124,8 +124,9 @@ namespace nodom {
 		/**
 		 * 不渲染标志，单次渲染有效
 		 */
-		dontRender:boolean = false;
-		/**
+        dontRender:boolean = false;
+        
+        /**
 		 * 是否找到（dom比较时使用）
 		 */
         finded:boolean;
@@ -151,13 +152,6 @@ namespace nodom {
         constructor(tag?:string) {
             this.tagName = tag; //标签
             this.key = Util.genId()+'';
-            //自定义标签需要初始化
-            // if(tag){
-            //     let de:IDefineElement = DefineElementManager.get(tag);
-            //     if(de){
-            //         return de.init();
-            //     }
-            // }
         }
 
         /**
@@ -169,13 +163,13 @@ namespace nodom {
             if(this.dontRender){
                 return;
             }
+            //自定义元素的前置渲染
             if(this.defineElement){
                 DefineElementManager.beforeRender(module,this);
             }
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
-                // this.parent = parent;
                 // 设置modelId
                 if (!this.modelId) {
                     this.modelId = parent.modelId;
@@ -203,8 +197,8 @@ namespace nodom {
                 this.handleTextContent(module);
             }
 
-            // dontrender 为false才渲染子节点
-                //子节点渲染
+            //子节点渲染
+            //dontrender 为false才渲染子节点
             for (let i = 0; i < this.children.length; i++) {
                 let item = this.children[i];
                 item.render(module, this);
@@ -215,6 +209,7 @@ namespace nodom {
                 }
             }
 
+            //自定义元素的后置渲染
             if(this.defineElement){
                 DefineElementManager.afterRender(module,this);
             }
@@ -446,7 +441,7 @@ namespace nodom {
         }
 
         /**
-         * 表达式预处理，添加到expression计算队列
+         * 表达式处理，添加到expression计算队列
          */
         handleExpression(exprArr:Array<Expression|string>, module:Module) {
             if (this.dontRender) {
@@ -456,15 +451,8 @@ namespace nodom {
             let value = '';
             exprArr.forEach((v) => {
                 if (v instanceof Expression) { //处理表达式
-                    // 统一添加到表达式计算队列
                     let v1 = v.val(model);
-                    //html或 fragment
-                    if (v1 instanceof DocumentFragment || Util.isEl(v1)) {
-                        // 设置类型
-                        this.type = 'html';
-                        return v1;
-                    }
-                    value += v1;
+                    value += v1!==undefined?v1:'';
                 } else {
                     value += v;
                 }

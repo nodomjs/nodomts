@@ -93,7 +93,7 @@ var nodom;
                 ret.sort((a, b) => a[field] >= b[field] ? 1 : -1);
             }
             else {
-                ret.sort((a, b) => b[field] <= a[field] ? 1 : -1);
+                ret.sort((a, b) => a[field] <= b[field] ? 1 : -1);
             }
         }
         else { //值数组
@@ -101,7 +101,7 @@ var nodom;
                 ret.sort((a, b) => a >= b ? 1 : -1);
             }
             else {
-                ret.sort((a, b) => b <= a ? 1 : -1);
+                ret.sort((a, b) => a <= b ? 1 : -1);
             }
         }
         return ret;

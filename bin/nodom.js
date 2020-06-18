@@ -1004,11 +1004,7 @@ var nodom;
             exprArr.forEach((v) => {
                 if (v instanceof nodom.Expression) {
                     let v1 = v.val(model);
-                    if (v1 instanceof DocumentFragment || nodom.Util.isEl(v1)) {
-                        this.type = 'html';
-                        return v1;
-                    }
-                    value += v1;
+                    value += v1 !== undefined ? v1 : '';
                 }
                 else {
                     value += v;
@@ -3524,7 +3520,7 @@ var nodom;
             for (let i = 0; i < rows.length; i++) {
                 let node = dom.clone();
                 node.modelId = rows[i].$modelId;
-                setKey(node, key, node.modelId);
+                setKey(node, key, i);
                 rows[i].$index = i;
                 chds.push(node);
             }
@@ -3924,7 +3920,6 @@ var nodom;
             }
             else {
                 ret.sort((a, b) => a[field] <= b[field] ? 1 : -1);
-                console.log(ret);
             }
         }
         else {
@@ -4068,18 +4063,6 @@ var nodom;
             }
         }
         return nodom.Util.apply(handler[type], this, params);
-    });
-    nodom.FilterManager.addType('html', (value) => {
-        if (nodom.Util.isEmpty(value)) {
-            return '';
-        }
-        let div = nodom.Util.newEl('div');
-        div.innerHTML = value;
-        let frag = document.createDocumentFragment();
-        for (let i = 0; i < div.childNodes.length; i++) {
-            frag.appendChild(div.childNodes[i]);
-        }
-        return frag;
     });
 })(nodom || (nodom = {}));
 var nodom;

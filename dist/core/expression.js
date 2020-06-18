@@ -96,17 +96,14 @@ var nodom;
                     if (opd === '(') {
                         r = this.judgeAndHandleFunc(arrOperator, arrOperand, opr);
                         if (r !== undefined) {
-                            //模块方法，不带参数
+                            //模块方法,挨着方法名的那个括号不需要
                             if (r.startsWith('$module')) {
-                                retStr = r + retStr.substr(1);
+                                opd = '';
                             }
-                            else if (opr !== '') { //js原生方法
-                                if (!this.addField(opr)) {
-                                    //还原字符串
-                                    opr = this.recoveryString(opr);
-                                }
-                                retStr = r + opd + opr + retStr;
+                            if (opr !== '' && !this.addField(opr)) {
+                                opr = this.recoveryString(opr);
                             }
+                            retStr = r + opd + opr + retStr;
                             //函数作为一个整体操作数，把前一个操作符补上
                             if (arrOperand.length > 0) {
                                 retStr = arrOperand.pop() + retStr;
@@ -173,7 +170,7 @@ var nodom;
                     arrOperator.pop();
                     //module 函数
                     if (sp.startsWith('$')) {
-                        return '$module.methodFactory.get("' + sp.substr(1) + '").apply($module)';
+                        return '$module.methodFactory.get("' + sp.substr(1) + '").call($module,';
                     }
                     else {
                         return sp;

@@ -279,20 +279,4 @@ namespace nodom {
         //方法调用
         return Util.apply(handler[type], this, params);
     });
-
-    /**
-     * html过滤器
-     */
-    FilterManager.addType('html', (value) => {
-        if (Util.isEmpty(value)) {
-            return '';
-        }
-        let div = Util.newEl('div');
-        div.innerHTML = value;
-        let frag = document.createDocumentFragment();
-        for (let i = 0; i < div.childNodes.length; i++) {
-            frag.appendChild(div.childNodes[i]);
-        }
-        return frag;
-    });
 }

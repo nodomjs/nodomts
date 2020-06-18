@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>filter</title>
+    <!-- <script type="text/javascript" src="../js/require.js"></script> -->
+    <script type="text/javascript" src="../bin/nodom.js"></script>
+
+    <style>
+        .code {
+            margin: 20px;
+        }
+
+        .tip {
+            color: darkorange;
+        }
+
+        p {
+            color: #666666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="view">
+        
+        <button e-click='ascClick'>升序</button>
+        <button e-click='descClick'>升序</button>
+        <ul>
+            <li x-repeat="rows">{{name}}'s address is {{addr}},url is <span>{{url|link}}</span></li>
+        </ul>
+    </div>
+</body>
+<script>
+    
+    nodom.newApp({
+        module:{
+            el: '.view',
+            data: {
+                rows: [
+                    { name: 'yang', addr: 'chengdu' },
+                    { name: 'zhang', addr: 'mianyang' },
+                    { name: 'chen', addr: 'luoyang' },
+                    { name: 'tang', addr: 'beijing' },
+                    { name: 'li', addr: 'shanghai',url:'http://www.baidu.com' }
+                ]
+            },
+            methods: {
+                ascClick:function(dom,model,module,e){
+                    console.log(module.virtualDom.children[4]);
+                    let dom1 = module.virtualDom.children[4].children[1];
+                    let d = dom1.getDirective('repeat');
+                    d.filter = new nodom.Filter(['orderby','name','asc']);
+                    dom1.forceRender = true;
+                    nodom.Renderer.add(module);
+                },
+                descClick:function(dom,model,module,e){
+                    console.log(module.virtualDom.children[4]);
+                    let dom1 = module.virtualDom.children[4].children[1];
+                    let d = dom1.getDirective('repeat');
+                    d.filter = new nodom.Filter(['orderby','name','desc']);
+                    dom1.forceRender = true;
+                    nodom.Renderer.add(module);
+                }
+            }
+        }
+    });
+    
+</script>
+
+</html>

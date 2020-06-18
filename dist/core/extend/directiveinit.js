@@ -83,14 +83,14 @@ var nodom;
         handle: (directive, dom, module, parent) => {
             const modelFac = module.modelFactory;
             let rows = modelFac.get(dom.modelId + '').data;
-            //有过滤器，处理数据集合
-            if (directive.filter !== undefined) {
-                rows = directive.filter.exec(rows, module);
-            }
             // 无数据，不渲染
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
                 return true;
+            }
+            //有过滤器，处理数据集合
+            if (directive.filter !== undefined) {
+                rows = directive.filter.exec(rows, module);
             }
             let chds = [];
             let key = dom.key;
@@ -101,7 +101,7 @@ var nodom;
                 //设置modelId
                 node.modelId = rows[i].$modelId;
                 //设置key
-                setKey(node, key, node.modelId);
+                setKey(node, key, i);
                 rows[i].$index = i;
                 chds.push(node);
             }
@@ -115,6 +115,7 @@ var nodom;
                     }
                 }
             }
+            console.log(chds);
             // 不渲染该节点
             dom.dontRender = true;
             return false;
