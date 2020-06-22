@@ -505,7 +505,7 @@ var nodom;
              */
             static width(el, value) {
                 if (!this.isEl(el)) {
-                    throw new nodom.NodomError('invoke', 'nodom.width', '0', 'Element');
+                    throw new nodom.NodomError('invoke', 'Util.width', '0', 'Element');
                 }
                 if (this.isNumber(value)) {
                     el.style.width = value + 'px';

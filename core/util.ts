@@ -517,7 +517,7 @@ namespace nodom{
          */
         static width(el:HTMLElement,value?:number|boolean){
             if(!this.isEl(el)){
-                throw new NodomError('invoke','nodom.width','0','Element');
+                throw new NodomError('invoke','Util.width','0','Element');
             }
             if(this.isNumber(value)){
                 el.style.width = value + 'px';

@@ -41,4 +41,8 @@ dom,model,module,e。this指向事件对象nodomevent
 
 2020-06-15
 element构造器是否对自定义元素进行处理
+repeat指令增加排序后，点击（非代理）非数据元素，导致获取model不正确，获得的是未排序前的那个model，事件代理正常
+2020-6-19
+element getParent module不传时错误
+
  

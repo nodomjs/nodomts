@@ -163,10 +163,6 @@ namespace nodom {
             if(this.dontRender){
                 return;
             }
-            //自定义元素的前置渲染
-            if(this.defineElement){
-                DefineElementManager.beforeRender(module,this);
-            }
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
@@ -187,6 +183,11 @@ namespace nodom {
                         model.set(item,this.extraData[item]);
                     });
                 }
+            }
+            
+            //自定义元素的前置渲染
+            if(this.defineElement){
+                DefineElementManager.beforeRender(module,this);
             }
             
             if (this.tagName !== undefined) { //element
@@ -470,7 +471,13 @@ namespace nodom {
             Util.getOwnProps(this.exprProps).forEach((k) => {
                 //属性值为数组，则为表达式
                 if (Util.isArray(this.exprProps[k])) {
-                    this.props[k] = this.handleExpression(this.exprProps[k], module);
+                    let pv = this.handleExpression(this.exprProps[k], module);
+                    //class可叠加
+                    if(k === 'class'){
+                        this.addClass(pv);
+                    }else{
+                        this.props[k] = pv;
+                    }
                 } else if (this.exprProps[k] instanceof Expression) { //单个表达式
                     this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
                 }
@@ -635,6 +642,9 @@ namespace nodom {
          * @returns      父element
          */
         getParent(module:Module):Element{
+            if(!module){
+                throw new NodomError('invoke','Element.getParent','0','Module');
+            }
             if(this.parent){
                 return this.parent;
             }
@@ -669,6 +679,20 @@ namespace nodom {
             return dom !== undefined;
         }
 
+        /**
+         * 是否存在某个class
+         * @param cls   classname
+         * @return      true/false
+         */
+        hasClass(cls:string):boolean{
+            let clazz = this.props['class'];
+            if(!clazz){
+                return false;
+            }else{
+                let sa:string[] = clazz.split(' ');
+                return sa.includes(cls); 
+            }
+        }
         /**
          * 添加css class
          * @param cls class名
@@ -727,6 +751,70 @@ namespace nodom {
             this.props['class'] = clazz;
         }
 
+        /**
+         * 是否拥有属性
+         * @param propName  属性名
+         * @param isExpr    是否是表达式属性 默认false  
+         */
+        hasProp(propName:string,isExpr?:boolean){
+            if(isExpr){
+                return this.exprProps.hasOwnProperty(propName);
+            }else{
+                return this.props.hasOwnProperty(propName);
+            }
+        }
+
+        /**
+         * 获取属性值
+         * @param propName  属性名
+         * @param isExpr    是否是表达式属性 默认false  
+         */
+        getProp(propName:string,isExpr?:boolean){
+            if(isExpr){
+                return this.exprProps[propName];
+            }else{
+                return this.props[propName];
+            }
+        }
+
+        /**
+         * 设置属性值
+         * @param propName  属性名
+         * @param v         属性值
+         * @param isExpr    是否是表达式属性 默认false  
+         */
+        setProp(propName:string,v:any,isExpr?:boolean){
+            if(isExpr){
+                this.exprProps[propName] = v;
+            }else{
+                this.props[propName] = v;
+            }
+        }
+
+        /**
+         * 删除属性
+         * @param props     属性名或属性名数组 
+         * @param isExpr    是否是表达式属性 默认false  
+         */
+        delProp(props:string|string[],isExpr?:boolean){
+            if(Util.isArray(props)){
+                if(isExpr){
+                    for(let p of <string[]>props){
+                        delete this.exprProps[p];
+                    }
+                }else{
+                    for(let p of <string[]>props){
+                        delete this.props[p];
+                    }
+                }
+            }else{
+                if(isExpr){
+                    delete this.exprProps[<string>props];
+                }else{
+                    delete this.props[<string>props];
+                }
+            }
+        }
         /**
          * 查找子孙节点
          * @param key 	element key

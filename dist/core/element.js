@@ -75,10 +75,6 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            //自定义元素的前置渲染
-            if (this.defineElement) {
-                nodom.DefineElementManager.beforeRender(module, this);
-            }
             // 设置父对象
             if (parent) {
                 this.parentKey = parent.key;
@@ -99,6 +95,10 @@ var nodom;
                         model.set(item, this.extraData[item]);
                     });
                 }
+            }
+            //自定义元素的前置渲染
+            if (this.defineElement) {
+                nodom.DefineElementManager.beforeRender(module, this);
             }
             if (this.tagName !== undefined) { //element
                 this.handleProps(module);
@@ -530,6 +530,9 @@ var nodom;
          * @returns      父element
          */
         getParent(module) {
+            if (!module) {
+                throw new nodom.NodomError('invoke', 'Element.getParent', '0', 'Module');
+            }
             if (this.parent) {
                 return this.parent;
             }
@@ -561,6 +564,21 @@ var nodom;
             for (; dom !== undefined && dom !== this; dom = dom.parent)
                 ;
             return dom !== undefined;
+        }
+        /**
+         * 是否存在某个class
+         * @param cls   classname
+         * @return      true/false
+         */
+        hasClass(cls) {
+            let clazz = this.props['class'];
+            if (!clazz) {
+                return false;
+            }
+            else {
+                let sa = clazz.split(' ');
+                return sa.includes(cls);
+            }
         }
         /**
          * 添加css class
@@ -619,6 +637,73 @@ var nodom;
                 clazz = sa.join(' ');
             }
             this.props['class'] = clazz;
+        }
+        /**
+         * 是否拥有属性
+         * @param propName  属性名
+         * @param isExpr    是否是表达式属性 默认false
+         */
+        hasProp(propName, isExpr) {
+            if (isExpr) {
+                return this.exprProps.hasOwnProperty(propName);
+            }
+            else {
+                return this.props.hasOwnProperty(propName);
+            }
+        }
+        /**
+         * 获取属性值
+         * @param propName  属性名
+         * @param isExpr    是否是表达式属性 默认false
+         */
+        getProp(propName, isExpr) {
+            if (isExpr) {
+                return this.exprProps[propName];
+            }
+            else {
+                return this.props[propName];
+            }
+        }
+        /**
+         * 设置属性值
+         * @param propName  属性名
+         * @param v         属性值
+         * @param isExpr    是否是表达式属性 默认false
+         */
+        setProp(propName, v, isExpr) {
+            if (isExpr) {
+                this.exprProps[propName] = v;
+            }
+            else {
+                this.props[propName] = v;
+            }
+        }
+        /**
+         * 删除属性
+         * @param props     属性名或属性名数组
+         * @param isExpr    是否是表达式属性 默认false
+         */
+        delProp(props, isExpr) {
+            if (nodom.Util.isArray(props)) {
+                if (isExpr) {
+                    for (let p of props) {
+                        delete this.exprProps[p];
+                    }
+                }
+                else {
+                    for (let p of props) {
+                        delete this.props[p];
+                    }
+                }
+            }
+            else {
+                if (isExpr) {
+                    delete this.exprProps[props];
+                }
+                else {
+                    delete this.props[props];
+                }
+            }
         }
         /**
          * 查找子孙节点

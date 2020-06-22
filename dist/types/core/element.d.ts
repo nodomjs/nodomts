@@ -230,6 +230,12 @@ declare namespace nodom {
          */
         contains(dom: any): boolean;
         /**
+         * 是否存在某个class
+         * @param cls   classname
+         * @return      true/false
+         */
+        hasClass(cls: string): boolean;
+        /**
          * 添加css class
          * @param cls class名
          */
@@ -239,6 +245,31 @@ declare namespace nodom {
          * @param cls class名
          */
         removeClass(cls: string): void;
+        /**
+         * 是否拥有属性
+         * @param propName  属性名
+         * @param isExpr    是否是表达式属性 默认false
+         */
+        hasProp(propName: string, isExpr?: boolean): boolean;
+        /**
+         * 获取属性值
+         * @param propName  属性名
+         * @param isExpr    是否是表达式属性 默认false
+         */
+        getProp(propName: string, isExpr?: boolean): any;
+        /**
+         * 设置属性值
+         * @param propName  属性名
+         * @param v         属性值
+         * @param isExpr    是否是表达式属性 默认false
+         */
+        setProp(propName: string, v: any, isExpr?: boolean): void;
+        /**
+         * 删除属性
+         * @param props     属性名或属性名数组
+         * @param isExpr    是否是表达式属性 默认false
+         */
+        delProp(props: string | string[], isExpr?: boolean): void;
         /**
          * 查找子孙节点
          * @param key 	element key

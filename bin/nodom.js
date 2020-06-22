@@ -409,7 +409,7 @@ var nodom;
             }
             static width(el, value) {
                 if (!this.isEl(el)) {
-                    throw new nodom.NodomError('invoke', 'nodom.width', '0', 'Element');
+                    throw new nodom.NodomError('invoke', 'Util.width', '0', 'Element');
                 }
                 if (this.isNumber(value)) {
                     el.style.width = value + 'px';
@@ -781,9 +781,6 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            if (this.defineElement) {
-                nodom.DefineElementManager.beforeRender(module, this);
-            }
             if (parent) {
                 this.parentKey = parent.key;
                 if (!this.modelId) {
@@ -801,6 +798,9 @@ var nodom;
                         model.set(item, this.extraData[item]);
                     });
                 }
+            }
+            if (this.defineElement) {
+                nodom.DefineElementManager.beforeRender(module, this);
             }
             if (this.tagName !== undefined) {
                 this.handleProps(module);
@@ -1018,7 +1018,13 @@ var nodom;
             }
             nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
                 if (nodom.Util.isArray(this.exprProps[k])) {
-                    this.props[k] = this.handleExpression(this.exprProps[k], module);
+                    let pv = this.handleExpression(this.exprProps[k], module);
+                    if (k === 'class') {
+                        this.addClass(pv);
+                    }
+                    else {
+                        this.props[k] = pv;
+                    }
                 }
                 else if (this.exprProps[k] instanceof nodom.Expression) {
                     this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
@@ -1114,6 +1120,9 @@ var nodom;
             }
         }
         getParent(module) {
+            if (!module) {
+                throw new nodom.NodomError('invoke', 'Element.getParent', '0', 'Module');
+            }
             if (this.parent) {
                 return this.parent;
             }
@@ -1136,6 +1145,16 @@ var nodom;
             for (; dom !== undefined && dom !== this; dom = dom.parent)
                 ;
             return dom !== undefined;
+        }
+        hasClass(cls) {
+            let clazz = this.props['class'];
+            if (!clazz) {
+                return false;
+            }
+            else {
+                let sa = clazz.split(' ');
+                return sa.includes(cls);
+            }
         }
         addClass(cls) {
             let clazz = this.props['class'];
@@ -1184,6 +1203,52 @@ var nodom;
                 clazz = sa.join(' ');
             }
             this.props['class'] = clazz;
+        }
+        hasProp(propName, isExpr) {
+            if (isExpr) {
+                return this.exprProps.hasOwnProperty(propName);
+            }
+            else {
+                return this.props.hasOwnProperty(propName);
+            }
+        }
+        getProp(propName, isExpr) {
+            if (isExpr) {
+                return this.exprProps[propName];
+            }
+            else {
+                return this.props[propName];
+            }
+        }
+        setProp(propName, v, isExpr) {
+            if (isExpr) {
+                this.exprProps[propName] = v;
+            }
+            else {
+                this.props[propName] = v;
+            }
+        }
+        delProp(props, isExpr) {
+            if (nodom.Util.isArray(props)) {
+                if (isExpr) {
+                    for (let p of props) {
+                        delete this.exprProps[p];
+                    }
+                }
+                else {
+                    for (let p of props) {
+                        delete this.props[p];
+                    }
+                }
+            }
+            else {
+                if (isExpr) {
+                    delete this.exprProps[props];
+                }
+                else {
+                    delete this.props[props];
+                }
+            }
         }
         query(key) {
             if (this.key === key) {
