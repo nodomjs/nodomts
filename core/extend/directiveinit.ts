@@ -12,6 +12,12 @@ namespace nodom {
         prio: 1,
         init: (directive: Directive, dom: Element, el: HTMLElement) => {
             let value: string = < string > directive.value;
+            //从根数据获取
+            if(value.startsWith('$$')){
+                directive.extra = 1;
+                value = value.substr(2);
+            }
+            
             //处理以.分割的字段，没有就是一个
             if (Util.isString(value)) {
                 let arr = new Array();
@@ -31,12 +37,22 @@ namespace nodom {
         },
 
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
-            let model = module.modelFactory.get(dom.modelId + '');
-            if (!model || !model.data) {
-                return;
+            let startIndex:number=0;
+            let data;
+            //从根获取数据
+            if (directive.extra===1) {
+                data = module.model.data[directive.value[0]];
+                startIndex = 1;
+            }else if(dom.modelId){
+                let model = module.modelFactory.get(dom.modelId);
+                if(model){
+                    data = model.data;
+                }
             }
-            let data = model.data;
-            directive.value.forEach((item) => {
+            
+            
+            for(let i=startIndex;i<directive.value.length;i++){
+                let item = directive.value[i];
                 if (!data) {
                     return;
                 }
@@ -44,10 +60,10 @@ namespace nodom {
                     let a = item.split(',');
                     data = data[a[0]][parseInt(a[1])];
                 } else { //非数组
-
                     data = data[item];
                 }
-            });
+            }
+            
             if (data) {
                 dom.modelId = data.$modelId;
             }
@@ -79,14 +95,17 @@ namespace nodom {
 
             // 增加model指令
             if (!dom.hasDirective('model')) {
-                dom.directives.push(new Directive('model', modelName, dom, el));
+                dom.directives.push(new Directive('model', modelName, dom));
             }
-
+            if(modelName.startsWith('$$')){
+                modelName = modelName.substr(2);
+            }
             directive.value = modelName;
         },
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             const modelFac = module.modelFactory;
-            let rows = modelFac.get(dom.modelId + '').data;
+            let rows = modelFac.get(dom.modelId).data;
+            
             // 无数据，不渲染
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;

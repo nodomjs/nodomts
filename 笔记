@@ -45,4 +45,7 @@ repeat指令增加排序后，点击（非代理）非数据元素，导致获�
 2020-6-19
 element getParent module不传时错误
 
+2020-06-23
+model 数组添加新元素有错误，需要对添加的内容增加 setter 和 getter
+
  

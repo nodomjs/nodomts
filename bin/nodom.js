@@ -916,6 +916,10 @@ var nodom;
                 return el;
             }
             function newText(text, dom) {
+                if (text === undefined) {
+                    text = '';
+                    dom = null;
+                }
                 if (dom && 'html' === dom.type) {
                     let div = nodom.Util.newEl('div');
                     div.setAttribute('key', dom.key);
@@ -1044,6 +1048,7 @@ var nodom;
                 return;
             }
             if (this.expressions !== undefined && this.expressions.length > 0) {
+                let v = this.handleExpression(this.expressions, module) || '';
                 this.textContent = this.handleExpression(this.expressions, module);
             }
         }
@@ -2011,18 +2016,17 @@ var nodom;
                             case 'shift':
                                 break;
                         }
-                        this.update(data);
                         Array.prototype[item].apply(data, arguments);
                         args.forEach((arg) => {
                             if (nodom.Util.isObject(arg) || nodom.Util.isArray(arg)) {
-                                new Model(arg, nodom.ModuleFactory.get(this.moduleName));
+                                new Model(arg, module);
                             }
                         });
                     };
                 });
                 data.forEach((item) => {
                     if (nodom.Util.isObject(item) || nodom.Util.isArray(item)) {
-                        new Model(item, nodom.ModuleFactory.get(this.moduleName));
+                        new Model(item, module);
                     }
                 });
             }
@@ -3508,6 +3512,10 @@ var nodom;
         prio: 1,
         init: (directive, dom, el) => {
             let value = directive.value;
+            if (value.startsWith('$$')) {
+                directive.extra = 1;
+                value = value.substr(2);
+            }
             if (nodom.Util.isString(value)) {
                 let arr = new Array();
                 value.split('.').forEach((item) => {
@@ -3525,12 +3533,20 @@ var nodom;
             }
         },
         handle: (directive, dom, module, parent) => {
-            let model = module.modelFactory.get(dom.modelId + '');
-            if (!model || !model.data) {
-                return;
+            let startIndex = 0;
+            let data;
+            if (directive.extra === 1) {
+                data = module.model.data[directive.value[0]];
+                startIndex = 1;
             }
-            let data = model.data;
-            directive.value.forEach((item) => {
+            else if (dom.modelId) {
+                let model = module.modelFactory.get(dom.modelId);
+                if (model) {
+                    data = model.data;
+                }
+            }
+            for (let i = startIndex; i < directive.value.length; i++) {
+                let item = directive.value[i];
                 if (!data) {
                     return;
                 }
@@ -3541,7 +3557,7 @@ var nodom;
                 else {
                     data = data[item];
                 }
-            });
+            }
             if (data) {
                 dom.modelId = data.$modelId;
             }
@@ -3565,13 +3581,16 @@ var nodom;
                 modelName = value;
             }
             if (!dom.hasDirective('model')) {
-                dom.directives.push(new nodom.Directive('model', modelName, dom, el));
+                dom.directives.push(new nodom.Directive('model', modelName, dom));
+            }
+            if (modelName.startsWith('$$')) {
+                modelName = modelName.substr(2);
             }
             directive.value = modelName;
         },
         handle: (directive, dom, module, parent) => {
             const modelFac = module.modelFactory;
-            let rows = modelFac.get(dom.modelId + '').data;
+            let rows = modelFac.get(dom.modelId).data;
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
                 return true;

@@ -49,20 +49,10 @@
             },
             methods: {
                 ascClick:function(dom,model,module,e){
-                    console.log(module.virtualDom.children[4]);
-                    let dom1 = module.virtualDom.children[4].children[1];
-                    let d = dom1.getDirective('repeat');
-                    d.filter = new nodom.Filter(['orderby','name','asc']);
-                    dom1.forceRender = true;
-                    nodom.Renderer.add(module);
+                    model.data['rows'].push({name:'haha',addr:'sssss'});
                 },
                 descClick:function(dom,model,module,e){
-                    console.log(module.virtualDom.children[4]);
-                    let dom1 = module.virtualDom.children[4].children[1];
-                    let d = dom1.getDirective('repeat');
-                    d.filter = new nodom.Filter(['orderby','name','desc']);
-                    dom1.forceRender = true;
-                    nodom.Renderer.add(module);
+                    model.data['rows'].splice(1,2,{name:'haha',addr:'sssss'});
                 }
             }
         }

@@ -153,12 +153,12 @@ namespace nodom {
                         case 'shift':
                             break;
                         }
-                        this.update(data);
+                        
                         Array.prototype[item].apply(data, arguments);
                         //递归创建新model
                         args.forEach((arg) => {
                             if (Util.isObject(arg) || Util.isArray(arg)) {
-                                new Model(arg, ModuleFactory.get(this.moduleName));
+                                new Model(arg, module);
                             }
                         });
                     }
@@ -167,7 +167,7 @@ namespace nodom {
                 //设置model
                 data.forEach((item) => {
                     if (Util.isObject(item) || Util.isArray(item)) {
-                        new Model(item, ModuleFactory.get(this.moduleName));
+                        new Model(item, module);
                     }
                 });
             }

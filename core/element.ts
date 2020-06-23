@@ -332,6 +332,10 @@ namespace nodom {
              * 新建文本节点
              */
             function newText(text:string|HTMLElement|DocumentFragment, dom?:Element) {
+                if(text === undefined){
+                    text='';
+                    dom=null;
+                }
                 if (dom && 'html' === dom.type) { //html fragment 或 element
                     let div = Util.newEl('div');
                     div.setAttribute('key', dom.key);
@@ -414,7 +418,6 @@ namespace nodom {
                     dst.events.set(key,(<NodomEvent>evt).clone());
                 }
             }
-                
             
             //子节点
             for(let i=0;i<this.children.length;i++){
@@ -504,6 +507,7 @@ namespace nodom {
                 return;
             }
             if (this.expressions !== undefined && this.expressions.length>0) {
+                let v = this.handleExpression(this.expressions, module)||'';
                 this.textContent = this.handleExpression(this.expressions, module);
             }
         }
