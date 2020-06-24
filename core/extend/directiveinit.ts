@@ -3,14 +3,14 @@ namespace nodom {
     /**
      *  指令类型初始化    
      *  每个指令类型都有一个init和handle方法，init和handle都可选
-     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块),el(html element)，无返回
+     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块)，无返回
      *  handle方法在渲染时执行，包含三个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
      *  return true/false false则不进行后面的所有渲染工作
      */
 
     DirectiveManager.addType('model', {
         prio: 1,
-        init: (directive: Directive, dom: Element, el: HTMLElement) => {
+        init: (directive: Directive, dom: Element) => {
             let value: string = < string > directive.value;
             //从根数据获取
             if(value.startsWith('$$')){
@@ -77,7 +77,7 @@ namespace nodom {
      */
     DirectiveManager.addType('repeat', {
         prio: 2,
-        init: (directive: Directive, dom: Element, el: HTMLElement) => {
+        init: (directive: Directive, dom: Element) => {
             let value = directive.value;
             if (!value) {
                 throw new NodomError("paramException", "x-repeat");
@@ -158,7 +158,7 @@ namespace nodom {
      * 描述：条件指令
      */
     DirectiveManager.addType('if', {
-        init: (directive: Directive, dom: Element, el: HTMLElement) => {
+        init: (directive: Directive, dom: Element) => {
             let value = directive.value;
             if (!value) {
                 throw new NodomError("paramException", "x-repeat");
@@ -215,7 +215,7 @@ namespace nodom {
      */
     DirectiveManager.addType('else', {
         name: 'else',
-        init: (directive: Directive, dom: Element, el: HTMLElement) => {
+        init: (directive: Directive, dom: Element) => {
             return;
         },
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
@@ -228,7 +228,7 @@ namespace nodom {
      * 描述：显示指令
      */
     DirectiveManager.addType('show', {
-        init: (directive: Directive, dom: Element, el: HTMLElement) => {
+        init: (directive: Directive, dom: Element) => {
             let value = directive.value;
             if (!value) {
                 throw new NodomError("paramException", "x-show");
@@ -254,7 +254,7 @@ namespace nodom {
      * 描述：class指令
      */
     DirectiveManager.addType('class', {
-        init: (directive: Directive, dom: Element, el: HTMLElement) => {
+        init: (directive: Directive, dom: Element) => {
             //转换为json数据
             let obj = eval('(' + directive.value + ')');
             if (!Util.isObject(obj)) {
@@ -306,7 +306,7 @@ namespace nodom {
      * 描述：字段指令
      */
     DirectiveManager.addType('field', {
-        init: (directive: Directive, dom: Element, el: HTMLElement) => {
+        init: (directive: Directive, dom: Element) => {
             dom.props['name'] = directive.value;
             
             let eventName:string = dom.props['tagName'] === 'input' && ['text','checkbox','radio'].includes(dom.props['type'])?'input':'change';
@@ -378,7 +378,7 @@ namespace nodom {
      * 描述：字段指令
      */
     DirectiveManager.addType('validity', {
-        init: (directive: Directive, dom: Element, el: HTMLElement) => {
+        init: (directive: Directive, dom: Element) => {
             let ind, fn, method;
             let value = directive.value;
             //处理带自定义校验方法

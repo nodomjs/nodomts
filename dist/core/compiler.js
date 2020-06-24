@@ -93,7 +93,7 @@ var nodom;
                 let v = attr.value.trim();
                 if (attr.name.startsWith('x-')) { //指令
                     //添加到dom指令集
-                    oe.directives.push(new nodom.Directive(attr.name.substr(2), v, oe, el));
+                    oe.directives.push(new nodom.Directive(attr.name.substr(2), v, oe));
                 }
                 else if (attr.name.startsWith('e-')) { //事件
                     let en = attr.name.substr(2);

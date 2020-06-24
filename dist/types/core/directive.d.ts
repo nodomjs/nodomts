@@ -48,9 +48,9 @@ declare namespace nodom {
          * @param type  	类型
          * @param value 	指令值
          * @param vdom 		指令所属虚拟dom
-         * @param el 		指令所属html element
+         * @param filterStr 过滤器字符串
          */
-        constructor(type: string, value: string, vdom: Element, el?: HTMLElement);
+        constructor(type: string, value: string, vdom: Element, filterStr?: string);
         /**
          * 执行
          * @param value 	指令值

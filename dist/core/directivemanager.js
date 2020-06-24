@@ -57,12 +57,14 @@ var nodom;
             }
             /**
              * 指令初始化
+             * @param directive     指令
+             * @param dom           指令绑定的dom节点
+             * @param el            制定对应的html element
              */
-            static init(directive, dom, el) {
+            static init(directive, dom) {
                 let dt = this.directiveTypes.get(directive.type);
                 if (dt) {
-                    // throw new NodomError('notexist1', TipWords.directiveType, directive.type);
-                    return dt.init(directive, dom, el);
+                    return dt.init(directive, dom);
                 }
             }
             /**

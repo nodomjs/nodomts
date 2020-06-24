@@ -137,12 +137,11 @@ var nodom;
                             case 'shift':
                                 break;
                         }
-                        this.update(data);
                         Array.prototype[item].apply(data, arguments);
                         //递归创建新model
                         args.forEach((arg) => {
                             if (nodom.Util.isObject(arg) || nodom.Util.isArray(arg)) {
-                                new Model(arg, nodom.ModuleFactory.get(this.moduleName));
+                                new Model(arg, module);
                             }
                         });
                     };
@@ -150,7 +149,7 @@ var nodom;
                 //设置model
                 data.forEach((item) => {
                     if (nodom.Util.isObject(item) || nodom.Util.isArray(item)) {
-                        new Model(item, nodom.ModuleFactory.get(this.moduleName));
+                        new Model(item, module);
                     }
                 });
             }

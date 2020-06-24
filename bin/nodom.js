@@ -618,7 +618,7 @@ var nodom;
                 let attr = el.attributes[i];
                 let v = attr.value.trim();
                 if (attr.name.startsWith('x-')) {
-                    oe.directives.push(new nodom.Directive(attr.name.substr(2), v, oe, el));
+                    oe.directives.push(new nodom.Directive(attr.name.substr(2), v, oe));
                 }
                 else if (attr.name.startsWith('e-')) {
                     let en = attr.name.substr(2);
@@ -679,14 +679,17 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Directive {
-        constructor(type, value, vdom, el) {
+        constructor(type, value, vdom, filterStr) {
             this.id = nodom.Util.genId();
             this.type = type;
             if (nodom.Util.isString(value)) {
                 this.value = value.trim();
             }
+            if (filterStr) {
+                this.filter = new nodom.Filter(filterStr);
+            }
             if (type !== undefined) {
-                nodom.DirectiveManager.init(this, vdom, el);
+                nodom.DirectiveManager.init(this, vdom);
             }
         }
         exec(value) {
@@ -734,10 +737,10 @@ var nodom;
             static hasType(name) {
                 return this.directiveTypes.has(name);
             }
-            static init(directive, dom, el) {
+            static init(directive, dom) {
                 let dt = this.directiveTypes.get(directive.type);
                 if (dt) {
-                    return dt.init(directive, dom, el);
+                    return dt.init(directive, dom);
                 }
             }
             static exec(directive, dom, module, parent) {
@@ -3510,7 +3513,7 @@ var nodom;
 (function (nodom) {
     nodom.DirectiveManager.addType('model', {
         prio: 1,
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let value = directive.value;
             if (value.startsWith('$$')) {
                 directive.extra = 1;
@@ -3566,7 +3569,7 @@ var nodom;
     });
     nodom.DirectiveManager.addType('repeat', {
         prio: 2,
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
@@ -3628,7 +3631,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('if', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
@@ -3671,7 +3674,7 @@ var nodom;
     });
     nodom.DirectiveManager.addType('else', {
         name: 'else',
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             return;
         },
         handle: (directive, dom, module, parent) => {
@@ -3679,7 +3682,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('show', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-show");
@@ -3699,7 +3702,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('class', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let obj = eval('(' + directive.value + ')');
             if (!nodom.Util.isObject(obj)) {
                 return;
@@ -3742,7 +3745,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('field', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             dom.props['name'] = directive.value;
             let eventName = dom.props['tagName'] === 'input' && ['text', 'checkbox', 'radio'].includes(dom.props['type']) ? 'input' : 'change';
             dom.addEvent(new nodom.NodomEvent(eventName, '', function (dom, model, module, e, el) {
@@ -3807,7 +3810,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('validity', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let ind, fn, method;
             let value = directive.value;
             if ((ind = value.indexOf('|')) !== -1) {

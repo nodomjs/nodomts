@@ -4,14 +4,19 @@ var nodom;
     /**
      *  指令类型初始化
      *  每个指令类型都有一个init和handle方法，init和handle都可选
-     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块),el(html element)，无返回
+     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块)，无返回
      *  handle方法在渲染时执行，包含三个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
      *  return true/false false则不进行后面的所有渲染工作
      */
     nodom.DirectiveManager.addType('model', {
         prio: 1,
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let value = directive.value;
+            //从根数据获取
+            if (value.startsWith('$$')) {
+                directive.extra = 1;
+                value = value.substr(2);
+            }
             //处理以.分割的字段，没有就是一个
             if (nodom.Util.isString(value)) {
                 let arr = new Array();
@@ -30,12 +35,21 @@ var nodom;
             }
         },
         handle: (directive, dom, module, parent) => {
-            let model = module.modelFactory.get(dom.modelId + '');
-            if (!model || !model.data) {
-                return;
+            let startIndex = 0;
+            let data;
+            //从根获取数据
+            if (directive.extra === 1) {
+                data = module.model.data[directive.value[0]];
+                startIndex = 1;
             }
-            let data = model.data;
-            directive.value.forEach((item) => {
+            else if (dom.modelId) {
+                let model = module.modelFactory.get(dom.modelId);
+                if (model) {
+                    data = model.data;
+                }
+            }
+            for (let i = startIndex; i < directive.value.length; i++) {
+                let item = directive.value[i];
                 if (!data) {
                     return;
                 }
@@ -46,7 +60,7 @@ var nodom;
                 else { //非数组
                     data = data[item];
                 }
-            });
+            }
             if (data) {
                 dom.modelId = data.$modelId;
             }
@@ -59,7 +73,7 @@ var nodom;
      */
     nodom.DirectiveManager.addType('repeat', {
         prio: 2,
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
@@ -76,13 +90,16 @@ var nodom;
             }
             // 增加model指令
             if (!dom.hasDirective('model')) {
-                dom.directives.push(new nodom.Directive('model', modelName, dom, el));
+                dom.directives.push(new nodom.Directive('model', modelName, dom));
+            }
+            if (modelName.startsWith('$$')) {
+                modelName = modelName.substr(2);
             }
             directive.value = modelName;
         },
         handle: (directive, dom, module, parent) => {
             const modelFac = module.modelFactory;
-            let rows = modelFac.get(dom.modelId + '').data;
+            let rows = modelFac.get(dom.modelId).data;
             // 无数据，不渲染
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
@@ -131,7 +148,7 @@ var nodom;
      * 描述：条件指令
      */
     nodom.DirectiveManager.addType('if', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
@@ -186,7 +203,7 @@ var nodom;
      */
     nodom.DirectiveManager.addType('else', {
         name: 'else',
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             return;
         },
         handle: (directive, dom, module, parent) => {
@@ -198,7 +215,7 @@ var nodom;
      * 描述：显示指令
      */
     nodom.DirectiveManager.addType('show', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-show");
@@ -223,7 +240,7 @@ var nodom;
      * 描述：class指令
      */
     nodom.DirectiveManager.addType('class', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             //转换为json数据
             let obj = eval('(' + directive.value + ')');
             if (!nodom.Util.isObject(obj)) {
@@ -274,7 +291,7 @@ var nodom;
      * 描述：字段指令
      */
     nodom.DirectiveManager.addType('field', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             dom.props['name'] = directive.value;
             let eventName = dom.props['tagName'] === 'input' && ['text', 'checkbox', 'radio'].includes(dom.props['type']) ? 'input' : 'change';
             dom.addEvent(new nodom.NodomEvent(eventName, '', function (dom, model, module, e, el) {
@@ -348,7 +365,7 @@ var nodom;
      * 描述：字段指令
      */
     nodom.DirectiveManager.addType('validity', {
-        init: (directive, dom, el) => {
+        init: (directive, dom) => {
             let ind, fn, method;
             let value = directive.value;
             //处理带自定义校验方法

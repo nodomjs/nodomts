@@ -10,16 +10,19 @@ var nodom;
          * @param type  	类型
          * @param value 	指令值
          * @param vdom 		指令所属虚拟dom
-         * @param el 		指令所属html element
+         * @param filterStr 过滤器字符串
          */
-        constructor(type, value, vdom, el) {
+        constructor(type, value, vdom, filterStr) {
             this.id = nodom.Util.genId();
             this.type = type;
             if (nodom.Util.isString(value)) {
                 this.value = value.trim();
             }
+            if (filterStr) {
+                this.filter = new nodom.Filter(filterStr);
+            }
             if (type !== undefined) {
-                nodom.DirectiveManager.init(this, vdom, el);
+                nodom.DirectiveManager.init(this, vdom);
             }
         }
         /**

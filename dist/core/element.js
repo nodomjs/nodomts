@@ -243,6 +243,10 @@ var nodom;
              * 新建文本节点
              */
             function newText(text, dom) {
+                if (text === undefined) {
+                    text = '';
+                    dom = null;
+                }
                 if (dom && 'html' === dom.type) { //html fragment 或 element
                     let div = nodom.Util.newEl('div');
                     div.setAttribute('key', dom.key);
@@ -374,7 +378,14 @@ var nodom;
             nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
                 //属性值为数组，则为表达式
                 if (nodom.Util.isArray(this.exprProps[k])) {
-                    this.props[k] = this.handleExpression(this.exprProps[k], module);
+                    let pv = this.handleExpression(this.exprProps[k], module);
+                    //class可叠加
+                    if (k === 'class') {
+                        this.addClass(pv);
+                    }
+                    else {
+                        this.props[k] = pv;
+                    }
                 }
                 else if (this.exprProps[k] instanceof nodom.Expression) { //单个表达式
                     this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
@@ -401,6 +412,7 @@ var nodom;
                 return;
             }
             if (this.expressions !== undefined && this.expressions.length > 0) {
+                let v = this.handleExpression(this.expressions, module) || '';
                 this.textContent = this.handleExpression(this.expressions, module);
             }
         }

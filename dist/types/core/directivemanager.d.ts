@@ -38,8 +38,11 @@ declare namespace nodom {
         static hasType(name: string): boolean;
         /**
          * 指令初始化
+         * @param directive     指令
+         * @param dom           指令绑定的dom节点
+         * @param el            制定对应的html element
          */
-        static init(directive: Directive, dom: Element, el: HTMLElement): any;
+        static init(directive: Directive, dom: Element): any;
         /**
          * 执行指令
          * @param directive     指令
