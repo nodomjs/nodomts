@@ -147,16 +147,13 @@ namespace nodom {
          * 事件触发
          * @param e     事件
          * @param el    html element
-         * @param dom   virtual dom
          */
-        fire(e:Event,el?:HTMLElement,dom?:Element) {
+        fire(e:Event,el?:HTMLElement) {
             const module:Module = ModuleFactory.get(this.moduleName);
             if (!module.hasContainer()) {
                 return;
             }
-            if(!dom){
-                dom = module.renderTree.query(this.domKey);
-            }
+            let dom:nodom.Element = module.renderTree.query(this.domKey);
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
@@ -167,7 +164,6 @@ namespace nodom {
                     handleSelf(this,e, model, module, dom, el);
                 }
             }
-            
             //判断是否清除事件
             if (this.events !== undefined && 
                     this.events.has(this.name) &&
@@ -251,7 +247,6 @@ namespace nodom {
                 if (eObj.once) {
                     delete eObj.handler;
                 }
-            
             }
         }
 
@@ -269,7 +264,7 @@ namespace nodom {
                 ExternalEvent.regist(this, el);
             } else {
                 this.handleListener = (e)=> {
-                    this.fire(e,el,dom);
+                    this.fire(e,el);
                 };
                 el.addEventListener(this.name,this.handleListener , this.capture);
             }

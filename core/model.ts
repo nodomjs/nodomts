@@ -74,8 +74,9 @@ namespace nodom {
                 }
                 let model:Model = module.modelFactory.get(data.$modelId);
                 if (model) {
-                    //如果不存在，则需要定义 set 方法
-                    if (data[fn] === undefined) {
+                    //如果未定义setter和getter，则需要定义
+                    let ds = Object.getOwnPropertyDescriptor(data,fn);
+                    if (ds === undefined || ds['writable']) {
                         this.defineProp(data, fn);
                     }
                     model.update(fn, value);

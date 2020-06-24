@@ -869,7 +869,7 @@ namespace nodom {
                     re.changeProps = [];
                     //待删除属性
                     re.removeProps = [];
-
+                    
 					//删除或增加的属性
 					Util.getOwnProps(dst.props).forEach((k)=>{
 						if (!this.props.hasOwnProperty(k)) {
@@ -943,6 +943,8 @@ namespace nodom {
                         dst.children.forEach((item) => {
                             if (!item.finded) {
                                 retArr.push(new ChangedDom(item,'del',dst));
+                            }else{
+                                item.finded = undefined;
                             }
                         });
                     }

@@ -1357,6 +1357,9 @@ var nodom;
                             if (!item.finded) {
                                 retArr.push(new ChangedDom(item, 'del', dst));
                             }
+                            else {
+                                item.finded = undefined;
+                            }
                         });
                     }
                 }
@@ -1954,7 +1957,8 @@ var nodom;
                 }
                 let model = module.modelFactory.get(data.$modelId);
                 if (model) {
-                    if (data[fn] === undefined) {
+                    let ds = Object.getOwnPropertyDescriptor(data, fn);
+                    if (ds === undefined || ds['writable']) {
                         this.defineProp(data, fn);
                     }
                     model.update(fn, value);
@@ -2578,14 +2582,12 @@ var nodom;
                 }
             }
         }
-        fire(e, el, dom) {
+        fire(e, el) {
             const module = nodom.ModuleFactory.get(this.moduleName);
             if (!module.hasContainer()) {
                 return;
             }
-            if (!dom) {
-                dom = module.renderTree.query(this.domKey);
-            }
+            let dom = module.renderTree.query(this.domKey);
             const model = module.modelFactory.get(dom.modelId);
             if (this.capture) {
                 handleSelf(this, e, model, module, dom, el);
@@ -2663,7 +2665,7 @@ var nodom;
             }
             else {
                 this.handleListener = (e) => {
-                    this.fire(e, el, dom);
+                    this.fire(e, el);
                 };
                 el.addEventListener(this.name, this.handleListener, this.capture);
             }
@@ -4111,7 +4113,7 @@ var nodom;
                         for (let i = 0; i < keys.length; i++) {
                             let v = item[keys[i]];
                             let v1 = param[keys[i]];
-                            if (v === undefined || v !== v1 && typeof v === 'string' && v.indexOf(v1) === -1) {
+                            if (v === undefined || v !== v1 || typeof v === 'string' && v.indexOf(v1) === -1) {
                                 return false;
                             }
                         }
@@ -4194,7 +4196,7 @@ var nodom;
         initial: "{0}初始化参数错误",
         jsonparse: "JSON解析错误",
         timeout: "请求超时",
-        config: "{1}配置参数错误"
+        config: "{0}配置参数错误"
     };
     nodom.FormMsgs = {
         type: "请输入有效的{0}",
