@@ -56,16 +56,20 @@ namespace nodom {
          * @param type  	类型
          * @param value 	指令值
          * @param vdom 		指令所属虚拟dom
-         * @param filterStr 过滤器字符串
+         * @param filter    过滤器字符串或过滤器对象
          */
-        constructor(type:string, value:string, vdom:Element,filterStr?:string) {
+        constructor(type:string, value:string, vdom:Element,filter?:string|Filter) {
             this.id = Util.genId();
             this.type = type;
             if (Util.isString(value)) {
                 this.value = value.trim();
             }
-            if(filterStr){
-                this.filter = new Filter(filterStr);
+            if(filter){
+                if(typeof filter === 'string'){
+                    this.filter = new Filter(filter);
+                }else if(filter instanceof Filter){
+                    this.filter = filter;
+                }
             }
             
             if (type !== undefined) {
