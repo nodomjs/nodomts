@@ -69,14 +69,15 @@ var nodom;
             static genId() {
                 return this.generatedId++;
             }
-            clone(srcObj, expKey) {
+            static clone(srcObj, expKey) {
+                let me = this;
                 let map = new WeakMap();
                 let retObj = clone(srcObj);
                 map = null;
                 return retObj;
                 function clone(src) {
                     let dst;
-                    if (this.isObject(src)) {
+                    if (me.isObject(src)) {
                         dst = new Object();
                         map.set(src, dst);
                         Object.getOwnPropertyNames(src).forEach((prop) => {
@@ -86,7 +87,7 @@ var nodom;
                                     return;
                                 }
                             }
-                            if (this.isObject(src[prop]) || this.isArray(src[prop])) {
+                            if (me.isObject(src[prop]) || me.isArray(src[prop]) || me.isMap(src[prop])) {
                                 let co = null;
                                 if (!map.has(src[prop])) {
                                     co = clone(src[prop]);
@@ -102,11 +103,37 @@ var nodom;
                             }
                         });
                     }
-                    else if (this.isArray(src)) {
+                    else if (me.isMap(src)) {
+                        dst = new Map();
+                        map.set(src, dst);
+                        src.forEach((value, key) => {
+                            if (expKey) {
+                                if (expKey.constructor === RegExp && expKey.test(key)
+                                    || expKey.constructor === String && expKey === key) {
+                                    return;
+                                }
+                            }
+                            if (me.isObject(value) || me.isArray(value) || me.isMap(value)) {
+                                let co = null;
+                                if (!map.has(value)) {
+                                    co = clone(value);
+                                    map.set(value, co);
+                                }
+                                else {
+                                    co = map.get(value);
+                                }
+                                dst.set(key, co);
+                            }
+                            else {
+                                dst.set(key, value);
+                            }
+                        });
+                    }
+                    else if (me.isArray(src)) {
                         dst = new Array();
                         map.set(src, dst);
                         src.forEach(function (item, i) {
-                            if (this.isObject(item) || this.isArray(item)) {
+                            if (me.isObject(item) || me.isArray(item) || me.isMap(item)) {
                                 dst[i] = clone(item);
                             }
                             else {
@@ -156,6 +183,9 @@ var nodom;
             }
             static isArray(obj) {
                 return Array.isArray(obj);
+            }
+            static isMap(obj) {
+                return obj !== null && obj !== undefined && obj.constructor === Map;
             }
             static isObject(obj) {
                 return obj !== null && obj !== undefined && obj.constructor === Object;
@@ -683,8 +713,9 @@ var nodom;
             this.id = nodom.Util.genId();
             this.type = type;
             if (nodom.Util.isString(value)) {
-                this.value = value.trim();
+                value = value.trim();
             }
+            this.value = value;
             if (filter) {
                 if (typeof filter === 'string') {
                     this.filter = new nodom.Filter(filter);
@@ -700,6 +731,13 @@ var nodom;
         exec(value) {
             let args = [this.module, this.type, value];
             return nodom.Util.apply(nodom.DirectiveManager.exec, nodom.DirectiveManager, args);
+        }
+        clone(vdom) {
+            let dir = new Directive(this.type, this.value, vdom, this.filter);
+            if (this.params) {
+                dir.params = nodom.Util.clone(this.params);
+            }
+            return dir;
         }
     }
     nodom.Directive = Directive;
@@ -954,20 +992,23 @@ var nodom;
                 }
             }
         }
-        clone() {
+        clone(changeKey) {
             let dst = new Element();
-            let notCopyProps = ['parent', 'directives', 'assets', 'props', 'exprProps', 'events', 'children'];
+            let notCopyProps = ['parent', 'directives', 'assets', 'tmpData', 'props', 'exprProps', 'events', 'children'];
             nodom.Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
                     return;
                 }
                 dst[p] = this[p];
             });
-            for (let d of this.directives) {
-                dst.directives.push(d);
+            if (changeKey) {
+                this.key = nodom.Util.genId() + '';
             }
-            for (let key of this.assets.keys()) {
-                dst.assets.set(key, this.assets.get(key));
+            for (let d of this.directives) {
+                dst.directives.push(d.clone(dst));
+            }
+            if (this.assets) {
+                dst.assets = nodom.Util.clone(this.assets);
             }
             nodom.Util.getOwnProps(this.props).forEach((k) => {
                 dst.props[k] = this.props[k];
@@ -975,6 +1016,9 @@ var nodom;
             nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
                 dst.exprProps[k] = this.exprProps[k];
             });
+            if (this.tmpData) {
+                dst.tmpData = nodom.Util.clone(this.tmpData);
+            }
             for (let key of this.events.keys()) {
                 let evt = this.events.get(key);
                 if (nodom.Util.isArray(evt)) {
@@ -993,7 +1037,7 @@ var nodom;
                     this.children.splice(i--, 1);
                 }
                 else {
-                    dst.children.push(this.children[i].clone());
+                    dst.children.push(this.children[i].clone(changeKey));
                 }
             }
             return dst;
@@ -2521,6 +2565,7 @@ var nodom;
 (function (nodom) {
     class NodomEvent {
         constructor(eventName, eventStr, handler) {
+            this.id = nodom.Util.genId();
             this.name = eventName;
             if (eventStr) {
                 let tp = typeof eventStr;
@@ -2723,7 +2768,7 @@ var nodom;
         }
         clone() {
             let evt = new NodomEvent(this.name);
-            let arr = ['delg', 'once', 'nopopo', 'capture', 'handler', 'handleEvent', 'module'];
+            let arr = ['delg', 'once', 'nopopo', 'capture', 'handler'];
             arr.forEach((item) => {
                 evt[item] = this[item];
             });
@@ -3524,11 +3569,11 @@ var nodom;
         prio: 1,
         init: (directive, dom) => {
             let value = directive.value;
-            if (value.startsWith('$$')) {
-                directive.extra = 1;
-                value = value.substr(2);
-            }
             if (nodom.Util.isString(value)) {
+                if (value.startsWith('$$')) {
+                    directive.extra = 1;
+                    value = value.substr(2);
+                }
                 let arr = new Array();
                 value.split('.').forEach((item) => {
                     let ind1 = -1, ind2 = -1;
@@ -3641,12 +3686,14 @@ var nodom;
     });
     nodom.DirectiveManager.addType('if', {
         init: (directive, dom) => {
-            let value = directive.value;
-            if (!value) {
-                throw new nodom.NodomError("paramException", "x-repeat");
+            if (typeof directive.value === 'string') {
+                let value = directive.value;
+                if (!value) {
+                    throw new nodom.NodomError("paramException", "x-repeat");
+                }
+                let expr = new nodom.Expression(value);
+                directive.value = expr;
             }
-            let expr = new nodom.Expression(value);
-            directive.value = expr;
         },
         handle: (directive, dom, module, parent) => {
             let model = module.modelFactory.get(dom.modelId);
@@ -3692,12 +3739,14 @@ var nodom;
     });
     nodom.DirectiveManager.addType('show', {
         init: (directive, dom) => {
-            let value = directive.value;
-            if (!value) {
-                throw new nodom.NodomError("paramException", "x-show");
+            if (typeof directive.value === 'string') {
+                let value = directive.value;
+                if (!value) {
+                    throw new nodom.NodomError("paramException", "x-show");
+                }
+                let expr = new nodom.Expression(value);
+                directive.value = expr;
             }
-            let expr = new nodom.Expression(value);
-            directive.value = expr;
         },
         handle: (directive, dom, module, parent) => {
             let model = module.modelFactory.get(dom.modelId);
@@ -3712,20 +3761,22 @@ var nodom;
     });
     nodom.DirectiveManager.addType('class', {
         init: (directive, dom) => {
-            let obj = eval('(' + directive.value + ')');
-            if (!nodom.Util.isObject(obj)) {
-                return;
+            if (typeof directive.value === 'string') {
+                let obj = eval('(' + directive.value + ')');
+                if (!nodom.Util.isObject(obj)) {
+                    return;
+                }
+                let robj = {};
+                nodom.Util.getOwnProps(obj).forEach(function (key) {
+                    if (nodom.Util.isString(obj[key])) {
+                        robj[key] = new nodom.Expression(obj[key]);
+                    }
+                    else {
+                        robj[key] = obj[key];
+                    }
+                });
+                directive.value = robj;
             }
-            let robj = {};
-            nodom.Util.getOwnProps(obj).forEach(function (key) {
-                if (nodom.Util.isString(obj[key])) {
-                    robj[key] = new nodom.Expression(obj[key]);
-                }
-                else {
-                    robj[key] = obj[key];
-                }
-            });
-            directive.value = robj;
         },
         handle: (directive, dom, module, parent) => {
             let obj = directive.value;
@@ -3757,7 +3808,7 @@ var nodom;
         init: (directive, dom) => {
             dom.props['name'] = directive.value;
             let eventName = dom.props['tagName'] === 'input' && ['text', 'checkbox', 'radio'].includes(dom.props['type']) ? 'input' : 'change';
-            dom.addEvent(new nodom.NodomEvent(eventName, '', function (dom, model, module, e, el) {
+            dom.addEvent(new nodom.NodomEvent(eventName, function (dom, model, module, e, el) {
                 if (!el) {
                     return;
                 }

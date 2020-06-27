@@ -223,7 +223,7 @@ var nodom;
                             let v = item[keys[i]];
                             let v1 = param[keys[i]];
                             //找不到属性值，或者不相等并且是字符串且不包含的情况都返回false
-                            if (v === undefined || v !== v1 && typeof v === 'string' && v.indexOf(v1) === -1) {
+                            if (v === undefined || v !== v1 || typeof v === 'string' && v.indexOf(v1) === -1) {
                                 return false;
                             }
                         }

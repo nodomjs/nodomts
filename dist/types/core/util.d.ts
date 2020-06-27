@@ -15,7 +15,7 @@ declare namespace nodom {
          * @param expKey    不复制的键正则表达式或名
          * @returns         复制的对象
          */
-        clone(srcObj: object, expKey?: string | RegExp): object;
+        static clone(srcObj: object, expKey?: string | RegExp): any;
         /**
          * 合并多个对象并返回
          * @param   参数数组
@@ -43,6 +43,11 @@ declare namespace nodom {
          * @returns     true/false
          */
         static isArray(obj: any): boolean;
+        /**
+         * 判断是否为map
+         * @param obj
+         */
+        static isMap(obj: any): boolean;
         /**
          * 是否为对象
          * @param obj   检查的对象

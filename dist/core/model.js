@@ -58,8 +58,9 @@ var nodom;
                 }
                 let model = module.modelFactory.get(data.$modelId);
                 if (model) {
-                    //如果不存在，则需要定义 set 方法
-                    if (data[fn] === undefined) {
+                    //如果未定义setter和getter，则需要定义
+                    let ds = Object.getOwnPropertyDescriptor(data, fn);
+                    if (ds === undefined || ds['writable']) {
                         this.defineProp(data, fn);
                     }
                     model.update(fn, value);
@@ -90,6 +91,7 @@ var nodom;
          * 为对象添加setter
          */
         addSetterGetter(data) {
+            let me = this;
             const excludes = ['$modelId'];
             if (nodom.Util.isObject(data)) {
                 nodom.Util.getOwnProps(data).forEach((p) => {
@@ -144,6 +146,8 @@ var nodom;
                                 new Model(arg, module);
                             }
                         });
+                        //增加渲染
+                        nodom.Renderer.add(nodom.ModuleFactory.get(me.moduleName));
                     };
                 });
                 //设置model

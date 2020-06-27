@@ -12,13 +12,13 @@ var nodom;
         prio: 1,
         init: (directive, dom) => {
             let value = directive.value;
-            //从根数据获取
-            if (value.startsWith('$$')) {
-                directive.extra = 1;
-                value = value.substr(2);
-            }
             //处理以.分割的字段，没有就是一个
             if (nodom.Util.isString(value)) {
+                //从根数据获取
+                if (value.startsWith('$$')) {
+                    directive.extra = 1;
+                    value = value.substr(2);
+                }
                 let arr = new Array();
                 value.split('.').forEach((item) => {
                     let ind1 = -1, ind2 = -1;
@@ -149,13 +149,15 @@ var nodom;
      */
     nodom.DirectiveManager.addType('if', {
         init: (directive, dom) => {
-            let value = directive.value;
-            if (!value) {
-                throw new nodom.NodomError("paramException", "x-repeat");
+            if (typeof directive.value === 'string') {
+                let value = directive.value;
+                if (!value) {
+                    throw new nodom.NodomError("paramException", "x-repeat");
+                }
+                //value为一个表达式
+                let expr = new nodom.Expression(value);
+                directive.value = expr;
             }
-            //value为一个表达式
-            let expr = new nodom.Expression(value);
-            directive.value = expr;
         },
         handle: (directive, dom, module, parent) => {
             //设置forceRender
@@ -216,12 +218,14 @@ var nodom;
      */
     nodom.DirectiveManager.addType('show', {
         init: (directive, dom) => {
-            let value = directive.value;
-            if (!value) {
-                throw new nodom.NodomError("paramException", "x-show");
+            if (typeof directive.value === 'string') {
+                let value = directive.value;
+                if (!value) {
+                    throw new nodom.NodomError("paramException", "x-show");
+                }
+                let expr = new nodom.Expression(value);
+                directive.value = expr;
             }
-            let expr = new nodom.Expression(value);
-            directive.value = expr;
         },
         handle: (directive, dom, module, parent) => {
             let model = module.modelFactory.get(dom.modelId);
@@ -241,22 +245,24 @@ var nodom;
      */
     nodom.DirectiveManager.addType('class', {
         init: (directive, dom) => {
-            //转换为json数据
-            let obj = eval('(' + directive.value + ')');
-            if (!nodom.Util.isObject(obj)) {
-                return;
+            if (typeof directive.value === 'string') {
+                //转换为json数据
+                let obj = eval('(' + directive.value + ')');
+                if (!nodom.Util.isObject(obj)) {
+                    return;
+                }
+                let robj = {};
+                nodom.Util.getOwnProps(obj).forEach(function (key) {
+                    if (nodom.Util.isString(obj[key])) {
+                        //如果是字符串，转换为表达式
+                        robj[key] = new nodom.Expression(obj[key]);
+                    }
+                    else {
+                        robj[key] = obj[key];
+                    }
+                });
+                directive.value = robj;
             }
-            let robj = {};
-            nodom.Util.getOwnProps(obj).forEach(function (key) {
-                if (nodom.Util.isString(obj[key])) {
-                    //如果是字符串，转换为表达式
-                    robj[key] = new nodom.Expression(obj[key]);
-                }
-                else {
-                    robj[key] = obj[key];
-                }
-            });
-            directive.value = robj;
         },
         handle: (directive, dom, module, parent) => {
             let obj = directive.value;
@@ -294,7 +300,7 @@ var nodom;
         init: (directive, dom) => {
             dom.props['name'] = directive.value;
             let eventName = dom.props['tagName'] === 'input' && ['text', 'checkbox', 'radio'].includes(dom.props['type']) ? 'input' : 'change';
-            dom.addEvent(new nodom.NodomEvent(eventName, '', function (dom, model, module, e, el) {
+            dom.addEvent(new nodom.NodomEvent(eventName, function (dom, model, module, e, el) {
                 if (!el) {
                     return;
                 }

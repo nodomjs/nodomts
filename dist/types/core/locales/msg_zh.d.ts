@@ -46,6 +46,7 @@ declare namespace nodom {
         jsonparse: string;
         timeout: string;
         config: string;
+        config1: string;
     };
     /**
      * 表单信息

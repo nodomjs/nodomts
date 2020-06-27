@@ -280,11 +280,12 @@ var nodom;
         }
         /**
          * 克隆
+         * changeKey    是否更改key，主要用于创建时克隆，渲染时克隆不允许修改key
          */
-        clone() {
+        clone(changeKey) {
             let dst = new Element();
             //不直接拷贝属性集
-            let notCopyProps = ['parent', 'directives', 'assets', 'props', 'exprProps', 'events', 'children'];
+            let notCopyProps = ['parent', 'directives', 'assets', 'tmpData', 'props', 'exprProps', 'events', 'children'];
             //简单属性
             nodom.Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
@@ -292,14 +293,17 @@ var nodom;
                 }
                 dst[p] = this[p];
             });
+            //更新key
+            if (changeKey) {
+                this.key = nodom.Util.genId() + '';
+            }
             //指令复制
             for (let d of this.directives) {
-                dst.directives.push(d);
+                dst.directives.push(d.clone(dst));
             }
-            //assets
-            //指令复制
-            for (let key of this.assets.keys()) {
-                dst.assets.set(key, this.assets.get(key));
+            //assets复制
+            if (this.assets) {
+                dst.assets = nodom.Util.clone(this.assets);
             }
             //普通属性
             nodom.Util.getOwnProps(this.props).forEach((k) => {
@@ -309,6 +313,10 @@ var nodom;
             nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
                 dst.exprProps[k] = this.exprProps[k];
             });
+            //tmpData 复制
+            if (this.tmpData) {
+                dst.tmpData = nodom.Util.clone(this.tmpData);
+            }
             //事件
             for (let key of this.events.keys()) {
                 let evt = this.events.get(key);
@@ -330,7 +338,7 @@ var nodom;
                     this.children.splice(i--, 1);
                 }
                 else {
-                    dst.children.push(this.children[i].clone());
+                    dst.children.push(this.children[i].clone(changeKey));
                 }
             }
             return dst;
@@ -840,6 +848,9 @@ var nodom;
                         dst.children.forEach((item) => {
                             if (!item.finded) {
                                 retArr.push(new ChangedDom(item, 'del', dst));
+                            }
+                            else {
+                                item.finded = undefined;
                             }
                         });
                     }

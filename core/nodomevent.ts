@@ -13,6 +13,7 @@ namespace nodom {
      * @since       1.0
      */
     export class NodomEvent {
+        id:number;
         /**
          * 事件名
          */
@@ -71,6 +72,7 @@ namespace nodom {
          * @param handler       事件执行函数，如果方法不在module methods中定义，则可以直接申明，eventStr第一个参数失效，即eventStr可以是":delg:nopopo..."
          */
         constructor(eventName: string, eventStr?: string|Function, handler?:Function) {
+            this.id = Util.genId();
             this.name = eventName;
             //如果事件串不为空，则不需要处理
             if (eventStr) {
@@ -343,7 +345,7 @@ namespace nodom {
 
         clone() {
             let evt = new NodomEvent(this.name);
-            let arr = ['delg', 'once', 'nopopo', 'capture', 'handler', 'handleEvent', 'module'];
+            let arr = ['delg', 'once', 'nopopo', 'capture', 'handler'];
             arr.forEach((item) => {
                 evt[item] = this[item];
             });

@@ -12,14 +12,13 @@ namespace nodom {
         prio: 1,
         init: (directive: Directive, dom: Element) => {
             let value: string = < string > directive.value;
-            //从根数据获取
-            if(value.startsWith('$$')){
-                directive.extra = 1;
-                value = value.substr(2);
-            }
-            
             //处理以.分割的字段，没有就是一个
             if (Util.isString(value)) {
+                //从根数据获取
+                if(value.startsWith('$$')){
+                    directive.extra = 1;
+                    value = value.substr(2);
+                }
                 let arr = new Array();
                 value.split('.').forEach((item) => {
                     let ind1 = -1,
@@ -49,7 +48,6 @@ namespace nodom {
                     data = model.data;
                 }
             }
-            
             
             for(let i=startIndex;i<directive.value.length;i++){
                 let item = directive.value[i];
@@ -92,7 +90,7 @@ namespace nodom {
             } else {
                 modelName = value;
             }
-
+            
             // 增加model指令
             if (!dom.hasDirective('model')) {
                 dom.directives.push(new Directive('model', modelName, dom));
@@ -159,13 +157,15 @@ namespace nodom {
      */
     DirectiveManager.addType('if', {
         init: (directive: Directive, dom: Element) => {
-            let value = directive.value;
-            if (!value) {
-                throw new NodomError("paramException", "x-repeat");
+            if(typeof directive.value === 'string'){
+                let value = directive.value;
+                if (!value) {
+                    throw new NodomError("paramException", "x-repeat");
+                }
+                //value为一个表达式
+                let expr = new Expression(value);
+                directive.value = expr;
             }
-            //value为一个表达式
-            let expr = new Expression(value);
-            directive.value = expr;
         },
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             //设置forceRender
@@ -229,12 +229,14 @@ namespace nodom {
      */
     DirectiveManager.addType('show', {
         init: (directive: Directive, dom: Element) => {
-            let value = directive.value;
-            if (!value) {
-                throw new NodomError("paramException", "x-show");
+            if(typeof directive.value === 'string'){
+                let value = directive.value;
+                if (!value) {
+                    throw new NodomError("paramException", "x-show");
+                }
+                let expr = new Expression(value);
+                directive.value = expr;
             }
-            let expr = new Expression(value);
-            directive.value = expr;
         },
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let model = module.modelFactory.get(dom.modelId);
@@ -245,7 +247,6 @@ namespace nodom {
             } else { //不渲染
                 dom.dontRender = true;
             }
-
         }
     });
 
@@ -255,21 +256,23 @@ namespace nodom {
      */
     DirectiveManager.addType('class', {
         init: (directive: Directive, dom: Element) => {
-            //转换为json数据
-            let obj = eval('(' + directive.value + ')');
-            if (!Util.isObject(obj)) {
-                return;
-            }
-            let robj = {};
-            Util.getOwnProps(obj).forEach(function (key) {
-                if (Util.isString(obj[key])) {
-                    //如果是字符串，转换为表达式
-                    robj[key] = new Expression(obj[key]);
-                } else {
-                    robj[key] = obj[key];
+            if(typeof directive.value === 'string'){
+                //转换为json数据
+                let obj = eval('(' + directive.value + ')');
+                if (!Util.isObject(obj)) {
+                    return;
                 }
-            });
-            directive.value = robj;
+                let robj = {};
+                Util.getOwnProps(obj).forEach(function (key) {
+                    if (Util.isString(obj[key])) {
+                        //如果是字符串，转换为表达式
+                        robj[key] = new Expression(obj[key]);
+                    } else {
+                        robj[key] = obj[key];
+                    }
+                });
+                directive.value = robj;
+            }
         },
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let obj = directive.value;
@@ -308,9 +311,8 @@ namespace nodom {
     DirectiveManager.addType('field', {
         init: (directive: Directive, dom: Element) => {
             dom.props['name'] = directive.value;
-            
             let eventName:string = dom.props['tagName'] === 'input' && ['text','checkbox','radio'].includes(dom.props['type'])?'input':'change';
-            dom.addEvent(new NodomEvent(eventName,'',
+            dom.addEvent(new NodomEvent(eventName,
                 function (dom,model,module,e,el) {
                     if(!el){
                         return;

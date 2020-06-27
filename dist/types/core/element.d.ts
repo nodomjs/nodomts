@@ -145,8 +145,9 @@ declare namespace nodom {
         renderToHtml(module: Module, params: any): void;
         /**
          * 克隆
+         * changeKey    是否更改key，主要用于创建时克隆，渲染时克隆不允许修改key
          */
-        clone(): Element;
+        clone(changeKey?: boolean): Element;
         /**
          * 处理指令
          *

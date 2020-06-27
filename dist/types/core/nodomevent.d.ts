@@ -13,6 +13,7 @@ declare namespace nodom {
      * @since       1.0
      */
     class NodomEvent {
+        id: number;
         /**
          * 事件名
          */
@@ -72,9 +73,8 @@ declare namespace nodom {
          * 事件触发
          * @param e     事件
          * @param el    html element
-         * @param dom   virtual dom
          */
-        fire(e: Event, el?: HTMLElement, dom?: Element): void;
+        fire(e: Event, el?: HTMLElement): void;
         /**
          * 绑定事件
          * @param module    模块

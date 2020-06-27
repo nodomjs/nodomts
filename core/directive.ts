@@ -21,8 +21,8 @@ namespace nodom {
 		/**
 		 * 指令值
 		 */
-		value:any;
-
+        value:any;
+        
 		/**
 		 * 指令对应模块
 		 */
@@ -62,8 +62,10 @@ namespace nodom {
             this.id = Util.genId();
             this.type = type;
             if (Util.isString(value)) {
-                this.value = value.trim();
+                value = value.trim();
             }
+            this.value = value;
+
             if(filter){
                 if(typeof filter === 'string'){
                     this.filter = new Filter(filter);
@@ -85,6 +87,18 @@ namespace nodom {
         exec(value) {
             let args:Array<any> = [this.module, this.type, value];
             return Util.apply(DirectiveManager.exec, DirectiveManager, args);
+        }
+
+        /**
+         * 克隆
+         * @param vdom  虚拟dom
+         */
+        clone(vdom:Element){
+            let dir = new Directive(this.type,this.value,vdom,this.filter);
+            if(this.params){
+                dir.params = Util.clone(this.params);
+            }
+            return dir;
         }
     }
 }

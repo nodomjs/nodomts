@@ -370,11 +370,12 @@ namespace nodom {
 
         /**
          * 克隆
+         * changeKey    是否更改key，主要用于创建时克隆，渲染时克隆不允许修改key
          */
-        clone():Element{
+        clone(changeKey?:boolean):Element{
             let dst:Element = new Element();
             //不直接拷贝属性集
-            let notCopyProps:string[] = ['parent','directives','assets','props','exprProps','events','children'];
+            let notCopyProps:string[] = ['parent','directives','assets','tmpData','props','exprProps','events','children'];
             //简单属性
 			Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
@@ -383,14 +384,18 @@ namespace nodom {
                 dst[p] = this[p];
             });
 
+            //更新key
+            if(changeKey){
+                this.key = Util.genId() + '';
+            }
             //指令复制
             for(let d of this.directives){
-                dst.directives.push(d);
+                dst.directives.push(d.clone(dst));
             }
 
             //assets复制
-            for(let key of this.assets.keys()){
-                dst.assets.set(key,this.assets.get(key));
+            if(this.assets){
+                dst.assets = Util.clone(this.assets);
             }
             
 			//普通属性
@@ -401,7 +406,12 @@ namespace nodom {
             //表达式属性
             Util.getOwnProps(this.exprProps).forEach((k)=>{
 				dst.exprProps[k] = this.exprProps[k];
-		    });
+            });
+            
+            //tmpData 复制
+            if(this.tmpData){
+                dst.tmpData = Util.clone(this.tmpData);
+            }
 
             //事件
             for(let key of this.events.keys()){
@@ -423,7 +433,7 @@ namespace nodom {
                 if(!this.children[i]){
                     this.children.splice(i--,1);
                 }else{
-                    dst.children.push(this.children[i].clone());
+                    dst.children.push(this.children[i].clone(changeKey));
                 }
             }
             return dst;

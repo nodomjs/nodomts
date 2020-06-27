@@ -22,7 +22,8 @@ namespace nodom{
          * @returns         复制的对象
          */
 
-        clone(srcObj:object,expKey?:string|RegExp):object{
+        static clone(srcObj:object,expKey?:string|RegExp):any{
+            let me = this;
             let map = new WeakMap();
             let retObj = clone(srcObj);
             map = null;
@@ -35,7 +36,7 @@ namespace nodom{
              */
             function clone(src){
                 let dst;
-                if(this.isObject(src)){
+                if(me.isObject(src)){
                     dst = new Object();
                     //把对象加入map，如果后面有新克隆对象，则用新克隆对象进行覆盖
                     map.set(src,dst);
@@ -49,7 +50,7 @@ namespace nodom{
                             }
                         }
                         //数组或对象继续克隆
-                        if(this.isObject(src[prop]) || this.isArray(src[prop])){
+                        if(me.isObject(src[prop]) || me.isArray(src[prop]) || me.isMap(src[prop])){
                             let co = null;
                             if(!map.has(src[prop])){  //clone新对象
                                 co = clone(src[prop]);
@@ -63,13 +64,39 @@ namespace nodom{
                             dst[prop] = src[prop];
                         }
                     });
-                } else if(this.isArray(src)){
+                } else if(me.isMap(src)){
+                    dst = new Map();
+                    //把对象加入map，如果后面有新克隆对象，则用新克隆对象进行覆盖
+                    map.set(src,dst);
+                    src.forEach((value,key)=>{
+                        //不克隆的键
+                        if(expKey){
+                            if(expKey.constructor === RegExp && (<RegExp>expKey).test(key)       //正则表达式匹配的键不复制
+                                || expKey.constructor === String && expKey === key){     //被排除的键不复制
+                                return;
+                            }
+                        }
+                        //数组或对象继续克隆
+                        if(me.isObject(value) || me.isArray(value) || me.isMap(value)){
+                            let co = null;
+                            if(!map.has(value)){  //clone新对象
+                                co = clone(value);
+                                //存储已克隆对象，避免重复创建或对象相互引用带来的溢出
+                                map.set(value,co);
+                            }else{                    //从map中获取对象
+                                co = map.get(value);
+                            }
+                            dst.set(key,co);
+                        }else{  //直接复制
+                            dst.set(key,value);
+                        }
+                    });
+                }else if(me.isArray(src)){
                     dst = new Array();
                     //把对象加入map，如果后面有新克隆对象，则用新克隆对象进行覆盖
                     map.set(src,dst);
-                
                     src.forEach(function(item,i){
-                    if(this.isObject(item) || this.isArray(item)){
+                        if(me.isObject(item) || me.isArray(item) || me.isMap(item)){
                             dst[i] = clone(item);
                         }else{  //直接复制
                             dst[i] = item;
@@ -138,6 +165,7 @@ namespace nodom{
         static isFunction(foo):boolean{
             return foo !== undefined && foo !== null && foo.constructor === Function;
         }
+
         /**
          * 是否为数组
          * @param obj   检查的对象
@@ -145,6 +173,14 @@ namespace nodom{
          */
         static isArray(obj) :boolean{
             return Array.isArray(obj);
+        }
+
+        /**
+         * 判断是否为map
+         * @param obj 
+         */
+        static isMap(obj):boolean{
+            return obj !== null && obj !== undefined && obj.constructor === Map;
         }
 
         /**

@@ -21,6 +21,7 @@ var nodom;
          * @param handler       事件执行函数，如果方法不在module methods中定义，则可以直接申明，eventStr第一个参数失效，即eventStr可以是":delg:nopopo..."
          */
         constructor(eventName, eventStr, handler) {
+            this.id = nodom.Util.genId();
             this.name = eventName;
             //如果事件串不为空，则不需要处理
             if (eventStr) {
@@ -97,16 +98,13 @@ var nodom;
          * 事件触发
          * @param e     事件
          * @param el    html element
-         * @param dom   virtual dom
          */
-        fire(e, el, dom) {
+        fire(e, el) {
             const module = nodom.ModuleFactory.get(this.moduleName);
             if (!module.hasContainer()) {
                 return;
             }
-            if (!dom) {
-                dom = module.renderTree.query(this.domKey);
-            }
+            let dom = module.renderTree.query(this.domKey);
             const model = module.modelFactory.get(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
@@ -217,7 +215,7 @@ var nodom;
             }
             else {
                 this.handleListener = (e) => {
-                    this.fire(e, el, dom);
+                    this.fire(e, el);
                 };
                 el.addEventListener(this.name, this.handleListener, this.capture);
             }
@@ -289,7 +287,7 @@ var nodom;
         }
         clone() {
             let evt = new NodomEvent(this.name);
-            let arr = ['delg', 'once', 'nopopo', 'capture', 'handler', 'handleEvent', 'module'];
+            let arr = ['delg', 'once', 'nopopo', 'capture', 'handler'];
             arr.forEach((item) => {
                 evt[item] = this[item];
             });
