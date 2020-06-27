@@ -49,7 +49,8 @@ namespace nodom{
 		initial:"{0}初始化参数错误",
 		jsonparse:"JSON解析错误",
 		timeout:"请求超时",
-		config:"{0}配置参数错误"
+		config:"{0}配置参数错误",
+		config1:"{0}配置参数'{1}'错误"
 	}
 
 	/**

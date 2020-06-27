@@ -388,8 +388,7 @@ namespace nodom {
                 dst.directives.push(d);
             }
 
-            //assets
-            //指令复制
+            //assets复制
             for(let key of this.assets.keys()){
                 dst.assets.set(key,this.assets.get(key));
             }

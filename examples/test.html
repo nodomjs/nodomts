@@ -52,7 +52,8 @@
                     model.data['rows'].push({name:'haha',addr:'sssss'});
                 },
                 descClick:function(dom,model,module,e){
-                    model.data['rows'].splice(1,2,{name:'haha',addr:'sssss'});
+                    // model.data['rows'].splice(1,2);
+                    model.data['rows'].pop();
                 }
             }
         }

@@ -109,6 +109,7 @@ namespace nodom {
          * 为对象添加setter
          */
         addSetterGetter(data:any) {
+            let me = this;
             const excludes = ['$modelId'];
             if (Util.isObject(data)) {
                 Util.getOwnProps(data).forEach((p)=>{
@@ -162,6 +163,8 @@ namespace nodom {
                                 new Model(arg, module);
                             }
                         });
+                        //增加渲染
+                        Renderer.add(ModuleFactory.get(me.moduleName));
                     }
                 });
 

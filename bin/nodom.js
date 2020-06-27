@@ -679,14 +679,19 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Directive {
-        constructor(type, value, vdom, filterStr) {
+        constructor(type, value, vdom, filter) {
             this.id = nodom.Util.genId();
             this.type = type;
             if (nodom.Util.isString(value)) {
                 this.value = value.trim();
             }
-            if (filterStr) {
-                this.filter = new nodom.Filter(filterStr);
+            if (filter) {
+                if (typeof filter === 'string') {
+                    this.filter = new nodom.Filter(filter);
+                }
+                else if (filter instanceof nodom.Filter) {
+                    this.filter = filter;
+                }
             }
             if (type !== undefined) {
                 nodom.DirectiveManager.init(this, vdom);
@@ -1979,6 +1984,7 @@ var nodom;
             }
         }
         addSetterGetter(data) {
+            let me = this;
             const excludes = ['$modelId'];
             if (nodom.Util.isObject(data)) {
                 nodom.Util.getOwnProps(data).forEach((p) => {
@@ -2029,6 +2035,7 @@ var nodom;
                                 new Model(arg, module);
                             }
                         });
+                        nodom.Renderer.add(nodom.ModuleFactory.get(me.moduleName));
                     };
                 });
                 data.forEach((item) => {
@@ -4196,7 +4203,8 @@ var nodom;
         initial: "{0}初始化参数错误",
         jsonparse: "JSON解析错误",
         timeout: "请求超时",
-        config: "{0}配置参数错误"
+        config: "{0}配置参数错误",
+        config1: "{0}配置参数'{1}'错误"
     };
     nodom.FormMsgs = {
         type: "请输入有效的{0}",
