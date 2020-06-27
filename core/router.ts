@@ -692,16 +692,20 @@ namespace nodom {
 
             //a标签需要设置href
             if (dom.tagName === 'A') {
-                dom.props['href'] = 'javascript:void(0)';
+                dom.setProp('href','javascript:void(0)');
             }
             // 表达式处理
-            if (value && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
-                let expr = new Expression(value.substring(2, value.length - 2));
-                dom.exprProps['path'] = expr;
-                directive.value = expr;
-            } else {
-                dom.props['path'] =  value;
+            if (typeof value === 'string' && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
+                value = new Expression(value.substring(2, value.length - 2));
+            } 
+            //表达式，则需要设置为exprProp
+            if(value instanceof Expression){
+                dom.setProp('path',value,true);
+                directive.value = value;
+            }else{
+                dom.setProp('path',value);
             }
+            
             //添加click事件
             dom.addEvent(new NodomEvent('click', '', 
                 async (dom,model,module,e) => {
