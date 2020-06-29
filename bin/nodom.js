@@ -976,18 +976,49 @@ var nodom;
         }
         clone(changeKey) {
             let dst = new Element();
-            let notCopyProps = ['parent', 'directives', 'children'];
-            nodom.Util.getOwnProps(this).forEach((p) => {
-                if (notCopyProps.includes(p)) {
-                    return;
-                }
-                dst[p] = nodom.Util.clone(this[p], null, changeKey);
-            });
             if (changeKey) {
                 dst.key = nodom.Util.genId() + '';
+                let notCopyProps = ['parent', 'directives', 'children'];
+                nodom.Util.getOwnProps(this).forEach((p) => {
+                    if (notCopyProps.includes(p)) {
+                        return;
+                    }
+                    dst[p] = nodom.Util.clone(this[p], null, changeKey);
+                });
+                for (let d of this.directives) {
+                    dst.directives.push(d.clone(dst));
+                }
             }
-            for (let d of this.directives) {
-                dst.directives.push(d.clone(dst));
+            else {
+                let notCopyProps = ['parent', 'directives', 'assets', 'props', 'exprProps', 'events', 'children'];
+                nodom.Util.getOwnProps(this).forEach((p) => {
+                    if (notCopyProps.includes(p)) {
+                        return;
+                    }
+                    dst[p] = this[p];
+                });
+                for (let d of this.directives) {
+                    dst.directives.push(d);
+                }
+                nodom.Util.getOwnProps(this.props).forEach((k) => {
+                    dst.props[k] = this.props[k];
+                });
+                nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
+                    dst.exprProps[k] = this.exprProps[k];
+                });
+                for (let key of this.events.keys()) {
+                    let evt = this.events.get(key);
+                    if (nodom.Util.isArray(evt)) {
+                        let a = [];
+                        for (let e of evt) {
+                            a.push(e.clone());
+                        }
+                        dst.events.set(key, a);
+                    }
+                    else {
+                        dst.events.set(key, evt.clone());
+                    }
+                }
             }
             for (let c of this.children) {
                 dst.add(c.clone(changeKey));
@@ -3826,7 +3857,7 @@ var nodom;
                 dom.assets.set('value', dataValue);
             }
             else {
-                dom.assets.set('value', value);
+                dom.assets.set('value', dataValue);
             }
         }
     });

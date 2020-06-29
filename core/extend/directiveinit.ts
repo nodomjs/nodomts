@@ -364,7 +364,7 @@ namespace nodom {
                 dom.props['value'] = dataValue;
                 dom.assets.set('value',dataValue);
             }else{
-                dom.assets.set('value',value);
+                dom.assets.set('value',dataValue);
             }
         }    
     });
