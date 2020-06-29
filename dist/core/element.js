@@ -102,21 +102,21 @@ var nodom;
             }
             if (this.tagName !== undefined) { //element
                 this.handleProps(module);
-                //某些指令可能会终止渲染，如果返回false，则不继续渲染
                 this.handleDirectives(module, parent);
             }
             else { //textContent
                 this.handleTextContent(module);
+            }
+            if (this.dontRender) {
+                return;
             }
             //子节点渲染
             //dontrender 为false才渲染子节点
             for (let i = 0; i < this.children.length; i++) {
                 let item = this.children[i];
                 item.render(module, this);
-                //dontRender 删除
                 if (item.dontRender) {
-                    this.removeChild(item);
-                    i--;
+                    this.children.splice(i--, 1);
                 }
             }
             //自定义元素的后置渲染
@@ -285,61 +285,24 @@ var nodom;
         clone(changeKey) {
             let dst = new Element();
             //不直接拷贝属性集
-            let notCopyProps = ['parent', 'directives', 'assets', 'tmpData', 'props', 'exprProps', 'events', 'children'];
+            let notCopyProps = ['parent', 'directives', 'children'];
             //简单属性
             nodom.Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
                     return;
                 }
-                dst[p] = this[p];
+                dst[p] = nodom.Util.clone(this[p], null, changeKey);
             });
             //更新key
             if (changeKey) {
-                this.key = nodom.Util.genId() + '';
+                dst.key = nodom.Util.genId() + '';
             }
             //指令复制
             for (let d of this.directives) {
                 dst.directives.push(d.clone(dst));
             }
-            //assets复制
-            if (this.assets) {
-                dst.assets = nodom.Util.clone(this.assets);
-            }
-            //普通属性
-            nodom.Util.getOwnProps(this.props).forEach((k) => {
-                dst.props[k] = this.props[k];
-            });
-            //表达式属性
-            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
-                dst.exprProps[k] = this.exprProps[k];
-            });
-            //tmpData 复制
-            if (this.tmpData) {
-                dst.tmpData = nodom.Util.clone(this.tmpData);
-            }
-            //事件
-            for (let key of this.events.keys()) {
-                let evt = this.events.get(key);
-                //数组需要单独clone
-                if (nodom.Util.isArray(evt)) {
-                    let a = [];
-                    for (let e of evt) {
-                        a.push(e.clone());
-                    }
-                    dst.events.set(key, a);
-                }
-                else {
-                    dst.events.set(key, evt.clone());
-                }
-            }
-            //子节点
-            for (let i = 0; i < this.children.length; i++) {
-                if (!this.children[i]) {
-                    this.children.splice(i--, 1);
-                }
-                else {
-                    dst.children.push(this.children[i].clone(changeKey));
-                }
+            for (let c of this.children) {
+                dst.add(c.clone(changeKey));
             }
             return dst;
         }
@@ -349,12 +312,14 @@ var nodom;
          */
         handleDirectives(module, parent) {
             if (this.dontRender) {
-                return false;
+                return;
             }
             for (let d of this.directives.values()) {
+                if (this.dontRender) {
+                    return;
+                }
                 nodom.DirectiveManager.exec(d, this, module, parent);
             }
-            return true;
         }
         /**
          * 表达式处理，添加到expression计算队列
@@ -383,7 +348,10 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
+            for (let k of nodom.Util.getOwnProps(this.exprProps)) {
+                if (this.dontRender) {
+                    return;
+                }
                 //属性值为数组，则为表达式
                 if (nodom.Util.isArray(this.exprProps[k])) {
                     let pv = this.handleExpression(this.exprProps[k], module);
@@ -398,7 +366,7 @@ var nodom;
                 else if (this.exprProps[k] instanceof nodom.Expression) { //单个表达式
                     this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
                 }
-            });
+            }
         }
         /**
          * 处理asset，在渲染到html时执行
@@ -882,8 +850,9 @@ var nodom;
         /**
          * 添加指令
          * @param directive     指令对象
+         * @param sort          是否排序
          */
-        addDirective(directive) {
+        addDirective(directive, sort) {
             let finded = false;
             for (let i = 0; i < this.directives.length; i++) {
                 //如果存在相同类型，则直接替换
@@ -895,6 +864,14 @@ var nodom;
             }
             if (!finded) {
                 this.directives.push(directive);
+            }
+            //指令按优先级排序
+            if (sort) {
+                if (this.directives.length > 1) {
+                    this.directives.sort((a, b) => {
+                        return nodom.DirectiveManager.getType(a.type).prio - nodom.DirectiveManager.getType(b.type).prio;
+                    });
+                }
             }
         }
     }

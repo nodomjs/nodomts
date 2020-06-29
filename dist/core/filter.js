@@ -10,10 +10,12 @@ var nodom;
          * @param src 		源串，或explain后的数组
          */
         constructor(src) {
-            let arr = nodom.Util.isString(src) ? nodom.FilterManager.explain(src) : src;
-            if (arr) {
-                this.type = arr[0];
-                this.params = arr.slice(1);
+            if (src) {
+                let arr = nodom.Util.isString(src) ? nodom.FilterManager.explain(src) : src;
+                if (arr) {
+                    this.type = arr[0];
+                    this.params = arr.slice(1);
+                }
             }
         }
         /**
@@ -25,6 +27,17 @@ var nodom;
         exec(value, module) {
             let args = [module, this.type, value].concat(this.params);
             return nodom.Util.apply(nodom.FilterManager.exec, module, args);
+        }
+        /**
+         * 克隆
+         */
+        clone() {
+            let filter = new Filter();
+            filter.type = this.type;
+            if (this.params) {
+                filter.params = nodom.Util.clone(this.params);
+            }
+            return filter;
         }
     }
     nodom.Filter = Filter;

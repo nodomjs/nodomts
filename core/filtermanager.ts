@@ -3,16 +3,17 @@ namespace nodom {
     /**
      * filter类型命名规则：以小写字母a-z命名，其它字母不允许
      */
-    export class FilterManager {
-		/**
+    export class FilterManager{
+        /**
 		 * 过滤类型
 		 */
 		static filterTypes:Map<string,Function> = new Map();
 		/**
 		 * 不可编辑类型
 		 */
-		static cantEditTypes:Array<string> = ['date','currency','number','tolowercase','touppercase','orderBy','filter'];
-
+        static cantEditTypes:Array<string> = ['date','currency','number','tolowercase','touppercase','orderBy','filter'];
+        
+        
         /**
          * 创建过滤器类型
          * @param name 		过滤器类型名

@@ -15,7 +15,7 @@ declare namespace nodom {
          * 构造方法
          * @param src 		源串，或explain后的数组
          */
-        constructor(src: string | string[]);
+        constructor(src?: string | string[]);
         /**
          * 过滤器执行
          * @param value 	待过滤值
@@ -23,5 +23,9 @@ declare namespace nodom {
          * @returns 		过滤结果
          */
         exec(value: string, module: Module): string;
+        /**
+         * 克隆
+         */
+        clone(): Filter;
     }
 }

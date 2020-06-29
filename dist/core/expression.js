@@ -22,8 +22,20 @@ var nodom;
                 }
                 if (this.execString) {
                     let v = this.fields.length > 0 ? ',' + this.fields.join(',') : '';
-                    this.execFunc = eval('(function($module' + v + '){return ' + this.execString + '})');
+                    this.execString = 'function($module' + v + '){return ' + this.execString + '}';
+                    this.execFunc = eval('(' + this.execString + ')');
                 }
+            }
+            /**
+             * 克隆
+             */
+            clone() {
+                /*let expr = new Expression();
+                expr.fields = this.fields;
+                expr.id = Util.genId();
+                expr.execString = this.execString;
+                expr.execFunc = this.execFunc;*/
+                return this;
             }
             /**
              * 初始化，把表达式串转换成堆栈

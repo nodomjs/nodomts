@@ -4,14 +4,12 @@
 ///<reference path='./core/factory.ts' />
 ///<reference path='./core/compiler.ts' />
 ///<reference path='./core/directive.ts' />
-///<reference path='./core/directivefactory.ts' />
 ///<reference path='./core/directivemanager.ts' />
 ///<reference path='./core/defineelement.ts' />
+///<reference path='./core/defineelementmanager.ts' />
 ///<reference path='./core/element.ts' />
 ///<reference path='./core/expression.ts' />
-///<reference path='./core/expressionfactory.ts' />
 ///<reference path='./core/filter.ts' />
-///<reference path='./core/filterfactory.ts' />
 ///<reference path='./core/filtermanager.ts' />
 ///<reference path='./core/linker.ts' />
 ///<reference path='./core/messagequeue.ts' />

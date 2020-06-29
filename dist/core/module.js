@@ -58,8 +58,6 @@ var nodom;
             nodom.ModuleFactory.add(this.name, this);
             this.methodFactory = new nodom.MethodFactory(this);
             this.modelFactory = new nodom.ModelFactory(this);
-            this.expressionFactory = new nodom.ExpressionFactory(this);
-            this.directiveFactory = new nodom.DirectiveFactory(this);
             if (config) {
                 //保存config，存在延迟初始化情况
                 this.initConfig = config;
@@ -196,7 +194,6 @@ var nodom;
                             case 'compiled': //预编译后的js文件
                                 let arr = nodom.Serializer.deserialize(file, this);
                                 this.virtualDom = arr[0];
-                                this.expressionFactory = arr[1];
                                 break;
                             case 'data': //数据
                                 this.model = new nodom.Model(JSON.parse(file), this);

@@ -132,14 +132,6 @@ declare namespace nodom {
          */
         modelFactory: ModelFactory;
         /**
-         * 表达式工厂
-         */
-        expressionFactory: ExpressionFactory;
-        /**
-         * 指令工厂
-         */
-        directiveFactory: DirectiveFactory;
-        /**
          * 修改渲染的虚拟dom数组
          */
         renderDoms: Array<ChangedDom>;

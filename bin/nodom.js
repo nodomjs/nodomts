@@ -69,79 +69,63 @@ var nodom;
             static genId() {
                 return this.generatedId++;
             }
-            static clone(srcObj, expKey) {
+            static clone(srcObj, expKey, extra) {
                 let me = this;
                 let map = new WeakMap();
-                let retObj = clone(srcObj);
-                map = null;
-                return retObj;
-                function clone(src) {
+                return clone(srcObj, expKey, extra);
+                function clone(src, expKey, extra) {
+                    if (typeof src !== 'object' || Util.isFunction(src)) {
+                        return src;
+                    }
                     let dst;
-                    if (me.isObject(src)) {
+                    if (src.clone && Util.isFunction(src.clone)) {
+                        return src.clone(extra);
+                    }
+                    else if (me.isObject(src)) {
                         dst = new Object();
                         map.set(src, dst);
                         Object.getOwnPropertyNames(src).forEach((prop) => {
                             if (expKey) {
                                 if (expKey.constructor === RegExp && expKey.test(prop)
-                                    || expKey.constructor === String && expKey === prop) {
+                                    || expKey.includes(prop)) {
                                     return;
                                 }
                             }
-                            if (me.isObject(src[prop]) || me.isArray(src[prop]) || me.isMap(src[prop])) {
-                                let co = null;
-                                if (!map.has(src[prop])) {
-                                    co = clone(src[prop]);
-                                    map.set(src[prop], co);
-                                }
-                                else {
-                                    co = map.get(src[prop]);
-                                }
-                                dst[prop] = co;
-                            }
-                            else {
-                                dst[prop] = src[prop];
-                            }
+                            dst[prop] = getCloneObj(src[prop], expKey, extra);
                         });
                     }
                     else if (me.isMap(src)) {
                         dst = new Map();
-                        map.set(src, dst);
                         src.forEach((value, key) => {
                             if (expKey) {
                                 if (expKey.constructor === RegExp && expKey.test(key)
-                                    || expKey.constructor === String && expKey === key) {
+                                    || expKey.includes(key)) {
                                     return;
                                 }
                             }
-                            if (me.isObject(value) || me.isArray(value) || me.isMap(value)) {
-                                let co = null;
-                                if (!map.has(value)) {
-                                    co = clone(value);
-                                    map.set(value, co);
-                                }
-                                else {
-                                    co = map.get(value);
-                                }
-                                dst.set(key, co);
-                            }
-                            else {
-                                dst.set(key, value);
-                            }
+                            dst.set(key, getCloneObj(value, expKey, extra));
                         });
                     }
                     else if (me.isArray(src)) {
                         dst = new Array();
-                        map.set(src, dst);
                         src.forEach(function (item, i) {
-                            if (me.isObject(item) || me.isArray(item) || me.isMap(item)) {
-                                dst[i] = clone(item);
-                            }
-                            else {
-                                dst[i] = item;
-                            }
+                            dst[i] = getCloneObj(item, expKey, extra);
                         });
                     }
                     return dst;
+                }
+                function getCloneObj(value, expKey, extra) {
+                    if (typeof value === 'object' && !Util.isFunction(value)) {
+                        let co = null;
+                        if (!map.has(value)) {
+                            co = clone(value, expKey, extra);
+                        }
+                        else {
+                            co = map.get(value);
+                        }
+                        return co;
+                    }
+                    return value;
                 }
             }
             static merge(o1, o2, o3, o4, o5, o6) {
@@ -571,19 +555,22 @@ var nodom;
 (function (nodom) {
     class Factory {
         constructor(module) {
+            this.items = new Map();
             if (module !== undefined) {
                 this.moduleName = module.name;
             }
-            this.items = Object.create(null);
         }
         add(name, item) {
-            this.items[name] = item;
+            this.items.set(name, item);
         }
         get(name) {
-            return this.items[name];
+            return this.items.get(name);
         }
         remove(name) {
-            delete this.items[name];
+            this.items.delete(name);
+        }
+        has(name) {
+            return this.items.has(name);
         }
     }
     nodom.Factory = Factory;
@@ -630,8 +617,7 @@ var nodom;
             }
         }
         static handleEl(el) {
-            let oe = new nodom.Element();
-            oe.tagName = el.tagName;
+            let oe = new nodom.Element(el.tagName);
             this.handleAttributes(oe, el);
             this.handleChildren(oe, el);
             return oe;
@@ -648,7 +634,7 @@ var nodom;
                 let attr = el.attributes[i];
                 let v = attr.value.trim();
                 if (attr.name.startsWith('x-')) {
-                    oe.directives.push(new nodom.Directive(attr.name.substr(2), v, oe));
+                    oe.addDirective(new nodom.Directive(attr.name.substr(2), v, oe), true);
                 }
                 else if (attr.name.startsWith('e-')) {
                     let en = attr.name.substr(2);
@@ -668,9 +654,6 @@ var nodom;
                     }
                 }
             }
-            oe.directives.sort((a, b) => {
-                return nodom.DirectiveManager.getType(a.type).prio - nodom.DirectiveManager.getType(b.type).prio;
-            });
         }
         static handleChildren(oe, el) {
             el.childNodes.forEach((nd) => {
@@ -733,7 +716,10 @@ var nodom;
             return nodom.Util.apply(nodom.DirectiveManager.exec, nodom.DirectiveManager, args);
         }
         clone(vdom) {
-            let dir = new Directive(this.type, this.value, vdom, this.filter);
+            let dir = new Directive(this.type, this.value, vdom);
+            if (this.filter) {
+                dir.filter = this.filter.clone();
+            }
             if (this.params) {
                 dir.params = nodom.Util.clone(this.params);
             }
@@ -741,12 +727,6 @@ var nodom;
         }
     }
     nodom.Directive = Directive;
-})(nodom || (nodom = {}));
-var nodom;
-(function (nodom) {
-    class DirectiveFactory extends nodom.Factory {
-    }
-    nodom.DirectiveFactory = DirectiveFactory;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
@@ -855,12 +835,14 @@ var nodom;
             else {
                 this.handleTextContent(module);
             }
+            if (this.dontRender) {
+                return;
+            }
             for (let i = 0; i < this.children.length; i++) {
                 let item = this.children[i];
                 item.render(module, this);
                 if (item.dontRender) {
-                    this.removeChild(item);
-                    i--;
+                    this.children.splice(i--, 1);
                 }
             }
             if (this.defineElement) {
@@ -994,62 +976,34 @@ var nodom;
         }
         clone(changeKey) {
             let dst = new Element();
-            let notCopyProps = ['parent', 'directives', 'assets', 'tmpData', 'props', 'exprProps', 'events', 'children'];
+            let notCopyProps = ['parent', 'directives', 'children'];
             nodom.Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
                     return;
                 }
-                dst[p] = this[p];
+                dst[p] = nodom.Util.clone(this[p], null, changeKey);
             });
             if (changeKey) {
-                this.key = nodom.Util.genId() + '';
+                dst.key = nodom.Util.genId() + '';
             }
             for (let d of this.directives) {
                 dst.directives.push(d.clone(dst));
             }
-            if (this.assets) {
-                dst.assets = nodom.Util.clone(this.assets);
-            }
-            nodom.Util.getOwnProps(this.props).forEach((k) => {
-                dst.props[k] = this.props[k];
-            });
-            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
-                dst.exprProps[k] = this.exprProps[k];
-            });
-            if (this.tmpData) {
-                dst.tmpData = nodom.Util.clone(this.tmpData);
-            }
-            for (let key of this.events.keys()) {
-                let evt = this.events.get(key);
-                if (nodom.Util.isArray(evt)) {
-                    let a = [];
-                    for (let e of evt) {
-                        a.push(e.clone());
-                    }
-                    dst.events.set(key, a);
-                }
-                else {
-                    dst.events.set(key, evt.clone());
-                }
-            }
-            for (let i = 0; i < this.children.length; i++) {
-                if (!this.children[i]) {
-                    this.children.splice(i--, 1);
-                }
-                else {
-                    dst.children.push(this.children[i].clone(changeKey));
-                }
+            for (let c of this.children) {
+                dst.add(c.clone(changeKey));
             }
             return dst;
         }
         handleDirectives(module, parent) {
             if (this.dontRender) {
-                return false;
+                return;
             }
             for (let d of this.directives.values()) {
+                if (this.dontRender) {
+                    return;
+                }
                 nodom.DirectiveManager.exec(d, this, module, parent);
             }
-            return true;
         }
         handleExpression(exprArr, module) {
             if (this.dontRender) {
@@ -1072,7 +1026,10 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
+            for (let k of nodom.Util.getOwnProps(this.exprProps)) {
+                if (this.dontRender) {
+                    return;
+                }
                 if (nodom.Util.isArray(this.exprProps[k])) {
                     let pv = this.handleExpression(this.exprProps[k], module);
                     if (k === 'class') {
@@ -1085,7 +1042,7 @@ var nodom;
                 else if (this.exprProps[k] instanceof nodom.Expression) {
                     this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
                 }
-            });
+            }
         }
         handleAssets(el) {
             if (!this.tagName && !el) {
@@ -1431,7 +1388,7 @@ var nodom;
                 this.events.set(event.name, event);
             }
         }
-        addDirective(directive) {
+        addDirective(directive, sort) {
             let finded = false;
             for (let i = 0; i < this.directives.length; i++) {
                 if (this.directives[i].type === directive.type) {
@@ -1442,6 +1399,13 @@ var nodom;
             }
             if (!finded) {
                 this.directives.push(directive);
+            }
+            if (sort) {
+                if (this.directives.length > 1) {
+                    this.directives.sort((a, b) => {
+                        return nodom.DirectiveManager.getType(a.type).prio - nodom.DirectiveManager.getType(b.type).prio;
+                    });
+                }
             }
         }
     }
@@ -1460,8 +1424,12 @@ var nodom;
                 }
                 if (this.execString) {
                     let v = this.fields.length > 0 ? ',' + this.fields.join(',') : '';
-                    this.execFunc = eval('(function($module' + v + '){return ' + this.execString + '})');
+                    this.execString = 'function($module' + v + '){return ' + this.execString + '}';
+                    this.execFunc = eval('(' + this.execString + ')');
                 }
+            }
+            clone() {
+                return this;
             }
             compile(exprStr) {
                 let stringReg = [/\".*?\"/, /'.*?'/, /`.*?`/];
@@ -1666,32 +1634,30 @@ var nodom;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
-    class ExpressionFactory extends nodom.Factory {
-    }
-    nodom.ExpressionFactory = ExpressionFactory;
-})(nodom || (nodom = {}));
-var nodom;
-(function (nodom) {
     class Filter {
         constructor(src) {
-            let arr = nodom.Util.isString(src) ? nodom.FilterManager.explain(src) : src;
-            if (arr) {
-                this.type = arr[0];
-                this.params = arr.slice(1);
+            if (src) {
+                let arr = nodom.Util.isString(src) ? nodom.FilterManager.explain(src) : src;
+                if (arr) {
+                    this.type = arr[0];
+                    this.params = arr.slice(1);
+                }
             }
         }
         exec(value, module) {
             let args = [module, this.type, value].concat(this.params);
             return nodom.Util.apply(nodom.FilterManager.exec, module, args);
         }
+        clone() {
+            let filter = new Filter();
+            filter.type = this.type;
+            if (this.params) {
+                filter.params = nodom.Util.clone(this.params);
+            }
+            return filter;
+        }
     }
     nodom.Filter = Filter;
-})(nodom || (nodom = {}));
-var nodom;
-(function (nodom) {
-    class FilterFactory extends nodom.Factory {
-    }
-    nodom.FilterFactory = FilterFactory;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
@@ -1978,7 +1944,7 @@ var nodom;
             if (module) {
                 this.moduleName = module.name;
                 if (module.modelFactory) {
-                    module.modelFactory.add(this.id + '', this);
+                    module.modelFactory.add(this.id, this);
                 }
             }
             data['$modelId'] = this.id;
@@ -2156,8 +2122,6 @@ var nodom;
             nodom.ModuleFactory.add(this.name, this);
             this.methodFactory = new nodom.MethodFactory(this);
             this.modelFactory = new nodom.ModelFactory(this);
-            this.expressionFactory = new nodom.ExpressionFactory(this);
-            this.directiveFactory = new nodom.DirectiveFactory(this);
             if (config) {
                 this.initConfig = config;
                 if (nodom.Util.isString(config.el)) {
@@ -2273,7 +2237,6 @@ var nodom;
                             case 'compiled':
                                 let arr = nodom.Serializer.deserialize(file, this);
                                 this.virtualDom = arr[0];
-                                this.expressionFactory = arr[1];
                                 break;
                             case 'data':
                                 this.model = new nodom.Model(JSON.parse(file), this);
@@ -3620,7 +3583,6 @@ var nodom;
             if (data) {
                 dom.modelId = data.$modelId;
             }
-            return true;
         }
     });
     nodom.DirectiveManager.addType('repeat', {
@@ -3640,7 +3602,7 @@ var nodom;
                 modelName = value;
             }
             if (!dom.hasDirective('model')) {
-                dom.directives.push(new nodom.Directive('model', modelName, dom));
+                dom.addDirective(new nodom.Directive('model', modelName, dom), true);
             }
             if (modelName.startsWith('$$')) {
                 modelName = modelName.substr(2);
@@ -3648,11 +3610,10 @@ var nodom;
             directive.value = modelName;
         },
         handle: (directive, dom, module, parent) => {
-            const modelFac = module.modelFactory;
-            let rows = modelFac.get(dom.modelId).data;
+            let rows = module.modelFactory.get(dom.modelId).data;
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
-                return true;
+                return;
             }
             if (directive.filter !== undefined) {
                 rows = directive.filter.exec(rows, module);
@@ -3677,7 +3638,6 @@ var nodom;
                 }
             }
             dom.dontRender = true;
-            return false;
             function setKey(node, key, id) {
                 node.key = key + '_' + id;
                 node.children.forEach((dom) => {
@@ -3727,7 +3687,6 @@ var nodom;
                     parent.children[indelse].dontRender = false;
                 }
             }
-            return true;
         }
     });
     nodom.DirectiveManager.addType('else', {
@@ -4266,6 +4225,23 @@ var nodom;
         min: "最小输入值为{0}",
         max: "最大输入值为{0}"
     };
+})(nodom || (nodom = {}));
+var nodom;
+(function (nodom) {
+    class DefineElement {
+        init(el) { }
+        ;
+        beforeRender(module, uidom) { }
+        afterRender(module, uidom) { }
+        clone() {
+            let ele = Reflect.construct(this.constructor, []);
+            nodom.Util.getOwnProps(this).forEach((prop) => {
+                ele[prop] = nodom.Util.clone(this[prop]);
+            });
+            return ele;
+        }
+    }
+    nodom.DefineElement = DefineElement;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {

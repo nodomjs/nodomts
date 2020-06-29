@@ -594,16 +594,19 @@ var nodom;
             }
             //a标签需要设置href
             if (dom.tagName === 'A') {
-                dom.props['href'] = 'javascript:void(0)';
+                dom.setProp('href', 'javascript:void(0)');
             }
             // 表达式处理
-            if (value && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
-                let expr = new nodom.Expression(value.substring(2, value.length - 2));
-                dom.exprProps['path'] = expr;
-                directive.value = expr;
+            if (typeof value === 'string' && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
+                value = new nodom.Expression(value.substring(2, value.length - 2));
+            }
+            //表达式，则需要设置为exprProp
+            if (value instanceof nodom.Expression) {
+                dom.setProp('path', value, true);
+                directive.value = value;
             }
             else {
-                dom.props['path'] = value;
+                dom.setProp('path', value);
             }
             //添加click事件
             dom.addEvent(new nodom.NodomEvent('click', '', (dom, model, module, e) => __awaiter(this, void 0, void 0, function* () {

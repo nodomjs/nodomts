@@ -3,73 +3,35 @@ namespace nodom{
     /**
      * 自定义元素
      */
-    export interface IDefineElement{
+    export class DefineElement {
         /**
          * tag name
          */
-        tagName?:string;
+        tagName:string;
         /**
-         * 编译方法
+         * 编译时执行方法
+         * @param el    待编译html element
          */
-        init:Function;
+        init(el:HTMLElement){};
         /**
-         * 前置渲染方法
+         * 前置渲染方法(dom render方法中获取modelId和parentKey后执行)
+         * @param module    模块
+         * @param uidom     虚拟dom
          */
-        afterRender?:Function;
+        beforeRender(module:nodom.Module,uidom:nodom.Element){}
         /**
-         * 后置渲染方法
+         * 后置渲染方法(dom render结束后，选到html之前)
+         * @param module    模块
+         * @param uidom     虚拟dom
          */
-        beforeRender?:Function;
-    }
+        afterRender(module:nodom.Module,uidom:nodom.Element){}
 
-    /**
-     * 自定义元素管理器
-     */
-    export class DefineElementManager{
-        static elementMap:Map<string,IDefineElement> = new Map();
-        /**
-         * 添加自定义元素类
-         * @param name  元素名
-         * @param cfg   元素类
-         */
-        static add(name:string,cfg:any){
-            if(this.elementMap.has(name)){
-                throw new NodomError('exist1',TipWords.element,name);
-            }
-            this.elementMap.set(name,cfg);
+        clone(){
+            let ele = Reflect.construct(this.constructor,[]);
+            Util.getOwnProps(this).forEach((prop)=>{
+                ele[prop] = Util.clone(this[prop]);
+            })
+            return ele;
         }
-
-        /**
-         * 获取自定义元素类
-         * @param tagName 元素名
-         */
-        static get(tagName:string):any{
-            return this.elementMap.get(tagName);
-        }
-
-        /**
-         * 执行自定义元素前置渲染
-         * @param module    模块 
-         * @param dom       虚拟dom
-         */
-        static beforeRender(module:Module,dom:Element){
-            let de:IDefineElement = dom.defineElement;
-            if(de && de.beforeRender){
-                de.beforeRender(module,dom);
-            }
-        }
-
-        /**
-         * 执行自定义元素后置渲染
-         * @param module    模块 
-         * @param dom       虚拟dom
-         */
-        static afterRender(module:Module,dom:Element){
-            let de:IDefineElement = dom.defineElement;
-            if(de && de.afterRender){
-                de.afterRender(module,dom);
-            }
-        }
-
     }
 }

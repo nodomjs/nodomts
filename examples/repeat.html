@@ -50,9 +50,9 @@
         </div>
         <div class="tip">使用数组外的数据，直接引用</div>
         <div class="code">
-            会员折扣：{{discount*10}}折
+            会员折扣：{{$$discount.data*10}}折
             <div x-repeat="foods">
-                菜名：{{name}}，价格：{{price}}，会员价：{{price*discount.data}}
+                菜名：{{name}}，价格：{{price}}，会员价：{{price*$$discount.data}}
             </div>
         </div>
     </div>
@@ -63,7 +63,7 @@
         module:{
             el: '.view',
             data: {
-                discount:{data: 0.9},
+                discount:{data:0.9},
                 foods: [{
                     name: '夫妻肺片',
                     price: 25

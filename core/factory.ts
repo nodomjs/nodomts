@@ -12,7 +12,7 @@ namespace nodom {
 		/**
 		 * 工厂item对象
 		 */
-		items:object;
+		items:Map<number|string,any> = new Map();
 		
 		/**
 		 * @param module 模块
@@ -21,8 +21,6 @@ namespace nodom {
             if (module !== undefined) {
                 this.moduleName = module.name;
             }
-            //容器map
-            this.items = Object.create(null);
         }
 
         /**
@@ -30,24 +28,33 @@ namespace nodom {
 		 * @param name 	item name
 		 * @param item	item
          */
-        add(name:any, item:any) {
-            this.items[name] = item;
+        add(name:string|number, item:any) {
+            this.items.set(name,item);
         }
 
         /**
          * 获得item
 		 * @param name 	item name
          */
-        get(name:any) {
-            return this.items[name];
+        get(name:string|number) {
+            return this.items.get(name);
         }
 
+        
         /**
          * 从容器移除
 		 * @param name 	item name
          */
-        remove(name:any) {
-            delete this.items[name];
+        remove(name:string|number) {
+            this.items.delete(name);
+        }
+
+        /**
+         * 是否拥有该项
+         * @param name item name
+         */
+        has(name:string|number){
+            return this.items.has(name);
         }
     }
 }

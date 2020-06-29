@@ -22,7 +22,7 @@ var nodom;
             if (module) {
                 this.moduleName = module.name;
                 if (module.modelFactory) {
-                    module.modelFactory.add(this.id + '', this);
+                    module.modelFactory.add(this.id, this);
                 }
             }
             // 给data设置modelid

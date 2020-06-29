@@ -124,7 +124,7 @@ declare namespace nodom {
         /**
          * 自定义element对象
          */
-        defineElement: IDefineElement;
+        defineElement: DefineElement;
         /**
          * @param tag 标签名
          */
@@ -152,7 +152,7 @@ declare namespace nodom {
          * 处理指令
          *
          */
-        handleDirectives(module: any, parent: any): boolean;
+        handleDirectives(module: any, parent: any): void;
         /**
          * 表达式处理，添加到expression计算队列
          */
@@ -292,7 +292,8 @@ declare namespace nodom {
         /**
          * 添加指令
          * @param directive     指令对象
+         * @param sort          是否排序
          */
-        addDirective(directive: Directive): void;
+        addDirective(directive: Directive, sort?: boolean): void;
     }
 }

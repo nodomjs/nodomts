@@ -6,7 +6,6 @@ var nodom;
      *  每个指令类型都有一个init和handle方法，init和handle都可选
      *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块)，无返回
      *  handle方法在渲染时执行，包含三个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
-     *  return true/false false则不进行后面的所有渲染工作
      */
     nodom.DirectiveManager.addType('model', {
         prio: 1,
@@ -64,7 +63,6 @@ var nodom;
             if (data) {
                 dom.modelId = data.$modelId;
             }
-            return true;
         }
     });
     /**
@@ -90,20 +88,20 @@ var nodom;
             }
             // 增加model指令
             if (!dom.hasDirective('model')) {
-                dom.directives.push(new nodom.Directive('model', modelName, dom));
+                dom.addDirective(new nodom.Directive('model', modelName, dom), true);
             }
+            //模块全局数据
             if (modelName.startsWith('$$')) {
                 modelName = modelName.substr(2);
             }
             directive.value = modelName;
         },
         handle: (directive, dom, module, parent) => {
-            const modelFac = module.modelFactory;
-            let rows = modelFac.get(dom.modelId).data;
+            let rows = module.modelFactory.get(dom.modelId).data;
             // 无数据，不渲染
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
-                return true;
+                return;
             }
             //有过滤器，处理数据集合
             if (directive.filter !== undefined) {
@@ -134,7 +132,6 @@ var nodom;
             }
             // 不渲染该节点
             dom.dontRender = true;
-            return false;
             function setKey(node, key, id) {
                 node.key = key + '_' + id;
                 node.children.forEach((dom) => {
@@ -196,7 +193,6 @@ var nodom;
                     parent.children[indelse].dontRender = false;
                 }
             }
-            return true;
         }
     });
     /**

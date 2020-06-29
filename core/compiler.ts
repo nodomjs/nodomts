@@ -63,8 +63,7 @@ namespace nodom {
          * @param el 待处理的html element
          */
         static handleEl(el:HTMLElement){
-            let oe:Element = new Element();
-            oe.tagName = el.tagName;
+            let oe:Element = new Element(el.tagName);
             this.handleAttributes(oe,el);
             this.handleChildren(oe,el);
             return oe;
@@ -96,7 +95,7 @@ namespace nodom {
                 let v = attr.value.trim();
                 if (attr.name.startsWith('x-')) { //指令
                     //添加到dom指令集
-                    oe.directives.push(new Directive(attr.name.substr(2), v, oe));
+                    oe.addDirective(new Directive(attr.name.substr(2), v, oe),true);
                 } else if (attr.name.startsWith('e-')) { //事件
                     let en = attr.name.substr(2);
                     oe.addEvent(new NodomEvent(en, attr.value.trim()));
@@ -114,10 +113,6 @@ namespace nodom {
                     }
                 }
             }
-            //指令按优先级排序
-            oe.directives.sort((a, b) => {
-                return DirectiveManager.getType(a.type).prio - DirectiveManager.getType(b.type).prio;
-            });
         }
 
         /**

@@ -62,8 +62,7 @@ var nodom;
          * @param el 待处理的html element
          */
         static handleEl(el) {
-            let oe = new nodom.Element();
-            oe.tagName = el.tagName;
+            let oe = new nodom.Element(el.tagName);
             this.handleAttributes(oe, el);
             this.handleChildren(oe, el);
             return oe;
@@ -93,7 +92,7 @@ var nodom;
                 let v = attr.value.trim();
                 if (attr.name.startsWith('x-')) { //指令
                     //添加到dom指令集
-                    oe.directives.push(new nodom.Directive(attr.name.substr(2), v, oe));
+                    oe.addDirective(new nodom.Directive(attr.name.substr(2), v, oe), true);
                 }
                 else if (attr.name.startsWith('e-')) { //事件
                     let en = attr.name.substr(2);
@@ -113,10 +112,6 @@ var nodom;
                     }
                 }
             }
-            //指令按优先级排序
-            oe.directives.sort((a, b) => {
-                return nodom.DirectiveManager.getType(a.type).prio - nodom.DirectiveManager.getType(b.type).prio;
-            });
         }
         /**
          * 处理子节点

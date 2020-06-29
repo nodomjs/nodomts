@@ -19,91 +19,87 @@ namespace nodom{
          * 对象复制
          * @param srcObj    源对象
          * @param expKey    不复制的键正则表达式或名
+         * @param extra     clone附加参数
          * @returns         复制的对象
          */
 
-        static clone(srcObj:object,expKey?:string|RegExp):any{
+        static clone(srcObj:object,expKey?:RegExp|string[],extra?:any):any{
             let me = this;
-            let map = new WeakMap();
-            let retObj = clone(srcObj);
-            map = null;
-            return retObj;
+            let map:WeakMap<object,any> = new WeakMap();
+            return clone(srcObj,expKey,extra);
 
             /**
              * clone对象
              * @param src   待clone对象
+             * @param extra clone附加参数
              * @returns     克隆后的对象
              */
-            function clone(src){
+            function clone(src,expKey,extra?){
+                //非对象或函数，直接返回            
+                if(typeof src !== 'object' || Util.isFunction(src)){
+                    return src;
+                }
+                
                 let dst;
-                if(me.isObject(src)){
+                
+                //带有clone方法，则直接返回clone值
+                if(src.clone && Util.isFunction(src.clone)){
+                    return src.clone(extra);
+                }else if(me.isObject(src)){
                     dst = new Object();
                     //把对象加入map，如果后面有新克隆对象，则用新克隆对象进行覆盖
                     map.set(src,dst);
                     Object.getOwnPropertyNames(src).forEach((prop)=>{
                         //不克隆的键
                         if(expKey){
-                            if(expKey.constructor === RegExp && (<RegExp>expKey).test(prop)       //正则表达式匹配的键不复制
-                                || expKey.constructor === String && expKey === prop     //被排除的键不复制
+                            if(expKey.constructor === RegExp && (<RegExp>expKey).test(prop) //正则表达式匹配的键不复制
+                                || (<string[]>expKey).includes(prop)                        //被排除的键不复制
                                 ){
                                 return;
                             }
                         }
-                        //数组或对象继续克隆
-                        if(me.isObject(src[prop]) || me.isArray(src[prop]) || me.isMap(src[prop])){
-                            let co = null;
-                            if(!map.has(src[prop])){  //clone新对象
-                                co = clone(src[prop]);
-                                //存储已克隆对象，避免重复创建或对象相互引用带来的溢出
-                                map.set(src[prop],co);
-                            }else{                    //从map中获取对象
-                                co = map.get(src[prop]);
-                            }
-                            dst[prop] = co;
-                        }else{  //直接复制
-                            dst[prop] = src[prop];
-                        }
+                        dst[prop] = getCloneObj(src[prop],expKey,extra);
                     });
                 } else if(me.isMap(src)){
                     dst = new Map();
                     //把对象加入map，如果后面有新克隆对象，则用新克隆对象进行覆盖
-                    map.set(src,dst);
                     src.forEach((value,key)=>{
                         //不克隆的键
                         if(expKey){
                             if(expKey.constructor === RegExp && (<RegExp>expKey).test(key)       //正则表达式匹配的键不复制
-                                || expKey.constructor === String && expKey === key){     //被排除的键不复制
+                                || (<string[]>expKey).includes(key)){     //被排除的键不复制
                                 return;
                             }
                         }
-                        //数组或对象继续克隆
-                        if(me.isObject(value) || me.isArray(value) || me.isMap(value)){
-                            let co = null;
-                            if(!map.has(value)){  //clone新对象
-                                co = clone(value);
-                                //存储已克隆对象，避免重复创建或对象相互引用带来的溢出
-                                map.set(value,co);
-                            }else{                    //从map中获取对象
-                                co = map.get(value);
-                            }
-                            dst.set(key,co);
-                        }else{  //直接复制
-                            dst.set(key,value);
-                        }
+                        dst.set(key,getCloneObj(value,expKey,extra));
                     });
                 }else if(me.isArray(src)){
                     dst = new Array();
                     //把对象加入map，如果后面有新克隆对象，则用新克隆对象进行覆盖
-                    map.set(src,dst);
                     src.forEach(function(item,i){
-                        if(me.isObject(item) || me.isArray(item) || me.isMap(item)){
-                            dst[i] = clone(item);
-                        }else{  //直接复制
-                            dst[i] = item;
-                        } 
+                        dst[i] = getCloneObj(item,expKey,extra);
                     });
                 }
                 return dst;
+            }
+
+            /**
+             * 获取clone对象
+             * @param value     待clone值
+             * @param expKey    排除键
+             * @param extra     附加参数
+             */
+            function getCloneObj(value,expKey,extra){
+                if(typeof value === 'object' && !Util.isFunction(value)){
+                    let co = null;
+                    if(!map.has(value)){  //clone新对象
+                        co = clone(value,expKey,extra);
+                    }else{                    //从map中获取对象
+                        co = map.get(value);
+                    }
+                    return co;
+                }
+                return value;
             }
         }
         /**

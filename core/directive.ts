@@ -94,7 +94,10 @@ namespace nodom {
          * @param vdom  虚拟dom
          */
         clone(vdom:Element){
-            let dir = new Directive(this.type,this.value,vdom,this.filter);
+            let dir = new Directive(this.type,this.value,vdom);
+            if(this.filter){
+                dir.filter = this.filter.clone();
+            }
             if(this.params){
                 dir.params = Util.clone(this.params);
             }

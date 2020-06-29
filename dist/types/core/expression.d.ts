@@ -30,7 +30,11 @@ declare namespace nodom {
         /**
          * @param exprStr	表达式串
          */
-        constructor(exprStr: string);
+        constructor(exprStr?: string);
+        /**
+         * 克隆
+         */
+        clone(): this;
         /**
          * 初始化，把表达式串转换成堆栈
          * @param exprStr 	表达式串

@@ -13,9 +13,10 @@ declare namespace nodom {
          * 对象复制
          * @param srcObj    源对象
          * @param expKey    不复制的键正则表达式或名
+         * @param extra     clone附加参数
          * @returns         复制的对象
          */
-        static clone(srcObj: object, expKey?: string | RegExp): any;
+        static clone(srcObj: object, expKey?: RegExp | string[], extra?: any): any;
         /**
          * 合并多个对象并返回
          * @param   参数数组

@@ -39,7 +39,7 @@ namespace nodom {
         /**
          * @param exprStr	表达式串
          */
-        constructor(exprStr:string) {
+        constructor(exprStr?:string) {
             //旧值
             this.fields = []; // 字段数组
             this.id = Util.genId();
@@ -48,8 +48,21 @@ namespace nodom {
             }
             if(this.execString){
                 let v:string = this.fields.length>0?','+this.fields.join(','):'';
-                this.execFunc = eval('(function($module' + v + '){return ' + this.execString + '})');
+                this.execString = 'function($module' + v + '){return ' + this.execString + '}';
+                this.execFunc = eval('('+ this.execString +')');
             }
+        }
+
+        /**
+         * 克隆
+         */
+        clone(){
+            /*let expr = new Expression();
+            expr.fields = this.fields;
+            expr.id = Util.genId();
+            expr.execString = this.execString;
+            expr.execFunc = this.execFunc;*/
+            return this;
         }
 
         /**

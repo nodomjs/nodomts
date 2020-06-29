@@ -11,7 +11,7 @@ declare namespace nodom {
         /**
          * 工厂item对象
          */
-        items: object;
+        items: Map<number | string, any>;
         /**
          * @param module 模块
          */
@@ -21,16 +21,21 @@ declare namespace nodom {
          * @param name 	item name
          * @param item	item
          */
-        add(name: any, item: any): void;
+        add(name: string | number, item: any): void;
         /**
          * 获得item
          * @param name 	item name
          */
-        get(name: any): any;
+        get(name: string | number): any;
         /**
          * 从容器移除
          * @param name 	item name
          */
-        remove(name: any): void;
+        remove(name: string | number): void;
+        /**
+         * 是否拥有该项
+         * @param name item name
+         */
+        has(name: string | number): boolean;
     }
 }

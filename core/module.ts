@@ -136,14 +136,7 @@ namespace nodom {
          * 数据模型工厂
          */
         modelFactory: ModelFactory;
-        /**
-         * 表达式工厂
-         */
-        expressionFactory: ExpressionFactory;
-        /**
-         * 指令工厂
-         */
-        directiveFactory: DirectiveFactory;
+        
         /**
          * 修改渲染的虚拟dom数组
          */
@@ -188,8 +181,6 @@ namespace nodom {
             
             this.methodFactory = new MethodFactory(this);
             this.modelFactory = new ModelFactory(this);
-            this.expressionFactory = new ExpressionFactory(this);
-            this.directiveFactory = new DirectiveFactory(this);
             
             if (config) {
                 //保存config，存在延迟初始化情况
@@ -330,7 +321,6 @@ namespace nodom {
                     case 'compiled': //预编译后的js文件
                         let arr = Serializer.deserialize(file, this);
                         this.virtualDom = arr[0];
-                        this.expressionFactory = arr[1];
                         break;
                     case 'data': //数据
                         this.model = new Model(JSON.parse(file), this);

@@ -3,51 +3,28 @@ declare namespace nodom {
     /**
      * 自定义元素
      */
-    interface IDefineElement {
+    class DefineElement {
         /**
          * tag name
          */
-        tagName?: string;
+        tagName: string;
         /**
-         * 编译方法
+         * 编译时执行方法
+         * @param el    待编译html element
          */
-        init: Function;
+        init(el: HTMLElement): void;
         /**
-         * 前置渲染方法
-         */
-        afterRender?: Function;
-        /**
-         * 后置渲染方法
-         */
-        beforeRender?: Function;
-    }
-    /**
-     * 自定义元素管理器
-     */
-    class DefineElementManager {
-        static elementMap: Map<string, IDefineElement>;
-        /**
-         * 添加自定义元素类
-         * @param name  元素名
-         * @param cfg   元素类
-         */
-        static add(name: string, cfg: any): void;
-        /**
-         * 获取自定义元素类
-         * @param tagName 元素名
-         */
-        static get(tagName: string): any;
-        /**
-         * 执行自定义元素前置渲染
+         * 前置渲染方法(dom render方法中获取modelId和parentKey后执行)
          * @param module    模块
-         * @param dom       虚拟dom
+         * @param uidom     虚拟dom
          */
-        static beforeRender(module: Module, dom: Element): void;
+        beforeRender(module: nodom.Module, uidom: nodom.Element): void;
         /**
-         * 执行自定义元素后置渲染
+         * 后置渲染方法(dom render结束后，选到html之前)
          * @param module    模块
-         * @param dom       虚拟dom
+         * @param uidom     虚拟dom
          */
-        static afterRender(module: Module, dom: Element): void;
+        afterRender(module: nodom.Module, uidom: nodom.Element): void;
+        clone(): DefineElement;
     }
 }
