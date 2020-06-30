@@ -263,7 +263,7 @@ var nodom;
         handle: (directive, dom, module, parent) => {
             let obj = directive.value;
             let clsArr = [];
-            let cls = dom.props['class'];
+            let cls = dom.getProp('class');
             let model = module.modelFactory.get(dom.modelId);
             if (nodom.Util.isString(cls) && !nodom.Util.isEmpty(cls)) {
                 clsArr = cls.trim().split(/\s+/);
@@ -285,7 +285,7 @@ var nodom;
                 }
             });
             //刷新dom的class
-            dom.props['class'] = clsArr.join(' ');
+            dom.setProp('class', clsArr.join(' '));
         }
     });
     /**
@@ -294,22 +294,22 @@ var nodom;
      */
     nodom.DirectiveManager.addType('field', {
         init: (directive, dom) => {
-            dom.props['name'] = directive.value;
-            let eventName = dom.props['tagName'] === 'input' && ['text', 'checkbox', 'radio'].includes(dom.props['type']) ? 'input' : 'change';
+            dom.setProp('name', directive.value);
+            let eventName = dom.getProp('tagName') === 'input' && ['text', 'checkbox', 'radio'].includes(dom.getProp('type')) ? 'input' : 'change';
             dom.addEvent(new nodom.NodomEvent(eventName, function (dom, model, module, e, el) {
                 if (!el) {
                     return;
                 }
-                let type = dom.props['type'];
+                let type = dom.getProp('type');
                 let field = dom.getDirective('field').value;
                 let v = el.value;
                 //根据选中状态设置checkbox的value
                 if (type === 'checkbox') {
-                    if (dom.props['yes-value'] == v) {
-                        v = dom.props['no-value'];
+                    if (dom.getProp('yes-value') == v) {
+                        v = dom.getProp('no-value');
                     }
                     else {
-                        v = dom.props['yes-value'];
+                        v = dom.getProp('yes-value');
                     }
                 }
                 else if (type === 'radio') {
@@ -321,44 +321,46 @@ var nodom;
                 model.data[field] = v;
                 //修改value值，该节点不重新渲染
                 if (type !== 'radio') {
-                    dom.props['value'] = v;
+                    dom.setProp('value', v);
                     el.value = v;
                 }
             }));
         },
         handle: (directive, dom, module, parent) => {
-            const type = dom.props['type'];
+            const type = dom.getProp('type');
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
             const dataValue = model.data[directive.value];
-            let value = dom.props['value'];
+            let value = dom.getProp('value');
             if (type === 'radio') {
                 if (dataValue + '' === value) {
                     dom.assets.set('checked', true);
+                    dom.setProp('checked', 'checked');
                 }
                 else {
                     dom.assets.set('checked', false);
+                    dom.delProp('checked');
                 }
             }
             else if (type === 'checkbox') {
                 //设置状态和value
-                let yv = dom.props['yes-value'];
+                let yv = dom.getProp('yes-value');
                 //当前值为yes-value
                 if (dataValue + '' === yv) {
-                    dom.props['value'] = yv;
+                    dom.setProp('value', yv);
                     dom.assets.set('checked', true);
                 }
                 else { //当前值为no-value
-                    dom.props['value'] = dom.props['no-value'];
+                    dom.setProp('value', dom.getProp('no-value'));
                     dom.assets.set('checked', false);
                 }
             }
             else if (tgname === 'select') { //下拉框
-                dom.props['value'] = dataValue;
+                dom.setProp('value', dataValue);
                 dom.assets.set('value', dataValue);
             }
             else {
-                dom.assets.set('value', value);
+                dom.assets.set('value', dataValue);
             }
         }
     });
@@ -430,7 +432,7 @@ var nodom;
             let chds = [];
             //找到带rel的节点
             dom.children.forEach((item) => {
-                if (item.tagName !== undefined && item.props.hasOwnProperty('rel')) {
+                if (item.tagName !== undefined && item.hasProp('rel')) {
                     chds.push(item);
                 }
             });
@@ -463,7 +465,7 @@ var nodom;
                 }
                 else { //多个校验
                     for (let i = 0; i < chds.length; i++) {
-                        let rel = chds[i].props['rel'];
+                        let rel = chds[i].getProp('rel');
                         if (rel === vn) {
                             setTip(chds[i], vn, el);
                         }

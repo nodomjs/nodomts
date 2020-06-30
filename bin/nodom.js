@@ -869,6 +869,7 @@ var nodom;
                 return;
             }
             this.handleAssets(el);
+            console.log(el);
             switch (type) {
                 case 'fresh':
                     if (this.tagName) {
@@ -2014,14 +2015,92 @@ var nodom;
         }
         update(field, value) {
             let change = false;
+            let module = nodom.ModuleFactory.get(this.moduleName);
             if (nodom.Util.isString(field)) {
-                if (this.fields[field] !== value) {
-                    this.fields[field] = value;
+                let fieldObj = this.fields[field];
+                if (!fieldObj) {
+                    fieldObj = {};
+                    this.fields[field] = fieldObj;
+                }
+                if (fieldObj.value !== value) {
+                    fieldObj.value = value;
+                    if (fieldObj.handlers && fieldObj.handlers.length > 0) {
+                        for (let f of fieldObj.handlers) {
+                            if (nodom.Util.isFunction(f)) {
+                                nodom.Util.apply(f, this, [module, field, value]);
+                            }
+                            else if (nodom.Util.isString(f)) {
+                                let foo = module.methodFactory.get(f);
+                                if (nodom.Util.isFunction(foo)) {
+                                    nodom.Util.apply(foo, this, [module, field, value]);
+                                }
+                            }
+                        }
+                    }
                     change = true;
                 }
             }
             if (change) {
-                nodom.ModuleFactory.get(this.moduleName).dataChange();
+                module.dataChange();
+            }
+        }
+        getData(dirty) {
+            if (dirty) {
+                return this.data;
+            }
+            return copy(this.data);
+            function copy(src) {
+                let dst;
+                if (nodom.Util.isObject(src)) {
+                    dst = new Object();
+                    Object.getOwnPropertyNames(src).forEach((prop) => {
+                        if (prop.startsWith('$')) {
+                            return;
+                        }
+                        dst[prop] = copy(src);
+                    });
+                }
+                else if (nodom.Util.isMap(src)) {
+                    dst = new Map();
+                    src.forEach((value, key) => {
+                        if (key.startsWith('$')) {
+                            return;
+                        }
+                        dst.set(key, copy(value));
+                    });
+                }
+                else if (nodom.Util.isArray(src)) {
+                    dst = new Array();
+                    src.forEach(function (item, i) {
+                        dst[i] = copy(item);
+                    });
+                }
+                else {
+                    dst = src;
+                }
+                return dst;
+            }
+        }
+        watch(key, operate, cancel) {
+            let fieldObj = this.fields[key];
+            if (!fieldObj) {
+                fieldObj = {};
+                this.fields[key] = fieldObj;
+            }
+            if (!fieldObj.handlers) {
+                fieldObj.handlers = [];
+            }
+            ;
+            let ind = fieldObj.handlers.indexOf(operate);
+            if (cancel) {
+                if (ind !== -1) {
+                    fieldObj.handlers.splice(ind, 1);
+                }
+            }
+            else {
+                if (ind === -1) {
+                    fieldObj.handlers.push(operate);
+                }
             }
         }
         addSetterGetter(data) {
@@ -2089,7 +2168,7 @@ var nodom;
         defineProp(data, p) {
             Object.defineProperty(data, p, {
                 set: (v) => {
-                    if (this.fields[p] === v) {
+                    if (this.fields[p] && this.fields[p].value === v) {
                         return;
                     }
                     this.update(p, v);
@@ -2097,7 +2176,7 @@ var nodom;
                 },
                 get: () => {
                     if (this.fields[p] !== undefined) {
-                        return this.fields[p];
+                        return this.fields[p].value;
                     }
                 }
             });
@@ -3836,10 +3915,13 @@ var nodom;
             if (type === 'radio') {
                 if (dataValue + '' === value) {
                     dom.assets.set('checked', true);
+                    dom.setProp('checked','checked');
                 }
                 else {
                     dom.assets.set('checked', false);
+                    dom.delProp('checked');
                 }
+                
             }
             else if (type === 'checkbox') {
                 let yv = dom.props['yes-value'];

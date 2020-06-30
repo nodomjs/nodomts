@@ -17,6 +17,7 @@ declare namespace nodom {
         data: any;
         /**
          * 模型字段集
+         * 每个字段对象结构为{value:值[,handlers:观察器，观察器为模块方法名或函数]}
          */
         fields: object;
         /**
@@ -36,6 +37,18 @@ declare namespace nodom {
          * @param value 	字段对应的新值
          */
         update(field: string, value?: any): void;
+        /**
+         * 获取所有数据
+         * @param dirty   是否获取脏数据（带$数据，该数据由框架生成）
+         */
+        getData(dirty?: boolean): any;
+        /**
+         * 观察(取消观察)某个数据项
+         * @param key       数据项名
+         * @param operate   变化时执行方法名(在module的methods中定义)
+         * @param cancel    取消观察
+         */
+        watch(key: string, operate: string | Function, cancel?: boolean): void;
         /**
          * 为对象添加setter
          */

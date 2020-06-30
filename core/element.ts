@@ -56,9 +56,9 @@ namespace nodom {
 		 */
 		key:string;
         /**
-         * 是不是虚拟dom跟节点
+         * 是不是虚拟dom根节点
          */
-        root:boolean;
+        isRoot:boolean;
 		/**
 		 * 绑定的模型id，如果没有，则从父继承
 		 */
@@ -890,7 +890,7 @@ namespace nodom {
                     
 					//删除或增加的属性
 					Util.getOwnProps(dst.props).forEach((k)=>{
-						if (!this.props.hasOwnProperty(k)) {
+						if (!this.hasProp(k)) {
                             re.removeProps.push(k);
                         }
 					})

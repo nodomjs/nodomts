@@ -285,22 +285,59 @@ var nodom;
         clone(changeKey) {
             let dst = new Element();
             //不直接拷贝属性集
-            let notCopyProps = ['parent', 'directives', 'children'];
-            //简单属性
-            nodom.Util.getOwnProps(this).forEach((p) => {
-                if (notCopyProps.includes(p)) {
-                    return;
-                }
-                dst[p] = nodom.Util.clone(this[p], null, changeKey);
-            });
-            //更新key
-            if (changeKey) {
+            if (changeKey) { //表示clone后进行新建节点
                 dst.key = nodom.Util.genId() + '';
+                let notCopyProps = ['parent', 'directives', 'children'];
+                //简单属性
+                nodom.Util.getOwnProps(this).forEach((p) => {
+                    if (notCopyProps.includes(p)) {
+                        return;
+                    }
+                    dst[p] = nodom.Util.clone(this[p], null, changeKey);
+                });
+                //指令复制
+                for (let d of this.directives) {
+                    dst.directives.push(d.clone(dst));
+                }
             }
-            //指令复制
-            for (let d of this.directives) {
-                dst.directives.push(d.clone(dst));
+            else { //表示克隆后直接渲染
+                let notCopyProps = ['parent', 'directives', 'assets', 'props', 'exprProps', 'events', 'children'];
+                //简单属性
+                nodom.Util.getOwnProps(this).forEach((p) => {
+                    if (notCopyProps.includes(p)) {
+                        return;
+                    }
+                    dst[p] = this[p];
+                });
+                //指令复制
+                for (let d of this.directives) {
+                    dst.directives.push(d);
+                }
+                //普通属性
+                nodom.Util.getOwnProps(this.props).forEach((k) => {
+                    dst.props[k] = this.props[k];
+                });
+                //表达式属性
+                nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
+                    dst.exprProps[k] = this.exprProps[k];
+                });
+                //事件
+                for (let key of this.events.keys()) {
+                    let evt = this.events.get(key);
+                    //数组需要单独clone
+                    if (nodom.Util.isArray(evt)) {
+                        let a = [];
+                        for (let e of evt) {
+                            a.push(e.clone());
+                        }
+                        dst.events.set(key, a);
+                    }
+                    else {
+                        dst.events.set(key, evt.clone());
+                    }
+                }
             }
+            //孩子节点
             for (let c of this.children) {
                 dst.add(c.clone(changeKey));
             }
@@ -745,7 +782,7 @@ var nodom;
                     re.removeProps = [];
                     //删除或增加的属性
                     nodom.Util.getOwnProps(dst.props).forEach((k) => {
-                        if (!this.props.hasOwnProperty(k)) {
+                        if (!this.hasProp(k)) {
                             re.removeProps.push(k);
                         }
                     });

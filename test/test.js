@@ -1,19 +1,11 @@
-
 function f(){
-    let x = 0;
-    let y = f1();
-    x = null;
-    return y;
-
-    function f1(){
-        x++;
-        return x;
-    }
+    console.log('ff');
 }
 
-let ff = f();
-console.log(ff);
-ff=f();
-console.log(ff);
+let f1 = f;
+let f2 = f;
+let a = ['aaa',f,'bbb','ccc'];
+console.log(a.includes(f1));
+console.log(a.includes(f2));
 
 

@@ -19,6 +19,7 @@
 	<div>
 		<button e-click='change'>change</button>
 		<button e-click='change1'>change1</button>
+		<button e-click='watch'>watch</button>
 		<div>
 			<div> 姓名:{{name}}</div>
 			<div> 性别:{{sexy}}</div>
@@ -50,9 +51,16 @@
 					]
 				},
 				methods:{
+					watchSexy:function(model,field,value){
+						console.log(model,field,value)
+					},
+					watch:function(dom,model,module,e){
+						model.watch('sexy','watchSexy');
+					},
 					change:function(dom,model,module,e){
 						model.data.married = 0;
 						model.data.sexy = 'F';
+						model.data.edu=3;
 					},
 					change1:function(dom,model,module,e){
 						model.data.name='yanglei123';

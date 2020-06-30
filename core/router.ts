@@ -407,14 +407,14 @@ namespace nodom {
                     return;
                 }
                 // dom route 路径
-                let domPath:string = dom.props['path'];
-                if (dom.exprProps.hasOwnProperty('active')) { // active属性为表达式，修改字段值
+                let domPath:string = dom.getProp('path');
+                if (dom.hasProp('active',true)) { // active属性为表达式，修改字段值
                     let model = module.modelFactory.get(dom.modelId);
                     if (!model) {
                         return;
                     }
 
-                    let expr = module.expressionFactory.get(dom.exprProps['active'][0]);
+                    let expr = module.expressionFactory.get(dom.getProp('active')[0]);
                     if (!expr) {
                         return;
                     }
@@ -426,12 +426,12 @@ namespace nodom {
                     } else {
                         model.data[field] = false;
                     }
-                } else if (dom.props.hasOwnProperty('active')) { //active值属性
+                } else if (dom.hasProp('active')) { //active值属性
                     //路径相同或参数路由路径前部分相同则设置active 为true，否则为false
                     if (path === domPath || path.indexOf(domPath + '/') === 0) {
-                        dom.props['active'] = true;
+                        dom.setProp('active',true);
                     } else {
-                        dom.props['active'] = false;
+                        dom.set('active',false);
                     }
                 }
             });
@@ -709,7 +709,7 @@ namespace nodom {
             //添加click事件
             dom.addEvent(new NodomEvent('click', '', 
                 async (dom,model,module,e) => {
-                    let path:string = dom.props['path'];
+                    let path:string = dom.getProp('path');
                     if (Util.isEmpty(path)) {
                         return;
                     }
@@ -719,7 +719,7 @@ namespace nodom {
         },
 
         handle: (directive:Directive, dom:Element, module:Module, parent:Element) => {
-            if (dom.props.hasOwnProperty('active')) {
+            if (dom.hasProp('active')) {
                 //添加到router的activeDomMap
                 let domArr:string[] = Router.activeDomMap.get(module.name);
                 if(!domArr){
@@ -729,20 +729,15 @@ namespace nodom {
                         domArr.push(dom.key);
                     }
                 }
-                
-                // let route:Array<Route> = Router.getRoute(dom.props['path'], true);
-                // if (route === null) {
-                //     return;
-                // }
             }
 
-            let path:string = dom.props['path'];
+            let path:string = dom.getProp('path');
             if (path === Router.currentPath) {
                 return;
             }
             
             //active需要跳转路由（当前路由为该路径对应的父路由）
-            if (dom.props.hasOwnProperty('active') && dom.props['active'] !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
+            if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
                 Router.addPath(path);
             }
             

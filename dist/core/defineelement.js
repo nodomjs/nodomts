@@ -24,8 +24,8 @@ var nodom;
          */
         afterRender(module, uidom) { }
         clone() {
-            let ele = new DefineElement();
-            nodom.Util.getOwnProps(ele).forEach((prop) => {
+            let ele = Reflect.construct(this.constructor, []);
+            nodom.Util.getOwnProps(this).forEach((prop) => {
                 ele[prop] = nodom.Util.clone(this[prop]);
             });
             return ele;

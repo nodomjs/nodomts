@@ -12,6 +12,7 @@ var nodom;
         constructor(data, module) {
             /**
              * 模型字段集
+             * 每个字段对象结构为{value:值[,handlers:观察器，观察器为模块方法名或函数]}
              */
             this.fields = {};
             this.data = data;
@@ -75,16 +76,107 @@ var nodom;
          */
         update(field, value) {
             let change = false;
+            let module = nodom.ModuleFactory.get(this.moduleName);
             //对象设置值
             if (nodom.Util.isString(field)) {
-                if (this.fields[field] !== value) {
-                    this.fields[field] = value;
+                let fieldObj = this.fields[field];
+                if (!fieldObj) {
+                    fieldObj = {};
+                    this.fields[field] = fieldObj;
+                }
+                if (fieldObj.value !== value) {
+                    fieldObj.value = value;
+                    //观察器执行
+                    if (fieldObj.handlers && fieldObj.handlers.length > 0) {
+                        for (let f of fieldObj.handlers) {
+                            //可能包括字符串和函数   
+                            if (nodom.Util.isFunction(f)) {
+                                nodom.Util.apply(f, this, [module, field, value]);
+                            }
+                            else if (nodom.Util.isString(f)) {
+                                let foo = module.methodFactory.get(f);
+                                if (nodom.Util.isFunction(foo)) {
+                                    nodom.Util.apply(foo, this, [module, field, value]);
+                                }
+                            }
+                        }
+                    }
                     change = true;
                 }
             }
             //添加到模块数据改变
             if (change) {
-                nodom.ModuleFactory.get(this.moduleName).dataChange();
+                module.dataChange();
+            }
+        }
+        /**
+         * 获取所有数据
+         * @param dirty   是否获取脏数据（带$数据，该数据由框架生成）
+         */
+        getData(dirty) {
+            // dirty，直接返回数据
+            if (dirty) {
+                return this.data;
+            }
+            return copy(this.data);
+            function copy(src) {
+                let dst;
+                if (nodom.Util.isObject(src)) { //object
+                    dst = new Object();
+                    Object.getOwnPropertyNames(src).forEach((prop) => {
+                        if (prop.startsWith('$')) {
+                            return;
+                        }
+                        dst[prop] = copy(src);
+                    });
+                }
+                else if (nodom.Util.isMap(src)) { //map
+                    dst = new Map();
+                    src.forEach((value, key) => {
+                        if (key.startsWith('$')) {
+                            return;
+                        }
+                        dst.set(key, copy(value));
+                    });
+                }
+                else if (nodom.Util.isArray(src)) { //array
+                    dst = new Array();
+                    src.forEach(function (item, i) {
+                        dst[i] = copy(item);
+                    });
+                }
+                else { //common value
+                    dst = src;
+                }
+                return dst;
+            }
+        }
+        /**
+         * 观察(取消观察)某个数据项
+         * @param key       数据项名
+         * @param operate   变化时执行方法名(在module的methods中定义)
+         * @param cancel    取消观察
+         */
+        watch(key, operate, cancel) {
+            let fieldObj = this.fields[key];
+            if (!fieldObj) {
+                fieldObj = {};
+                this.fields[key] = fieldObj;
+            }
+            if (!fieldObj.handlers) {
+                fieldObj.handlers = [];
+            }
+            ;
+            let ind = fieldObj.handlers.indexOf(operate);
+            if (cancel) { //取消watch方法
+                if (ind !== -1) {
+                    fieldObj.handlers.splice(ind, 1);
+                }
+            }
+            else { //添加watch
+                if (ind === -1) {
+                    fieldObj.handlers.push(operate);
+                }
             }
         }
         /**
@@ -166,7 +258,7 @@ var nodom;
         defineProp(data, p) {
             Object.defineProperty(data, p, {
                 set: (v) => {
-                    if (this.fields[p] === v) {
+                    if (this.fields[p] && this.fields[p].value === v) {
                         return;
                     }
                     this.update(p, v);
@@ -174,7 +266,7 @@ var nodom;
                 },
                 get: () => {
                     if (this.fields[p] !== undefined) {
-                        return this.fields[p];
+                        return this.fields[p].value;
                     }
                 }
             });

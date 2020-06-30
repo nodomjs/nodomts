@@ -15,7 +15,7 @@ var nodom;
             const div = nodom.Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new nodom.Element();
-            oe.root = true;
+            oe.isRoot = true;
             this.handleChildren(oe, div);
             return oe;
         }
@@ -103,12 +103,12 @@ var nodom;
                     if (v !== '') {
                         let ra = this.compileExpression(v);
                         if (nodom.Util.isArray(ra)) {
-                            oe.exprProps[attr.name] = ra;
+                            oe.setProp(attr.name, ra, true);
                             isExpr = true;
                         }
                     }
                     if (!isExpr) {
-                        oe.props[attr.name] = v;
+                        oe.setProp(attr.name, v);
                     }
                 }
             }

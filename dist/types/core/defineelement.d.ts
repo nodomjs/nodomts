@@ -25,6 +25,6 @@ declare namespace nodom {
          * @param uidom     虚拟dom
          */
         afterRender(module: nodom.Module, uidom: nodom.Element): void;
-        clone(): DefineElement;
+        clone(): any;
     }
 }

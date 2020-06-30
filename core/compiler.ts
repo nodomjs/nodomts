@@ -14,7 +14,7 @@ namespace nodom {
             const div:HTMLElement = Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new Element();
-            oe.root = true;
+            oe.isRoot = true;
             this.handleChildren(oe,div);
             return oe;
         }
@@ -104,12 +104,12 @@ namespace nodom {
                     if (v !== '') {
                         let ra = this.compileExpression(v);
                         if (Util.isArray(ra)) {
-                            oe.exprProps[attr.name] = ra;
+                            oe.setProp(attr.name, ra,true);
                             isExpr = true;
                         }
                     }
                     if (!isExpr) {
-                        oe.props[attr.name] = v;
+                        oe.setProp(attr.name, v);
                     }
                 }
             }
