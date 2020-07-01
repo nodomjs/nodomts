@@ -81,12 +81,14 @@ namespace nodom {
 
             let ind:number;
             let modelName:string;
-            //过滤器
-            if ((ind = value.indexOf('|')) !== -1) {
-                modelName = value.substr(0, ind).trim();
-                directive.filter = new Filter(value.substr(ind + 1));
-            } else {
-                modelName = value;
+            let fa:string[] = value.split('|');
+            modelName = fa[0];
+            //有过滤器
+            if(fa.length>1){
+                directive.filters = [];
+                for(let i=1;i<fa.length;i++){
+                    directive.filters.push(new Filter(fa[i]));
+                }
             }
             
             // 增加model指令
@@ -107,8 +109,10 @@ namespace nodom {
                 return;
             }
             //有过滤器，处理数据集合
-            if (directive.filter !== undefined) {
-                rows = directive.filter.exec(rows, module);
+            if (directive.filters && directive.filters.length>0) {
+                for(let f of directive.filters){
+                    rows = f.exec(rows,module);
+                }
             }
             let chds = [];
             let key = dom.key;

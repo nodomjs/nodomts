@@ -48,6 +48,13 @@
                 编号：{{$index}}，菜名：{{name}}，价格：{{price}}
             </div>
         </div>
+        <div class="tip">过滤器使用-价格升序排序且只取前三（编号从1开始）</div>
+        <div class="code">
+            菜单：
+            <div x-repeat="foods|orderby:price|select:func:top:3">
+                编号：{{$index+1}}，菜名：{{name}}，价格：{{price}}
+            </div>
+        </div>
         <div class="tip">使用数组外的数据，直接引用</div>
         <div class="code">
             会员折扣：{{$$discount.data*10}}折
@@ -83,6 +90,16 @@
                     name: '水煮肉片',
                     price: 24
                 }]
+            },
+            methods:{
+                top:function(arr){
+                    var a = [];
+                    for(let i=0;i<3;i++){
+                        a.push(arr[i]);
+                    }
+                    
+                    return a;
+                }
             }
         }
     });

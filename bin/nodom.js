@@ -582,7 +582,7 @@ var nodom;
             const div = nodom.Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new nodom.Element();
-            oe.root = true;
+            oe.isRoot = true;
             this.handleChildren(oe, div);
             return oe;
         }
@@ -645,12 +645,12 @@ var nodom;
                     if (v !== '') {
                         let ra = this.compileExpression(v);
                         if (nodom.Util.isArray(ra)) {
-                            oe.exprProps[attr.name] = ra;
+                            oe.setProp(attr.name, ra, true);
                             isExpr = true;
                         }
                     }
                     if (!isExpr) {
-                        oe.props[attr.name] = v;
+                        oe.setProp(attr.name, v);
                     }
                 }
             }
@@ -692,19 +692,30 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Directive {
-        constructor(type, value, vdom, filter) {
+        constructor(type, value, vdom, filters) {
             this.id = nodom.Util.genId();
             this.type = type;
             if (nodom.Util.isString(value)) {
                 value = value.trim();
             }
             this.value = value;
-            if (filter) {
-                if (typeof filter === 'string') {
-                    this.filter = new nodom.Filter(filter);
+            if (filters) {
+                this.filters = [];
+                if (typeof filters === 'string') {
+                    let fa = filters.split('|');
+                    for (let f of fa) {
+                        this.filters.push(new nodom.Filter(f));
+                    }
                 }
-                else if (filter instanceof nodom.Filter) {
-                    this.filter = filter;
+                else if (nodom.Util.isArray(filters)) {
+                    for (let f of filters) {
+                        if (typeof f === 'string') {
+                            this.filters.push(new nodom.Filter(f));
+                        }
+                        else if (f instanceof nodom.Filter) {
+                            this.filters.push(f);
+                        }
+                    }
                 }
             }
             if (type !== undefined) {
@@ -717,8 +728,11 @@ var nodom;
         }
         clone(vdom) {
             let dir = new Directive(this.type, this.value, vdom);
-            if (this.filter) {
-                dir.filter = this.filter.clone();
+            if (this.filters) {
+                dir.filters = [];
+                for (let f of this.filters) {
+                    dir.filters.push(f.clone());
+                }
             }
             if (this.params) {
                 dir.params = nodom.Util.clone(this.params);
@@ -869,7 +883,6 @@ var nodom;
                 return;
             }
             this.handleAssets(el);
-            console.log(el);
             switch (type) {
                 case 'fresh':
                     if (this.tagName) {
@@ -991,7 +1004,7 @@ var nodom;
                 }
             }
             else {
-                let notCopyProps = ['parent', 'directives', 'assets', 'props', 'exprProps', 'events', 'children'];
+                let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
                 nodom.Util.getOwnProps(this).forEach((p) => {
                     if (notCopyProps.includes(p)) {
                         return;
@@ -1334,7 +1347,7 @@ var nodom;
                     re.changeProps = [];
                     re.removeProps = [];
                     nodom.Util.getOwnProps(dst.props).forEach((k) => {
-                        if (!this.props.hasOwnProperty(k)) {
+                        if (!this.hasProp(k)) {
                             re.removeProps.push(k);
                         }
                     });
@@ -3237,13 +3250,13 @@ var nodom;
                     if (!dom) {
                         return;
                     }
-                    let domPath = dom.props['path'];
-                    if (dom.exprProps.hasOwnProperty('active')) {
+                    let domPath = dom.getProp('path');
+                    if (dom.hasProp('active', true)) {
                         let model = module.modelFactory.get(dom.modelId);
                         if (!model) {
                             return;
                         }
-                        let expr = module.expressionFactory.get(dom.exprProps['active'][0]);
+                        let expr = module.expressionFactory.get(dom.getProp('active')[0]);
                         if (!expr) {
                             return;
                         }
@@ -3255,12 +3268,12 @@ var nodom;
                             model.data[field] = false;
                         }
                     }
-                    else if (dom.props.hasOwnProperty('active')) {
+                    else if (dom.hasProp('active')) {
                         if (path === domPath || path.indexOf(domPath + '/') === 0) {
-                            dom.props['active'] = true;
+                            dom.setProp('active', true);
                         }
                         else {
-                            dom.props['active'] = false;
+                            dom.set('active', false);
                         }
                     }
                 });
@@ -3445,7 +3458,7 @@ var nodom;
                 dom.setProp('path', value);
             }
             dom.addEvent(new nodom.NodomEvent('click', '', (dom, model, module, e) => __awaiter(this, void 0, void 0, function* () {
-                let path = dom.props['path'];
+                let path = dom.getProp('path');
                 if (nodom.Util.isEmpty(path)) {
                     return;
                 }
@@ -3453,7 +3466,7 @@ var nodom;
             })));
         },
         handle: (directive, dom, module, parent) => {
-            if (dom.props.hasOwnProperty('active')) {
+            if (dom.hasProp('active')) {
                 let domArr = Router.activeDomMap.get(module.name);
                 if (!domArr) {
                     Router.activeDomMap.set(module.name, [dom.key]);
@@ -3464,11 +3477,11 @@ var nodom;
                     }
                 }
             }
-            let path = dom.props['path'];
+            let path = dom.getProp('path');
             if (path === Router.currentPath) {
                 return;
             }
-            if (dom.props.hasOwnProperty('active') && dom.props['active'] !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
+            if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
                 Router.addPath(path);
             }
         }
@@ -3704,12 +3717,13 @@ var nodom;
             }
             let ind;
             let modelName;
-            if ((ind = value.indexOf('|')) !== -1) {
-                modelName = value.substr(0, ind).trim();
-                directive.filter = new nodom.Filter(value.substr(ind + 1));
-            }
-            else {
-                modelName = value;
+            let fa = value.split('|');
+            modelName = fa[0];
+            if (fa.length > 1) {
+                directive.filters = [];
+                for (let i = 1; i < fa.length; i++) {
+                    directive.filters.push(new nodom.Filter(fa[i]));
+                }
             }
             if (!dom.hasDirective('model')) {
                 dom.addDirective(new nodom.Directive('model', modelName, dom), true);
@@ -3725,8 +3739,10 @@ var nodom;
                 dom.dontRender = true;
                 return;
             }
-            if (directive.filter !== undefined) {
-                rows = directive.filter.exec(rows, module);
+            if (directive.filters && directive.filters.length > 0) {
+                for (let f of directive.filters) {
+                    rows = f.exec(rows, module);
+                }
             }
             let chds = [];
             let key = dom.key;
@@ -3852,7 +3868,7 @@ var nodom;
         handle: (directive, dom, module, parent) => {
             let obj = directive.value;
             let clsArr = [];
-            let cls = dom.props['class'];
+            let cls = dom.getProp('class');
             let model = module.modelFactory.get(dom.modelId);
             if (nodom.Util.isString(cls) && !nodom.Util.isEmpty(cls)) {
                 clsArr = cls.trim().split(/\s+/);
@@ -3872,26 +3888,26 @@ var nodom;
                     clsArr.push(key);
                 }
             });
-            dom.props['class'] = clsArr.join(' ');
+            dom.setProp('class', clsArr.join(' '));
         }
     });
     nodom.DirectiveManager.addType('field', {
         init: (directive, dom) => {
-            dom.props['name'] = directive.value;
-            let eventName = dom.props['tagName'] === 'input' && ['text', 'checkbox', 'radio'].includes(dom.props['type']) ? 'input' : 'change';
+            dom.setProp('name', directive.value);
+            let eventName = dom.getProp('tagName') === 'input' && ['text', 'checkbox', 'radio'].includes(dom.getProp('type')) ? 'input' : 'change';
             dom.addEvent(new nodom.NodomEvent(eventName, function (dom, model, module, e, el) {
                 if (!el) {
                     return;
                 }
-                let type = dom.props['type'];
+                let type = dom.getProp('type');
                 let field = dom.getDirective('field').value;
                 let v = el.value;
                 if (type === 'checkbox') {
-                    if (dom.props['yes-value'] == v) {
-                        v = dom.props['no-value'];
+                    if (dom.getProp('yes-value') == v) {
+                        v = dom.getProp('no-value');
                     }
                     else {
-                        v = dom.props['yes-value'];
+                        v = dom.getProp('yes-value');
                     }
                 }
                 else if (type === 'radio') {
@@ -3901,41 +3917,40 @@ var nodom;
                 }
                 model.data[field] = v;
                 if (type !== 'radio') {
-                    dom.props['value'] = v;
+                    dom.setProp('value', v);
                     el.value = v;
                 }
             }));
         },
         handle: (directive, dom, module, parent) => {
-            const type = dom.props['type'];
+            const type = dom.getProp('type');
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
             const dataValue = model.data[directive.value];
-            let value = dom.props['value'];
+            let value = dom.getProp('value');
             if (type === 'radio') {
                 if (dataValue + '' === value) {
                     dom.assets.set('checked', true);
-                    dom.setProp('checked','checked');
+                    dom.setProp('checked', 'checked');
                 }
                 else {
                     dom.assets.set('checked', false);
                     dom.delProp('checked');
                 }
-                
             }
             else if (type === 'checkbox') {
-                let yv = dom.props['yes-value'];
+                let yv = dom.getProp('yes-value');
                 if (dataValue + '' === yv) {
-                    dom.props['value'] = yv;
+                    dom.setProp('value', yv);
                     dom.assets.set('checked', true);
                 }
                 else {
-                    dom.props['value'] = dom.props['no-value'];
+                    dom.setProp('value', dom.getProp('no-value'));
                     dom.assets.set('checked', false);
                 }
             }
             else if (tgname === 'select') {
-                dom.props['value'] = dataValue;
+                dom.setProp('value', dataValue);
                 dom.assets.set('value', dataValue);
             }
             else {
@@ -4001,7 +4016,7 @@ var nodom;
             }
             let chds = [];
             dom.children.forEach((item) => {
-                if (item.tagName !== undefined && item.props.hasOwnProperty('rel')) {
+                if (item.tagName !== undefined && item.hasProp('rel')) {
                     chds.push(item);
                 }
             });
@@ -4030,7 +4045,7 @@ var nodom;
                 }
                 else {
                     for (let i = 0; i < chds.length; i++) {
-                        let rel = chds[i].props['rel'];
+                        let rel = chds[i].getProp('rel');
                         if (rel === vn) {
                             setTip(chds[i], vn, el);
                         }
@@ -4231,7 +4246,7 @@ var nodom;
                 }
                 let foo = this.methodFactory.get(param);
                 if (nodom.Util.isFunction(foo)) {
-                    return foo(arr);
+                    return nodom.Util.apply(foo, this, [arr]);
                 }
                 return arr;
             },
