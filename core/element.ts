@@ -394,7 +394,7 @@ namespace nodom {
                 }
                 
             }else{ //表示克隆后直接渲染
-                let notCopyProps:string[] = ['parent','directives','assets','props','exprProps','events','children'];
+                let notCopyProps:string[] = ['parent','directives','props','exprProps','events','children'];
                 //简单属性
                 Util.getOwnProps(this).forEach((p) => {
                     if (notCopyProps.includes(p)) {

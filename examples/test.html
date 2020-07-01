@@ -6,6 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>filter</title>
     <!-- <script type="text/javascript" src="../js/require.js"></script> -->
+    <script>
+        // class TreeElement extends HTMLElement{
+        //     constructor(){
+        //         super();
+        //         let shadow = this.attachShadow({mode:'open'});
+        //         // this.innerHTML = "<div style='color:red'>hello world</div>"
+        //         let root = this.shadowRoot;
+        //         root.innerHTML = "<div style='color:red'>{{hello}}</div>";
+        //     }
+        // }
+        // customElements.define('ui-tree',TreeElement);    
+    </script>
     <script type="text/javascript" src="../bin/nodom.js"></script>
 
     <style>
@@ -20,17 +32,36 @@
         p {
             color: #666666;
         }
+        thead{
+            background-color:#ccc;
+        }
     </style>
+
+    
 </head>
 
 <body>
     <div class="view">
+        <table>
+            <thead>
+                <tr>
+                    <td>name</td>
+                    <td>address</td>
+                </tr>
+            </thead>
+            <tbody>
+                <row x-repeat = 'rows'>
+                    <tr>
+                        <td>{{name}}</td>
+                        <td>{{addr}}</td>
+                    </tr>
+                    <tr>
+                        <td colspan='2'>hello</td>
+                    </tr>
+                </row>
+            </tbody>
+        </table>
         
-        <button e-click='ascClick'>升序</button>
-        <button e-click='descClick'>升序</button>
-        <ul>
-            <li x-repeat="rows">{{name}}'s address is {{addr}},url is <span>{{url}}</span></li>
-        </ul>
     </div>
 </body>
 <script>
@@ -39,6 +70,7 @@
         module:{
             el: '.view',
             data: {
+                hello:'hello world!',
                 rows: [
                     { name: 'yang', addr: 'chengdu' },
                     { name: 'zhang', addr: 'mianyang' },
