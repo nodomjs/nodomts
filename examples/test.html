@@ -41,32 +41,21 @@
 </head>
 
 <body>
-    <div class="view">
-        <table>
-            <thead>
-                <tr>
-                    <td>name</td>
-                    <td>address</td>
-                </tr>
-            </thead>
-            <tbody>
-                <row x-repeat = 'rows'>
-                    <tr>
-                        <td>{{name}}</td>
-                        <td>{{addr}}</td>
-                    </tr>
-                    <tr>
-                        <td colspan='2'>hello</td>
-                    </tr>
-                </row>
-            </tbody>
-        </table>
-        
-    </div>
+    <select value='2'>
+        <option value='1'>1</option>
+        <option value='2'>2</option>
+        <option value='3'>3</option>
+        <option value='4'>4</option>
+        <option value='5'>5</option>
+    </select>
+   <button onclick='show()'>show</button>
 </body>
 <script>
-    
-    nodom.newApp({
+    document.querySelector('select').value=2;
+    function show(){
+        document.querySelector('select').value = 5;
+    }
+   /* nodom.newApp({
         module:{
             el: '.view',
             data: {
@@ -90,7 +79,7 @@
             }
         }
     });
-    
+    */
 </script>
 
 </html>

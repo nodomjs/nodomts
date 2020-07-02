@@ -318,6 +318,11 @@ namespace nodom {
                     let type = dom.getProp('type');
                     let field = dom.getDirective('field').value;
                     let v = el.value;
+                    //增加value表达式
+                    if(['text','number','date','datetime','datetime-local','month','week','time','email','password','search','tel','url','color','radio'].includes(type) 
+                        || dom.tagName === 'TEXTAREA'){
+                        dom.setProp('value',new Expression(field),true);
+                    }
                     //根据选中状态设置checkbox的value
                     if (type === 'checkbox') {
                         if (dom.getProp('yes-value') == v) {
@@ -330,6 +335,7 @@ namespace nodom {
                             v = undefined;
                         }
                     }
+
                     //修改字段值
                     model.data[field] = v;
                     //修改value值，该节点不重新渲染
@@ -368,8 +374,14 @@ namespace nodom {
                     dom.assets.set('checked',false);
                 }
             } else if (tgname === 'select') { //下拉框
-                dom.setProp('value', dataValue);
-                dom.assets.set('value',dataValue);
+                if(dataValue !== dom.getProp('value')){
+                    //存在option使用repeat指令，此时尚未渲染出来
+                    setTimeout(()=>{
+                        dom.setProp('value', dataValue);
+                        dom.assets.set('value',dataValue);
+                        Renderer.add(module);
+                    },0);
+                }
             }else{
                 dom.assets.set('value',dataValue);
             }

@@ -301,7 +301,7 @@ var nodom;
                 }
             }
             else { //表示克隆后直接渲染
-                let notCopyProps = ['parent', 'directives', 'assets', 'props', 'exprProps', 'events', 'children'];
+                let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
                 //简单属性
                 nodom.Util.getOwnProps(this).forEach((p) => {
                     if (notCopyProps.includes(p)) {

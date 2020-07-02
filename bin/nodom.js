@@ -3902,6 +3902,10 @@ var nodom;
                 let type = dom.getProp('type');
                 let field = dom.getDirective('field').value;
                 let v = el.value;
+                if (['text', 'number', 'date', 'datetime', 'datetime-local', 'month', 'week', 'time', 'email', 'password', 'search', 'tel', 'url', 'color', 'radio'].includes(type)
+                    || dom.tagName === 'TEXTAREA') {
+                    dom.setProp('value', new nodom.Expression(field), true);
+                }
                 if (type === 'checkbox') {
                     if (dom.getProp('yes-value') == v) {
                         v = dom.getProp('no-value');
@@ -3950,8 +3954,13 @@ var nodom;
                 }
             }
             else if (tgname === 'select') {
-                dom.setProp('value', dataValue);
-                dom.assets.set('value', dataValue);
+                if (dataValue !== dom.getProp('value')) {
+                    setTimeout(() => {
+                        dom.setProp('value', dataValue);
+                        dom.assets.set('value', dataValue);
+                        nodom.Renderer.add(module);
+                    }, 0);
+                }
             }
             else {
                 dom.assets.set('value', dataValue);

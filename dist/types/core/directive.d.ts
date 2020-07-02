@@ -32,9 +32,9 @@ declare namespace nodom {
          */
         handle: Function;
         /**
-         * 过滤器
+         * 过滤器组
          */
-        filter: Filter;
+        filters: Filter[];
         /**
          * 附加参数
          */
@@ -48,9 +48,9 @@ declare namespace nodom {
          * @param type  	类型
          * @param value 	指令值
          * @param vdom 		指令所属虚拟dom
-         * @param filter    过滤器字符串或过滤器对象
+         * @param filters   过滤器字符串或过滤器对象,如果为过滤器串，则以｜分割
          */
-        constructor(type: string, value: string, vdom: Element, filter?: string | Filter);
+        constructor(type: string, value: string, vdom: Element, filters?: string | Filter[]);
         /**
          * 执行
          * @param value 	指令值

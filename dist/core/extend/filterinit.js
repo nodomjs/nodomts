@@ -206,7 +206,7 @@ var nodom;
                 //自定义函数
                 let foo = this.methodFactory.get(param);
                 if (nodom.Util.isFunction(foo)) {
-                    return foo(arr);
+                    return nodom.Util.apply(foo, this, [arr]);
                 }
                 return arr;
             },

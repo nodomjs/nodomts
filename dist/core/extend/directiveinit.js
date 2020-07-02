@@ -78,13 +78,14 @@ var nodom;
             }
             let ind;
             let modelName;
-            //过滤器
-            if ((ind = value.indexOf('|')) !== -1) {
-                modelName = value.substr(0, ind).trim();
-                directive.filter = new nodom.Filter(value.substr(ind + 1));
-            }
-            else {
-                modelName = value;
+            let fa = value.split('|');
+            modelName = fa[0];
+            //有过滤器
+            if (fa.length > 1) {
+                directive.filters = [];
+                for (let i = 1; i < fa.length; i++) {
+                    directive.filters.push(new nodom.Filter(fa[i]));
+                }
             }
             // 增加model指令
             if (!dom.hasDirective('model')) {
@@ -104,8 +105,10 @@ var nodom;
                 return;
             }
             //有过滤器，处理数据集合
-            if (directive.filter !== undefined) {
-                rows = directive.filter.exec(rows, module);
+            if (directive.filters && directive.filters.length > 0) {
+                for (let f of directive.filters) {
+                    rows = f.exec(rows, module);
+                }
             }
             let chds = [];
             let key = dom.key;
