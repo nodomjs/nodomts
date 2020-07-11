@@ -1,60 +1,172 @@
+// / <reference path="nodom.ts" />
 namespace nodom {
     /**
+     * 资源对象
+     */
+    export interface IResourceObj{
+        /**
+         * 资源内容 字符串或数据对象或element
+         */
+        content?:any;
+
+        /**
+         * 类型js、template(html,htm), nd(编译后的模版文件)，data(不保存资源)
+         */
+        type?:string;
+
+    }
+    /**
      * 资源管理器
-     * 用于管理url资源的加载状态管理
+     * 用于url资源的加载及管理，主要针对js、模版等
      */
     export class ResourceManager{
         /**
          * 资源map，key为url，值为整数，1表示正在加载，2表示已加载完成
          */
-        private static resources:Map<string,number> = new Map();
+        private static resources:Map<string,IResourceObj> = new Map();
         
         /**
-         * 获取资源当前状态
-         * @param url 资源url
-         * @reutrn    0:不存在 1:加载中 2:已加载
+         * 获取资源
+         * @param url   资源路径
+         * @returns     资源内容 
          */
-        public static getState(url:string):number{
-            return this.resources.get(url)||0;
-        }
-
-        /**
-         * 加载单个资源
-         * @param url 
-         */
-        public static async loadResource(url:string){
+        public static async getResource(url:string,type?:string):Promise<any>{
+            let rObj:IResourceObj;
+            type = type || this.getType(url);
+            //资源已存在
             if(this.resources.has(url)){
-                return;
+                rObj = this.resources.get(url);
+                //资源类型为js和css，则直接返回，因为只需要处理一次
+                if(['js','css'].includes(type)){
+                    return;
+                }
+            }else{
+                rObj = {type:type};
+                rObj.content = await request({url:url});
             }
-            //设置加载中标志
-            this.resources.set(url,1);
-            await Linker.gen('getfiles',[url]);
-            //设置加载结束标志
-            this.resources.set(url,2);
+            this.handleOne(url,rObj);
+            this.resources.set(url,rObj);
+            return rObj.content;
         }
 
         /**
-         * 加载多个资源
-         * @param urls 
+         * 获取多个资源
+         * @param urls  [{url:**,type:**}]或 [url1,url2,...]
          */
-        public static async loadResources(urls:string[]){
-            let url:string;
-            urls.forEach((url,i)=>{
-                //已加载的资源不处理
-                if(this.resources.has(url)){
-                    urls.splice(i,1);
-                }
-                this.resources.set(url,1);
-            });
+        public static async getResources(reqs:any[]){
+            let me = this;
             
-            if(urls.length === 0){
-                return;
+            let re = this.preHandle(reqs);
+            let urls:string[] = re[1];
+            let types:string[] = re[2];
+            let rObjs:IResourceObj[] = [];
+            //返回promise
+            return Promise.all(re[0]).then(arr=>{
+                //返回resource obj数组
+                for(let i=0;i<arr.length;i++){
+                    let rObj:IResourceObj;
+                    if(typeof arr[i] === 'string'){ //刚加载的资源需要处理
+                        rObj = {
+                            type:types[i],
+                            content:arr[i]
+                        }
+                        me.handleOne(urls[i],rObj);
+                        rObjs.push(rObj);
+                    }
+                }
+                return rObjs;
+            });
+        }
+        
+        /**
+         * 获取url类型
+         * @param url   url
+         * @returns     url type
+         */
+        static getType(url:string):string{
+            let ind = -1;
+            let type:string;
+            if((ind=url.lastIndexOf('.')) !== -1){
+                type = url.substr(ind+1);
+                if(type === 'htm' || type === 'html'){
+                    type = 'template';
+                }
             }
-            //设置加载中标志
-            await Linker.gen('getfiles',urls);
-            //设置加载结束标志
-            for(url of urls){
-                this.resources.set(url,2);
+            return type || 'js';
+        }
+
+        /**
+         * 处理一个资源获取结果
+         * @param rObj 
+         */
+        static handleOne(url:string,rObj:IResourceObj){
+            switch(rObj.type){
+                case 'js':
+                    let head = document.querySelector('head');
+                    let script = Util.newEl('script');
+                    script.innerHTML = rObj.content;
+                    head.appendChild(script);
+                    head.removeChild(script);
+                    delete rObj.content;
+                    break;
+                case 'template':
+                    rObj.content = Compiler.compile(rObj.content);
+                    break;
+                case 'nd':
+                    rObj.content = Serializer.deserialize(rObj.content);
+                    break;
+                case 'data': //数据
+                    try{
+                        rObj.content = JSON.parse(rObj.content);
+                    }catch(e){
+                        console.log(e);
+                    }
+                    
+            }
+            this.resources.set(url,rObj);
+        }
+
+        /**
+         * 预处理
+         * @param reqs  [{url:**,type:**},url,...]
+         * @returns     [promises(请求对象数组),urls(url数组),types(类型数组)]
+         */
+        static preHandle(reqs:any[]):any[]{
+            let promises = [];
+            let types = [];
+            let urls = [];
+            let head = document.querySelector('head');
+                    
+            //预处理请求资源
+            for(let r of reqs){
+                let url:string;
+                let type:string;
+                //对象中已经包含类型
+                if(typeof r === 'object'){
+                    url = r.url;
+                    type = r.type || this.getType(url);
+                }else{ //只是url串
+                    url = r;
+                    type = this.getType(url);
+                }
+                urls.push(url);
+                types.push(type);
+
+                //css 不需要加载
+                if(type === 'css'){
+                    let css = <HTMLLinkElement>Util.newEl('link');
+                    css.type = 'text/css';
+                    css.rel = 'stylesheet'; // 保留script标签的path属性
+                    css.href = url;
+                    head.appendChild(css);
+                }else{
+                    if(this.resources.has(url)){
+                        promises.push(this.resources.get(url));
+                    }else{
+                        promises.push(request(url))
+                    }
+                }
+                return [promises,urls,types];
             }
         }
     }

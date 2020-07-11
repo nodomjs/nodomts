@@ -51,14 +51,10 @@
    <button onclick='show()'>show</button>
 </body>
 <script>
-    document.querySelector('select').value=2;
-    function show(){
-        document.querySelector('select').value = 5;
-    }
-   /* nodom.newApp({
+    nodom.newApp({
         module:{
             el: '.view',
-            data: {
+            data: 'http://localhost:3000/commodity/getinfo'/*{
                 hello:'hello world!',
                 rows: [
                     { name: 'yang', addr: 'chengdu' },
@@ -67,7 +63,7 @@
                     { name: 'tang', addr: 'beijing' },
                     { name: 'li', addr: 'shanghai',url:'http://www.baidu.com' }
                 ]
-            },
+            }*/,
             methods: {
                 ascClick:function(dom,model,module,e){
                     model.data['rows'].push({name:'haha',addr:'sssss'});
@@ -79,7 +75,7 @@
             }
         }
     });
-    */
+    
 </script>
 
 </html>

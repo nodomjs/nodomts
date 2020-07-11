@@ -11,7 +11,7 @@ module.exports = function (grunt) {
       dev:{
         src:[
           // 'core/**/*.ts',
-          './core/nodom.ts',
+            './core/nodom.ts',
             './core/util.ts',
             './core/application.ts',
             './core/factory.ts',
@@ -25,7 +25,7 @@ module.exports = function (grunt) {
             './core/filter.ts',
             './core/filterfactory.ts',
             './core/filtermanager.ts',
-            './core/linker.ts',
+            './core/resourcemanager.ts',
             './core/messagequeue.ts',
             './core/methodfactory.ts',
             './core/model.ts',

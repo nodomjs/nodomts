@@ -58,9 +58,90 @@ var nodom;
         });
     }
     nodom.createDirective = createDirective;
-    function createPlugin(name, init, handler) {
+    function request(config) {
+        return new Promise((resolve, reject) => {
+            if (typeof config === 'string') {
+                config = {
+                    url: config
+                };
+            }
+            config.params = config.params || {};
+            if (config.rand) {
+                config.params.$rand = Math.random();
+            }
+            let url = config.url;
+            const async = config.async === false ? false : true;
+            const req = new XMLHttpRequest();
+            req.withCredentials = config.withCredentials;
+            const method = config.method || 'GET';
+            req.timeout = async ? config.timeout : 0;
+            req.onload = () => {
+                if (req.status === 200) {
+                    let r = req.responseText;
+                    if (config.type === 'json') {
+                        try {
+                            r = JSON.parse(r);
+                        }
+                        catch (e) {
+                            reject({ type: "jsonparse" });
+                        }
+                    }
+                    resolve(r);
+                }
+                else {
+                    reject({ type: 'error', url: url });
+                }
+            };
+            req.ontimeout = () => reject({ type: 'timeout' });
+            req.onerror = () => reject({ type: 'error', url: url });
+            let data = null;
+            switch (method) {
+                case 'GET':
+                    let pa;
+                    if (nodom.Util.isObject(config.params)) {
+                        let ar = [];
+                        nodom.Util.getOwnProps(config.params).forEach(function (key) {
+                            ar.push(key + '=' + config.params[key]);
+                        });
+                        pa = ar.join('&');
+                    }
+                    if (pa !== undefined) {
+                        if (url.indexOf('?') !== -1) {
+                            url += '&' + pa;
+                        }
+                        else {
+                            url += '?' + pa;
+                        }
+                    }
+                    break;
+                case 'POST':
+                    let fd = new FormData();
+                    for (let o in config.params) {
+                        fd.append(o, config.params[o]);
+                    }
+                    req.open(method, url, async, config.user, config.pwd);
+                    data = fd;
+                    break;
+            }
+            req.open(method, url, async, config.user, config.pwd);
+            if (config.header) {
+                nodom.Util.getOwnProps(config.header).forEach((item) => {
+                    req.setRequestHeader(item, config.header[item]);
+                });
+            }
+            req.send(data);
+        }).catch((re) => {
+            switch (re.type) {
+                case "error":
+                    throw new nodom.NodomError("notexist1", nodom.TipWords.resource, re.url);
+                case "timeout":
+                    throw new nodom.NodomError("timeout");
+                case "jsonparse":
+                    throw new nodom.NodomError("jsonparse");
+            }
+        });
     }
-    nodom.createPlugin = createPlugin;
+    nodom.request = request;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
@@ -1795,141 +1876,128 @@ var nodom;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
-    class Linker {
-        static gen(type, config) {
-            let p;
-            switch (type) {
-                case 'ajax':
-                    p = this.ajax(config);
-                    break;
-                case 'getfiles':
-                    p = this.getfiles(config);
-                    break;
-                case 'dolist':
-                    if (config.params) {
-                        p = this.dolist(config.funcs, config.params);
+    let ResourceManager = (() => {
+        class ResourceManager {
+            static getResource(url, type) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    let rObj;
+                    type = type || this.getType(url);
+                    if (this.resources.has(url)) {
+                        rObj = this.resources.get(url);
+                        if (['js', 'css'].includes(type)) {
+                            return;
+                        }
                     }
                     else {
-                        p = this.dolist(config.funcs);
+                        rObj = { type: type };
+                        rObj.content = yield nodom.request({ url: url });
                     }
+                    this.handleOne(url, rObj);
+                    this.resources.set(url, rObj);
+                    return rObj.content;
+                });
             }
-            return p;
-        }
-        static ajax(config) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return new Promise((resolve, reject) => {
-                    if (config.rand) {
-                        config.params = config.params || {};
-                        config.params.$rand = Math.random();
-                    }
-                    let url = config.url;
-                    const async = config.async === false ? false : true;
-                    const req = new XMLHttpRequest();
-                    req.withCredentials = config.withCredentials;
-                    const reqType = config.reqType || 'GET';
-                    req.timeout = async ? config.timeout : 0;
-                    req.onload = () => {
-                        if (req.status === 200) {
-                            let r = req.responseText;
-                            if (config.type === 'json') {
-                                try {
-                                    r = JSON.parse(r);
-                                }
-                                catch (e) {
-                                    reject({ type: "jsonparse" });
-                                }
+            static getResources(reqs) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    let me = this;
+                    let re = this.preHandle(reqs);
+                    let urls = re[1];
+                    let types = re[2];
+                    let rObjs = [];
+                    return Promise.all(re[0]).then(arr => {
+                        for (let i = 0; i < arr.length; i++) {
+                            let rObj;
+                            if (typeof arr[i] === 'string') {
+                                rObj = {
+                                    type: types[i],
+                                    content: arr[i]
+                                };
+                                me.handleOne(urls[i], rObj);
+                                rObjs.push(rObj);
                             }
-                            resolve(r);
                         }
-                        else {
-                            reject({ type: 'error', url: url });
-                        }
-                    };
-                    req.ontimeout = () => reject({ type: 'timeout' });
-                    req.onerror = () => reject({ type: 'error', url: url });
-                    switch (reqType) {
-                        case 'GET':
-                            let pa;
-                            if (nodom.Util.isObject(config.params)) {
-                                let ar = [];
-                                nodom.Util.getOwnProps(config.params).forEach(function (key) {
-                                    ar.push(key + '=' + config.params[key]);
-                                });
-                                pa = ar.join('&');
-                            }
-                            if (pa !== undefined) {
-                                if (url.indexOf('?') !== -1) {
-                                    url += '&' + pa;
-                                }
-                                else {
-                                    url += '?' + pa;
-                                }
-                            }
-                            req.open(reqType, url, async, config.user, config.pwd);
-                            req.send(null);
-                            break;
-                        case 'POST':
-                            let fd = new FormData();
-                            for (let o in config.params) {
-                                fd.append(o, config.params[o]);
-                            }
-                            req.open(reqType, url, async, config.user, config.pwd);
-                            req.send(fd);
-                            break;
-                    }
-                }).catch((re) => {
-                    switch (re.type) {
-                        case "error":
-                            throw new nodom.NodomError("notexist1", nodom.TipWords.resource, re.url);
-                        case "timeout":
-                            throw new nodom.NodomError("timeout");
-                        case "jsonparse":
-                            throw new nodom.NodomError("jsonparse");
-                    }
-                });
-            });
-        }
-        static getfiles(urls) {
-            return __awaiter(this, void 0, void 0, function* () {
-                let promises = [];
-                urls.forEach((url) => {
-                    promises.push(new Promise((resolve, reject) => {
-                        const req = new XMLHttpRequest();
-                        req.onload = () => resolve(req.responseText);
-                        req.onerror = () => reject(url);
-                        req.open("GET", url);
-                        req.send();
-                    }));
-                });
-                return Promise.all(promises).catch((text) => {
-                    throw new nodom.NodomError("notexist1", nodom.TipWords.resource, text);
-                });
-            });
-        }
-        static dolist(funcArr, paramArr) {
-            return foo(funcArr, 0, paramArr);
-            function foo(fa, i, pa) {
-                if (fa.length === 0) {
-                    return Promise.resolve();
-                }
-                else {
-                    return new Promise((resolve, reject) => {
-                        if (nodom.Util.isArray(pa)) {
-                            fa[i](resolve, reject, pa[i]);
-                        }
-                        else {
-                            fa[i](resolve, reject);
-                        }
-                    }).then(() => {
-                        if (i < fa.length - 1) {
-                            return foo(fa, i + 1, pa);
-                        }
+                        return rObjs;
                     });
+                });
+            }
+            static getType(url) {
+                let ind = -1;
+                let type;
+                if ((ind = url.lastIndexOf('.')) !== -1) {
+                    type = url.substr(ind + 1);
+                    if (type === 'htm' || type === 'html') {
+                        type = 'template';
+                    }
+                }
+                return type || 'js';
+            }
+            static handleOne(url, rObj) {
+                switch (rObj.type) {
+                    case 'js':
+                        let head = document.querySelector('head');
+                        let script = nodom.Util.newEl('script');
+                        script.innerHTML = rObj.content;
+                        head.appendChild(script);
+                        head.removeChild(script);
+                        delete rObj.content;
+                        break;
+                    case 'template':
+                        rObj.content = nodom.Compiler.compile(rObj.content);
+                        break;
+                    case 'nd':
+                        rObj.content = nodom.Serializer.deserialize(rObj.content);
+                        break;
+                    case 'data':
+                        try {
+                            rObj.content = JSON.parse(rObj.content);
+                        }
+                        catch (e) {
+                            console.log(e);
+                        }
+                }
+                this.resources.set(url, rObj);
+            }
+            static preHandle(reqs) {
+                let promises = [];
+                let types = [];
+                let urls = [];
+                let head = document.querySelector('head');
+                for (let r of reqs) {
+                    let url;
+                    let type;
+                    if (typeof r === 'object') {
+                        url = r.url;
+                        type = r.type || this.getType(url);
+                    }
+                    else {
+                        url = r;
+                        type = this.getType(url);
+                    }
+                    urls.push(url);
+                    types.push(type);
+                    if (type === 'css') {
+                        let css = nodom.Util.newEl('link');
+                        css.type = 'text/css';
+                        css.rel = 'stylesheet';
+                        css.href = url;
+                        head.appendChild(css);
+                    }
+                    else {
+                        if (this.resources.has(url)) {
+                            promises.push(this.resources.get(url));
+                        }
+                        else {
+                            promises.push(nodom.request(url));
+                        }
+                    }
+                    return [promises, urls, types];
                 }
             }
         }
-    }
-    nodom.Linker = Linker;
+        ResourceManager.resources = new Map();
+        return ResourceManager;
+    })();
+    nodom.ResourceManager = ResourceManager;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
@@ -2274,42 +2342,21 @@ var nodom;
         init() {
             return __awaiter(this, void 0, void 0, function* () {
                 let config = this.initConfig;
-                let typeArr = [];
                 let urlArr = [];
                 let appPath = nodom.Application.templatePath || '';
                 if (nodom.Util.isArray(config.requires) && config.requires.length > 0) {
-                    const head = document.head;
                     config.requires.forEach((item) => {
                         let type;
                         let url = '';
                         if (nodom.Util.isObject(item)) {
                             type = item['type'] || 'js';
-                            url += item['url'];
+                            url = item['url'];
                         }
                         else {
                             type = 'js';
-                            url += item;
+                            url = item;
                         }
-                        if (type === 'css') {
-                            let css = nodom.Util.get("link[href='" + url + "']");
-                            if (css !== null) {
-                                return;
-                            }
-                            css = nodom.Util.newEl('link');
-                            css.type = 'text/css';
-                            css.rel = 'stylesheet';
-                            css.href = url;
-                            head.appendChild(css);
-                            return;
-                        }
-                        else if (type === 'js') {
-                            let cs = nodom.Util.get("script[dsrc='" + url + "']");
-                            if (cs !== null) {
-                                return;
-                            }
-                        }
-                        typeArr.push(type);
-                        urlArr.push(url);
+                        urlArr.push({ url: appPath + url, type: type });
                     });
                 }
                 let templateStr = this.template;
@@ -2319,13 +2366,10 @@ var nodom;
                         templateStr = config.template;
                     }
                     else {
-                        if (config.template.endsWith('.nd')) {
-                            typeArr.push('compiled');
-                        }
-                        else {
-                            typeArr.push('template');
-                        }
-                        urlArr.push(appPath + config.template);
+                        urlArr.push({
+                            url: appPath + config.template,
+                            type: config.template.endsWith('.nd') ? 'nd' : 'template'
+                        });
                     }
                 }
                 if (!nodom.Util.isEmpty(templateStr)) {
@@ -2336,35 +2380,23 @@ var nodom;
                         this.model = new nodom.Model(config.data, this);
                     }
                     else {
-                        typeArr.push('data');
-                        urlArr.push(config['data']);
+                        urlArr.push({
+                            url: config.data,
+                            type: 'data'
+                        });
                         this.dataUrl = config.data;
                     }
                 }
-                if (typeArr.length > 0) {
-                    let files = yield nodom.Linker.gen('getfiles', urlArr);
-                    let head = document.querySelector('head');
-                    files.forEach((file, ind) => {
-                        switch (typeArr[ind]) {
-                            case 'js':
-                                let script = nodom.Util.newEl('script');
-                                script.innerHTML = file;
-                                head.appendChild(script);
-                                script.setAttribute('dsrc', urlArr[ind]);
-                                script.innerHTML = '';
-                                head.removeChild(script);
-                                break;
-                            case 'template':
-                                this.virtualDom = nodom.Compiler.compile(file.trim());
-                                break;
-                            case 'compiled':
-                                let arr = nodom.Serializer.deserialize(file, this);
-                                this.virtualDom = arr[0];
-                                break;
-                            case 'data':
-                                this.model = new nodom.Model(JSON.parse(file), this);
+                if (urlArr.length > 0) {
+                    let rets = yield nodom.ResourceManager.getResources(urlArr);
+                    for (let r of rets) {
+                        if (r.type === 'template' || r.type === 'nd') {
+                            this.virtualDom = r.content;
                         }
-                    });
+                        else if (r.type === 'data') {
+                            this.model = new nodom.Model(r.content, this);
+                        }
+                    }
                 }
                 changeState(this);
                 if (nodom.Util.isArray(this.initConfig.modules)) {
@@ -2394,12 +2426,14 @@ var nodom;
             let root = this.virtualDom.clone();
             if (this.firstRender) {
                 if (this.loadNewData && this.dataUrl) {
-                    nodom.Linker.gen('ajax', {
+                    nodom.request({
                         url: this.dataUrl,
                         type: 'json'
                     }).then((r) => {
                         this.model = new nodom.Model(r, this);
                         this.doFirstRender(root);
+                    }).catch((e) => {
+                        console.log(e);
                     });
                     this.loadNewData = false;
                 }
@@ -3586,20 +3620,13 @@ var nodom;
                 });
             }
         }
-        static deserialize(jsonStr, module) {
-            let jsonArr = JSON.parse(jsonStr);
-            let arr = [];
+        static deserialize(jsonStr) {
+            let jObj = JSON.parse(jsonStr);
             let vdom;
-            jsonArr.forEach((item) => {
-                arr.push(handleCls(item));
-            });
-            return arr;
+            return handleCls(jObj);
             function handleCls(jsonObj) {
                 if (!nodom.Util.isObject(jsonObj)) {
                     return jsonObj;
-                }
-                if (jsonObj.moduleName) {
-                    jsonObj.moduleName = module.name;
                 }
                 let retObj;
                 if (jsonObj.hasOwnProperty('className')) {
@@ -3607,7 +3634,7 @@ var nodom;
                     let param = [];
                     switch (cls) {
                         case 'Directive':
-                            param = [jsonObj['type'], jsonObj['value'], vdom, module];
+                            param = [jsonObj['type'], jsonObj['value'], vdom];
                             break;
                         case 'Event':
                             param = [jsonObj['name']];

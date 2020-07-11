@@ -11,7 +11,7 @@
 ///<reference path='./core/expression.ts' />
 ///<reference path='./core/filter.ts' />
 ///<reference path='./core/filtermanager.ts' />
-///<reference path='./core/linker.ts' />
+///<reference path='./core/resourcemanager.ts' />
 ///<reference path='./core/messagequeue.ts' />
 ///<reference path='./core/methodfactory.ts' />
 ///<reference path='./core/model.ts' />

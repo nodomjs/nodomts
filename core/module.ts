@@ -212,13 +212,13 @@ namespace nodom {
                 if (main) {
                     this.main = true;
                     ModuleFactory.setMain(this);
-                    // this.active();
+                    this.active();
                 }
 
                 //不延迟初始化或为主模块，需要立即初始化
-                // if (!config.delayInit) {
-                //     this.init();
-                // }
+                if (!config.delayInit) {
+                    this.init();
+                }
             }
         }
 
@@ -227,44 +227,25 @@ namespace nodom {
          */
         async init():Promise<any> {
             let config = this.initConfig;
-            let typeArr:Array<string> = []; //请求类型数组
-            let urlArr:Array<string> = []; //请求url数组
+            let urlArr:Array<object> = []; //请求url数组
             
-            //app页面根路径
+            //app根路径
             let appPath:string = Application.templatePath || '';
+
             //加载文件
             if (Util.isArray(config.requires) && config.requires.length > 0) {
-                const head:HTMLHeadElement = document.head;
                 config.requires.forEach((item) => {
                     let type:string;
                     let url:string = '';
                     if (Util.isObject(item)) { //为对象，可能是css或js
                         type = item['type'] || 'js';
-                        url += item['url'];
+                        url = item['url'];
                     } else { //js文件
                         type = 'js';
-                        url += item;
+                        url = <string>item;
                     }
-                    //如果已经加载，则不再加载
-                    if (type === 'css') {
-                        let css: HTMLLinkElement = <HTMLLinkElement>Util.get("link[href='" + url + "']");
-                        if (css !== null) {
-                            return;
-                        }
-                        css = <HTMLLinkElement>Util.newEl('link');
-                        css.type = 'text/css';
-                        css.rel = 'stylesheet'; // 保留script标签的path属性
-                        css.href = url;
-                        head.appendChild(css);
-                        return;
-                    } else if (type === 'js') {
-                        let cs = Util.get("script[dsrc='" + url + "']");
-                        if (cs !== null) {
-                            return;
-                        }
-                    }
-                    typeArr.push(type);
-                    urlArr.push(url);
+                    
+                    urlArr.push({url:appPath + url,type:type});
                 });
             }
 
@@ -276,12 +257,10 @@ namespace nodom {
                 if(config.template.startsWith('<')){ //html模版串
                     templateStr = config.template;
                 }else{  //文件
-                    if(config.template.endsWith('.nd')){ //nodom编译文件
-                        typeArr.push('compiled');
-                    }else{  //普通html文件
-                        typeArr.push('template');
-                    }
-                    urlArr.push(appPath + config.template);
+                    urlArr.push({
+                        url:appPath + config.template,
+                        type:config.template.endsWith('.nd')?'nd':'template'
+                    });
                 }
             }
             
@@ -290,43 +269,31 @@ namespace nodom {
                 this.virtualDom = Compiler.compile(templateStr);
             }
 
-            //数据信息
+            //数据
             if (config.data) { //数据
                 if(Util.isObject(config.data)){ //数据
                     this.model = new Model(config.data, this);
-                }else{ //数据文件
-                    typeArr.push('data');
-                    urlArr.push((<object>config)['data']);
+                }else{ //数据url
+                    urlArr.push({
+                        url:config.data,
+                        type:'data'
+                    });
                     this.dataUrl = <string>config.data;
                 }
             }
 
             //批量请求文件
-            if (typeArr.length > 0) {
-                let files = await Linker.gen('getfiles', urlArr);
-                let head = document.querySelector('head');
-                files.forEach((file, ind) => {
-                    switch (typeArr[ind]) {
-                    case 'js':
-                        let script = Util.newEl('script');
-                        script.innerHTML = file;
-                        head.appendChild(script);
-                        script.setAttribute('dsrc', urlArr[ind]);
-                        script.innerHTML = '';
-                        head.removeChild(script);
-                        break;
-                    case 'template':
-                        this.virtualDom = Compiler.compile(file.trim());
-                        break;
-                    case 'compiled': //预编译后的js文件
-                        let arr = Serializer.deserialize(file, this);
-                        this.virtualDom = arr[0];
-                        break;
-                    case 'data': //数据
-                        this.model = new Model(JSON.parse(file), this);
+            if (urlArr.length > 0) {
+                let rets:IResourceObj[] = await ResourceManager.getResources(urlArr);
+                for(let r of rets){
+                    if(r.type === 'template' || r.type === 'nd'){
+                        this.virtualDom = <Element>r.content;
+                    }else if(r.type === 'data'){
+                        this.model = new Model(r.content,this);
                     }
-                });
-            } 
+                }
+            }
+
             changeState(this);
             
             if (Util.isArray(this.initConfig.modules)) {
@@ -368,12 +335,14 @@ namespace nodom {
             if (this.firstRender) {
                 //model无数据，如果存在dataUrl，则需要加载数据
                 if (this.loadNewData && this.dataUrl) {
-                    Linker.gen('ajax', {
+                    request({
                         url: this.dataUrl,
                         type: 'json'
                     }).then((r) => {
                         this.model = new Model(r, this);
                         this.doFirstRender(root);
+                    }).catch((e)=>{
+                        console.log(e);
                     });
                     this.loadNewData = false;
                 } else {

@@ -1,28 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+<!-- <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Document</title>
-    
-    
-</head>
+
+    <link type='text/css' rel='stylesheet' href='test.css'>
+</head> -->
 
 <body>
-    <div class="view">
-        <button onclick='change()'>change</button>
-        <button onclick='change1()'>change1</button>
+    <div class="view" onclick='clickme()'>
+        <!-- <button onclick='change()'>change</button>
+        <button onclick='change1()'>change1</button> -->
         <input id='i1' type='checkbox'>选中
     </div>
 </body>
-<script>
-   function change(){
-       document.querySelector('#i1').checked = true;
-   }
-   function change1(){
-    document.querySelector('#i1').checked = false;
-   }
-</script>
+<script src='test.js'></script>
 
 </html>

@@ -66,24 +66,14 @@ namespace nodom{
 		 * @param module 	模块
 		 * @returns 		[virtualDom,expressionFactory]	
 		 */
-		static deserialize(jsonStr:string,module:Module){
-			let jsonArr = JSON.parse(jsonStr);
-			
-			let arr = [];
-			let vdom; //虚拟dom
-			jsonArr.forEach((item)=>{
-				arr.push(handleCls(item));
-			});
+		static deserialize(jsonStr:string):Element{
+			let jObj = JSON.parse(jsonStr);
+			let vdom:Element;
+			return handleCls(jObj);
 
-			return arr;
-
-			function handleCls(jsonObj){
+			function handleCls(jsonObj):Element{
 				if(!Util.isObject(jsonObj)){
 					return jsonObj;
-				}
-
-				if(jsonObj.moduleName){
-					jsonObj.moduleName = module.name;
 				}
 
 				let retObj;
@@ -93,7 +83,7 @@ namespace nodom{
 					//指令需要传入参数
 					switch(cls){
 						case 'Directive':
-							param = [jsonObj['type'],jsonObj['value'],vdom,module];
+							param = [jsonObj['type'],jsonObj['value'],vdom];
 							break;
 						case 'Event':
 							param = [jsonObj['name']];
