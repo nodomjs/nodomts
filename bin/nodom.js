@@ -715,7 +715,7 @@ var nodom;
                 let attr = el.attributes[i];
                 let v = attr.value.trim();
                 if (attr.name.startsWith('x-')) {
-                    oe.addDirective(new nodom.Directive(attr.name.substr(2), v, oe), true);
+                    oe.addDirective(new nodom.Directive(attr.name.substr(2), v), true);
                 }
                 else if (attr.name.startsWith('e-')) {
                     let en = attr.name.substr(2);
@@ -773,7 +773,7 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Directive {
-        constructor(type, value, vdom, filters) {
+        constructor(type, value, filters) {
             this.id = nodom.Util.genId();
             this.type = type;
             if (nodom.Util.isString(value)) {
@@ -800,14 +800,14 @@ var nodom;
                 }
             }
             if (type !== undefined) {
-                nodom.DirectiveManager.init(this, vdom);
+                nodom.DirectiveManager.init(this);
             }
         }
         exec(module, dom, parent) {
             return nodom.DirectiveManager.exec(this, dom, module, parent);
         }
-        clone(vdom) {
-            let dir = new Directive(this.type, this.value, vdom);
+        clone() {
+            let dir = new Directive(this.type, this.value);
             if (this.filters) {
                 dir.filters = [];
                 for (let f of this.filters) {
@@ -854,10 +854,10 @@ var nodom;
             static hasType(name) {
                 return this.directiveTypes.has(name);
             }
-            static init(directive, dom) {
+            static init(directive) {
                 let dt = this.directiveTypes.get(directive.type);
                 if (dt) {
-                    return dt.init(directive, dom);
+                    return dt.init(directive);
                 }
             }
             static exec(directive, dom, module, parent) {
@@ -903,6 +903,7 @@ var nodom;
             }
             if (parent) {
                 this.parent = parent;
+                this.parentKey = parent.key;
                 if (!this.modelId) {
                     this.modelId = parent.modelId;
                 }
@@ -1074,16 +1075,13 @@ var nodom;
             let dst = new Element();
             if (changeKey) {
                 dst.key = nodom.Util.genId() + '';
-                let notCopyProps = ['parent', 'directives', 'children'];
+                let notCopyProps = ['parent', 'children'];
                 nodom.Util.getOwnProps(this).forEach((p) => {
                     if (notCopyProps.includes(p)) {
                         return;
                     }
                     dst[p] = nodom.Util.clone(this[p], null, changeKey);
                 });
-                for (let d of this.directives) {
-                    dst.directives.push(d.clone(dst));
-                }
             }
             else {
                 let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
@@ -1720,7 +1718,7 @@ var nodom;
                 }
             }
             val(model) {
-                if (!model) {
+                if (!model || !model.data) {
                     return '';
                 }
                 let module = nodom.ModuleFactory.get(model.moduleName);
@@ -2055,7 +2053,6 @@ var nodom;
     class Model {
         constructor(data, module) {
             this.fields = {};
-            this.data = data;
             this.fields = {};
             this.id = nodom.Util.genId();
             if (module) {
@@ -2064,8 +2061,12 @@ var nodom;
                     module.modelFactory.add(this.id, this);
                 }
             }
+            if (!data || !nodom.Util.isObject(data) && !nodom.Util.isArray(data)) {
+                data = {};
+            }
             data['$modelId'] = this.id;
             this.addSetterGetter(data);
+            this.data = data;
         }
         set(key, value) {
             let fn, data;
@@ -3678,7 +3679,7 @@ var nodom;
 (function (nodom) {
     nodom.DirectiveManager.addType('model', {
         prio: 1,
-        init: (directive, dom) => {
+        init: (directive) => {
             let value = directive.value;
             if (nodom.Util.isString(value)) {
                 if (value.startsWith('$$')) {
@@ -3709,9 +3710,12 @@ var nodom;
             }
             else if (dom.modelId) {
                 let model = module.modelFactory.get(dom.modelId);
-                if (model) {
+                if (model && model.data) {
                     data = model.data;
                 }
+            }
+            if (!data) {
+                return;
             }
             for (let i = startIndex; i < directive.value.length; i++) {
                 let item = directive.value[i];
@@ -3733,7 +3737,7 @@ var nodom;
     });
     nodom.DirectiveManager.addType('repeat', {
         prio: 2,
-        init: (directive, dom) => {
+        init: (directive) => {
             let value = directive.value;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
@@ -3753,7 +3757,11 @@ var nodom;
             directive.value = modelName;
         },
         handle: (directive, dom, module, parent) => {
-            let rows = module.modelFactory.get(dom.modelId).query(directive.value);
+            let model = module.modelFactory.get(dom.modelId);
+            if (!model || !model.data) {
+                return;
+            }
+            let rows = model.query(directive.value);
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
                 return;
@@ -3792,7 +3800,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('if', {
-        init: (directive, dom) => {
+        init: (directive) => {
             if (typeof directive.value === 'string') {
                 let value = directive.value;
                 if (!value) {
@@ -3836,7 +3844,7 @@ var nodom;
     });
     nodom.DirectiveManager.addType('else', {
         name: 'else',
-        init: (directive, dom) => {
+        init: (directive) => {
             return;
         },
         handle: (directive, dom, module, parent) => {
@@ -3844,7 +3852,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('show', {
-        init: (directive, dom) => {
+        init: (directive) => {
             if (typeof directive.value === 'string') {
                 let value = directive.value;
                 if (!value) {
@@ -3866,7 +3874,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('class', {
-        init: (directive, dom) => {
+        init: (directive) => {
             if (typeof directive.value === 'string') {
                 let obj = eval('(' + directive.value + ')');
                 if (!nodom.Util.isObject(obj)) {
@@ -3911,7 +3919,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('field', {
-        init: (directive, dom) => {
+        init: (directive) => {
         },
         handle: (directive, dom, module, parent) => {
             if (!directive.extra) {
@@ -3942,7 +3950,7 @@ var nodom;
                             v = undefined;
                         }
                     }
-                    model.data[field] = v;
+                    model.set(field, v);
                     if (type !== 'radio') {
                         dom.setProp('value', v);
                         el.value = v;
@@ -3952,6 +3960,9 @@ var nodom;
             const type = dom.getProp('type');
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
+            if (!model.data) {
+                return;
+            }
             const dataValue = model.data[directive.value];
             let value = dom.getProp('value');
             if (type === 'radio') {
@@ -3990,7 +4001,7 @@ var nodom;
         }
     });
     nodom.DirectiveManager.addType('validity', {
-        init: (directive, dom) => {
+        init: (directive) => {
             let ind, fn, method;
             let value = directive.value;
             if ((ind = value.indexOf('|')) !== -1) {
@@ -4016,7 +4027,6 @@ var nodom;
                     let vd1 = new nodom.Element();
                     vd1.textContent = '';
                     dom.add(vd1);
-                    console.log(vd1);
                 }
                 else {
                     dom.children.forEach((item) => {
@@ -4024,7 +4034,6 @@ var nodom;
                             let vd1 = new nodom.Element();
                             vd1.textContent = '   ';
                             item.add(vd1);
-                            console.log(vd1);
                         }
                     });
                 }
@@ -4094,7 +4103,6 @@ var nodom;
                 dom.dontRender = true;
             }
             function setTip(vd, vn, el) {
-                console.log(vd);
                 let text = vd.children[0].textContent.trim();
                 if (text === '') {
                     text = nodom.Util.compileStr(nodom.FormMsgs[vn], el.getAttribute(vn));

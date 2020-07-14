@@ -293,11 +293,12 @@ namespace nodom {
 		 * @returns 		计算结果
          */
         val(model:Model) {
-            if (!model) { 
+            if (!model || !model.data) { 
 				return ''; 
 			}
             let module:Module = ModuleFactory.get(model.moduleName);
             let fieldObj:object = model.data;
+            
             let valueArr = [];
             this.fields.forEach((field) => {
                 valueArr.push(getFieldValue(module,fieldObj,field));

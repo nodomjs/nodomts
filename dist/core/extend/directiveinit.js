@@ -501,7 +501,6 @@ var nodom;
              */
             function setTip(vd, vn, el) {
                 //子节点不存在，添加一个
-                console.log(vd);
                 let text = vd.children[0].textContent.trim();
                 if (text === '') { //没有提示内容，根据类型提示
                     text = nodom.Util.compileStr(nodom.FormMsgs[vn], el.getAttribute(vn));

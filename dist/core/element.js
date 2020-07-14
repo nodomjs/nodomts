@@ -79,6 +79,7 @@ var nodom;
             // 设置父对象
             if (parent) {
                 this.parent = parent;
+                this.parentKey = parent.key;
                 // 设置modelId
                 if (!this.modelId) {
                     this.modelId = parent.modelId;

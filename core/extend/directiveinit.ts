@@ -37,17 +37,19 @@ namespace nodom {
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let startIndex:number=0;
             let data;
-            //从根获取数据
+            //从根获取数据,$$开始数据项
             if (directive.extra===1) {
                 data = module.model.data[directive.value[0]];
                 startIndex = 1;
             }else if(dom.modelId){
                 let model = module.modelFactory.get(dom.modelId);
-                if(model){
+                if(model && model.data){
                     data = model.data;
                 }
             }
-            
+            if(!data){
+                return;
+            }
             for(let i=startIndex;i<directive.value.length;i++){
                 let item = directive.value[i];
                 if (!data) {
@@ -97,7 +99,11 @@ namespace nodom {
             directive.value = modelName;
         },
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
-            let rows = module.modelFactory.get(dom.modelId).query(directive.value);
+            let model = module.modelFactory.get(dom.modelId);
+            if(!model || !model.data){
+                return;
+            } 
+            let rows = model.query(directive.value);
             // 无数据，不渲染
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
@@ -338,7 +344,7 @@ namespace nodom {
                         }
 
                         //修改字段值
-                        model.data[field] = v;
+                        model.set(field,v);
                         //修改value值，该节点不重新渲染
                         if (type !== 'radio') {
                             dom.setProp('value',v);
@@ -350,6 +356,9 @@ namespace nodom {
             const type:string = dom.getProp('type');
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
+            if(!model.data){
+                return;
+            }
             const dataValue = model.data[directive.value];
             let value = dom.getProp('value');
             if (type === 'radio') {
@@ -360,7 +369,6 @@ namespace nodom {
                     dom.assets.set('checked',false);
                     dom.delProp('checked');
                 }
-                
             } else if (type === 'checkbox') {
                 //设置状态和value
                 let yv = dom.getProp('yes-value');
@@ -519,7 +527,6 @@ namespace nodom {
              */
             function setTip(vd: Element, vn: string, el ? : HTMLElement) {
                 //子节点不存在，添加一个
-                console.log(vd);
                 let text = ( <string> vd.children[0].textContent).trim();
                 if (text === '') { //没有提示内容，根据类型提示
                     text = Util.compileStr(FormMsgs[vn], el.getAttribute(vn));

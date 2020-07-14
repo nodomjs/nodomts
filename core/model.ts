@@ -28,7 +28,6 @@ namespace nodom {
          * @param module 	模块对象
          */
         constructor(data: any, module: Module) {
-            this.data = data;
             this.fields = {};
             // modelId
             this.id = Util.genId();
@@ -40,9 +39,14 @@ namespace nodom {
                 }
             }
 
+            //如果data不存在，则初始化为空object
+            if(!data || !Util.isObject(data) && !Util.isArray(data)){
+                data = {};
+            }
             // 给data设置modelid
             data['$modelId'] = this.id;
             this.addSetterGetter(data);
+            this.data = data;
         }
 
         /**
