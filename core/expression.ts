@@ -38,14 +38,18 @@ namespace nodom {
 		
         /**
          * @param exprStr	表达式串
+         * @param execStr   执行串
          */
-        constructor(exprStr?:string) {
+        constructor(exprStr?:string,execStr?:string) {
             //旧值
             this.fields = []; // 字段数组
             this.id = Util.genId();
             if (exprStr) {
                 this.execString = this.compile(exprStr);
+            }else if(execStr){
+                this.execString = execStr;
             }
+            
             if(this.execString){
                 let v:string = this.fields.length>0?','+this.fields.join(','):'';
                 this.execString = 'function($module' + v + '){return ' + this.execString + '}';
@@ -57,11 +61,6 @@ namespace nodom {
          * 克隆
          */
         clone(){
-            /*let expr = new Expression();
-            expr.fields = this.fields;
-            expr.id = Util.genId();
-            expr.execString = this.execString;
-            expr.execFunc = this.execFunc;*/
             return this;
         }
 

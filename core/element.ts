@@ -3,6 +3,7 @@ namespace nodom {
 	
     /**
      * 改变的dom类型
+     * 用于比较需要修改渲染的节点属性存储
      */
     export class ChangedDom{
         /**
@@ -24,7 +25,7 @@ namespace nodom {
 
         /**
          * 改变的属性数组
-         * {prop1:value1,...}
+         * [{prop1:value1},...]
          */
         changeProps:Array<object>;
 
@@ -166,7 +167,7 @@ namespace nodom {
             
             // 设置父对象
             if (parent) {
-                this.parentKey = parent.key;
+                this.parent = parent;
                 // 设置modelId
                 if (!this.modelId) {
                     this.modelId = parent.modelId;
@@ -216,19 +217,23 @@ namespace nodom {
             if(this.defineElement){
                 DefineElementManager.afterRender(module,this);
             }
+            //删除parent
+            delete this.parent;
         }
         /**
          * 渲染到html element
          * @param module 	模块
          * @param params 	配置对象{}
-         * @param type 		类型
-         * @param parent 	父虚拟dom
+         *          type 		类型
+         *          parent 	父虚拟dom
          */
-        renderToHtml(module:Module, params:any) {
+        renderToHtml(module:Module, params:ChangedDom) {
 			let el:HTMLElement;
 			let el1:Node;
             let type = params.type;
             let parent = params.parent;
+            //重置dontRender
+            this.dontRender = false;
             //构建el
             if (!parent) {
                 el = module.container;
@@ -287,7 +292,7 @@ namespace nodom {
                 //修改属性
                 if(params.changeProps){
                     params.changeProps.forEach((p) => {
-                        el.setAttribute(p.k, p.v);
+                        el.setAttribute(p['k'], p['v']);
                     });
                 }
                 break;
@@ -379,7 +384,7 @@ namespace nodom {
             //不直接拷贝属性集
             if(changeKey){  //表示clone后进行新建节点
                 dst.key = Util.genId() + '';
-                let notCopyProps:string[] = ['parent','directives','children'];
+                let notCopyProps:string[] = ['parent','children'];
                 //简单属性
                 Util.getOwnProps(this).forEach((p) => {
                     if (notCopyProps.includes(p)) {
@@ -387,12 +392,6 @@ namespace nodom {
                     }
                     dst[p] = Util.clone(this[p],null,changeKey);
                 });
-
-                //指令复制
-                for(let d of this.directives){
-                    dst.directives.push(d.clone(dst));
-                }
-                
             }else{ //表示克隆后直接渲染
                 let notCopyProps:string[] = ['parent','directives','props','exprProps','events','children'];
                 //简单属性
@@ -454,7 +453,7 @@ namespace nodom {
                 if (this.dontRender) {
                     return;
                 }
-                DirectiveManager.exec(d, this, module, parent);
+                d.exec(module,this,this.parent);
             }
         }
 
@@ -612,7 +611,7 @@ namespace nodom {
          * @param dom 	子节点
          */
         add(dom) {
-            dom.parent = this;
+            dom.parentKey = this.key;
             this.children.push(dom);
         }
         /**

@@ -803,9 +803,8 @@ var nodom;
                 nodom.DirectiveManager.init(this, vdom);
             }
         }
-        exec(value) {
-            let args = [this.module, this.type, value];
-            return nodom.Util.apply(nodom.DirectiveManager.exec, nodom.DirectiveManager, args);
+        exec(module, dom, parent) {
+            return nodom.DirectiveManager.exec(this, dom, module, parent);
         }
         clone(vdom) {
             let dir = new Directive(this.type, this.value, vdom);
@@ -903,7 +902,7 @@ var nodom;
                 return;
             }
             if (parent) {
-                this.parentKey = parent.key;
+                this.parent = parent;
                 if (!this.modelId) {
                     this.modelId = parent.modelId;
                 }
@@ -943,12 +942,14 @@ var nodom;
             if (this.defineElement) {
                 nodom.DefineElementManager.afterRender(module, this);
             }
+            delete this.parent;
         }
         renderToHtml(module, params) {
             let el;
             let el1;
             let type = params.type;
             let parent = params.parent;
+            this.dontRender = false;
             if (!parent) {
                 el = module.container;
             }
@@ -1005,7 +1006,7 @@ var nodom;
                     }
                     if (params.changeProps) {
                         params.changeProps.forEach((p) => {
-                            el.setAttribute(p.k, p.v);
+                            el.setAttribute(p['k'], p['v']);
                         });
                     }
                     break;
@@ -1128,7 +1129,7 @@ var nodom;
                 if (this.dontRender) {
                     return;
                 }
-                nodom.DirectiveManager.exec(d, this, module, parent);
+                d.exec(module, this, this.parent);
             }
         }
         handleExpression(exprArr, module) {
@@ -1232,7 +1233,7 @@ var nodom;
             return this.directives.find(item => item.type === directiveType);
         }
         add(dom) {
-            dom.parent = this;
+            dom.parentKey = this.key;
             this.children.push(dom);
         }
         remove(module, delHtml) {
@@ -1541,12 +1542,15 @@ var nodom;
 (function (nodom) {
     let Expression = (() => {
         class Expression {
-            constructor(exprStr) {
+            constructor(exprStr, execStr) {
                 this.replaceMap = new Map();
                 this.fields = [];
                 this.id = nodom.Util.genId();
                 if (exprStr) {
                     this.execString = this.compile(exprStr);
+                }
+                else if (execStr) {
+                    this.execString = execStr;
                 }
                 if (this.execString) {
                     let v = this.fields.length > 0 ? ',' + this.fields.join(',') : '';
@@ -2344,7 +2348,7 @@ var nodom;
                 let config = this.initConfig;
                 let urlArr = [];
                 let appPath = nodom.Application.templatePath || '';
-                if (nodom.Util.isArray(config.requires) && config.requires.length > 0) {
+                if (config && nodom.Util.isArray(config.requires) && config.requires.length > 0) {
                     config.requires.forEach((item) => {
                         let type;
                         let url = '';
@@ -3579,20 +3583,9 @@ var nodom;
 (function (nodom) {
     class Serializer {
         static serialize(module) {
-            let props = ['virtualDom', 'expressionFactory'];
-            let jsonStr = '[';
-            props.forEach((p, i) => {
-                addClsName(module[p]);
-                let s = JSON.stringify(module[p]);
-                jsonStr += s;
-                if (i < props.length - 1) {
-                    jsonStr += ',';
-                }
-                else {
-                    jsonStr += ']';
-                }
-            });
-            return jsonStr;
+            let dom = module.virtualDom;
+            addClsName(dom);
+            return JSON.stringify(dom);
             function addClsName(obj) {
                 if (typeof obj !== 'object') {
                     return;
@@ -3622,7 +3615,6 @@ var nodom;
         }
         static deserialize(jsonStr) {
             let jObj = JSON.parse(jsonStr);
-            let vdom;
             return handleCls(jObj);
             function handleCls(jsonObj) {
                 if (!nodom.Util.isObject(jsonObj)) {
@@ -3634,16 +3626,20 @@ var nodom;
                     let param = [];
                     switch (cls) {
                         case 'Directive':
-                            param = [jsonObj['type'], jsonObj['value'], vdom];
+                            param = [jsonObj['type']];
                             break;
-                        case 'Event':
+                        case 'Expression':
+                            param = [jsonObj['execString']];
+                            break;
+                        case 'Element':
+                            param = [];
+                            break;
+                        case 'NodomEvent':
                             param = [jsonObj['name']];
                             break;
                     }
                     let clazz = eval(cls);
-                    if (cls === 'Element') {
-                        vdom = retObj;
-                    }
+                    retObj = Reflect.construct(clazz, param);
                 }
                 else {
                     retObj = {};
@@ -3742,7 +3738,6 @@ var nodom;
             if (!value) {
                 throw new nodom.NodomError("paramException", "x-repeat");
             }
-            let ind;
             let modelName;
             let fa = value.split('|');
             modelName = fa[0];
@@ -3752,16 +3747,13 @@ var nodom;
                     directive.filters.push(new nodom.Filter(fa[i]));
                 }
             }
-            if (!dom.hasDirective('model')) {
-                dom.addDirective(new nodom.Directive('model', modelName, dom), true);
-            }
             if (modelName.startsWith('$$')) {
                 modelName = modelName.substr(2);
             }
             directive.value = modelName;
         },
         handle: (directive, dom, module, parent) => {
-            let rows = module.modelFactory.get(dom.modelId).data;
+            let rows = module.modelFactory.get(dom.modelId).query(directive.value);
             if (rows === undefined || rows.length === 0) {
                 dom.dontRender = true;
                 return;
@@ -3773,7 +3765,7 @@ var nodom;
             }
             let chds = [];
             let key = dom.key;
-            dom.removeDirectives(['model', 'repeat']);
+            dom.removeDirectives(['repeat']);
             for (let i = 0; i < rows.length; i++) {
                 let node = dom.clone();
                 node.modelId = rows[i].$modelId;
@@ -3920,40 +3912,43 @@ var nodom;
     });
     nodom.DirectiveManager.addType('field', {
         init: (directive, dom) => {
-            dom.setProp('name', directive.value);
-            let eventName = dom.getProp('tagName') === 'input' && ['text', 'checkbox', 'radio'].includes(dom.getProp('type')) ? 'input' : 'change';
-            dom.addEvent(new nodom.NodomEvent(eventName, function (dom, model, module, e, el) {
-                if (!el) {
-                    return;
-                }
-                let type = dom.getProp('type');
-                let field = dom.getDirective('field').value;
-                let v = el.value;
-                if (['text', 'number', 'date', 'datetime', 'datetime-local', 'month', 'week', 'time', 'email', 'password', 'search', 'tel', 'url', 'color', 'radio'].includes(type)
-                    || dom.tagName === 'TEXTAREA') {
-                    dom.setProp('value', new nodom.Expression(field), true);
-                }
-                if (type === 'checkbox') {
-                    if (dom.getProp('yes-value') == v) {
-                        v = dom.getProp('no-value');
-                    }
-                    else {
-                        v = dom.getProp('yes-value');
-                    }
-                }
-                else if (type === 'radio') {
-                    if (!el.checked) {
-                        v = undefined;
-                    }
-                }
-                model.data[field] = v;
-                if (type !== 'radio') {
-                    dom.setProp('value', v);
-                    el.value = v;
-                }
-            }));
         },
         handle: (directive, dom, module, parent) => {
+            if (!directive.extra) {
+                directive.extra = 1;
+                dom.setProp('name', directive.value);
+                let eventName = dom.getProp('tagName') === 'input' && ['text', 'checkbox', 'radio'].includes(dom.getProp('type')) ? 'input' : 'change';
+                dom.addEvent(new nodom.NodomEvent(eventName, function (dom, model, module, e, el) {
+                    if (!el) {
+                        return;
+                    }
+                    let type = dom.getProp('type');
+                    let field = dom.getDirective('field').value;
+                    let v = el.value;
+                    if (['text', 'number', 'date', 'datetime', 'datetime-local', 'month', 'week', 'time', 'email', 'password', 'search', 'tel', 'url', 'color', 'radio'].includes(type)
+                        || dom.tagName === 'TEXTAREA') {
+                        dom.setProp('value', new nodom.Expression(field), true);
+                    }
+                    if (type === 'checkbox') {
+                        if (dom.getProp('yes-value') == v) {
+                            v = dom.getProp('no-value');
+                        }
+                        else {
+                            v = dom.getProp('yes-value');
+                        }
+                    }
+                    else if (type === 'radio') {
+                        if (!el.checked) {
+                            v = undefined;
+                        }
+                    }
+                    model.data[field] = v;
+                    if (type !== 'radio') {
+                        dom.setProp('value', v);
+                        el.value = v;
+                    }
+                }));
+            }
             const type = dom.getProp('type');
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
@@ -4005,6 +4000,7 @@ var nodom;
             else {
                 fn = value;
             }
+            directive.extra = { initChild: false, initEvent: false };
             directive.value = fn;
             directive.params = {
                 enabled: false
@@ -4012,28 +4008,31 @@ var nodom;
             if (method) {
                 directive.params.method = method;
             }
-            setTimeout(() => {
+        },
+        handle: (directive, dom, module, parent) => {
+            if (!directive.extra.initChild) {
+                directive.extra.initChild = true;
                 if (dom.children.length === 0) {
                     let vd1 = new nodom.Element();
-                    vd1.textContent = '   ';
-                    dom.children.push(vd1);
+                    vd1.textContent = '';
+                    dom.add(vd1);
+                    console.log(vd1);
                 }
                 else {
                     dom.children.forEach((item) => {
                         if (item.children.length === 0) {
                             let vd1 = new nodom.Element();
                             vd1.textContent = '   ';
-                            item.children.push(vd1);
+                            item.add(vd1);
+                            console.log(vd1);
                         }
                     });
                 }
-            }, 0);
-        },
-        handle: (directive, dom, module, parent) => {
+            }
             setTimeout(() => {
                 const el = module.container.querySelector("[name='" + directive.value + "']");
-                if (!directive.extra) {
-                    directive.extra = true;
+                if (!directive.extra.initEvent) {
+                    directive.extra.initEvent = true;
                     el.addEventListener('focus', function () {
                         setTimeout(() => { directive.params.enabled = true; }, 0);
                     });
@@ -4095,6 +4094,7 @@ var nodom;
                 dom.dontRender = true;
             }
             function setTip(vd, vn, el) {
+                console.log(vd);
                 let text = vd.children[0].textContent.trim();
                 if (text === '') {
                     text = nodom.Util.compileStr(nodom.FormMsgs[vn], el.getAttribute(vn));

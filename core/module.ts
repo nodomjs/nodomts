@@ -44,10 +44,7 @@ namespace nodom {
          * ```
          */
         methods ? : object;
-        /**
-         * 延迟初始化，如果设置为true，则不会提前加载并初始化
-         */    
-        delayInit:boolean;
+        
         /**
          * 先于模块初始化加载的文件[{type:'js'/'css',url:路径}
          */
@@ -64,16 +61,16 @@ namespace nodom {
         /**
          * 是否静态，如果为静态模块，则不产生虚拟dom，只需要把该模块对应模版置入容器即可
          */
-        static ? : boolean;
+        // static ? : boolean;
         /**
          * 模型
          */
-        model ? : Model;
+        model: Model;
 
         /**
          * 是否主模块，一个app只有一个根模块
          */
-        main ? : boolean;
+        main: boolean;
 
         /**
          * 是否是首次渲染
@@ -83,10 +80,7 @@ namespace nodom {
          * 根虚拟dom
          */
         virtualDom: Element;
-        /**
-         * 渲染结束
-         */
-        rendered: boolean;
+        
         /**
          * 待渲染树
          */
@@ -151,11 +145,6 @@ namespace nodom {
         container: HTMLElement;
 
         /**
-         * 初始化链式处理器
-         */
-        initLinker:Promise<any>;
-
-        /**
          * 模版串
          */
         template:string;
@@ -164,6 +153,7 @@ namespace nodom {
          * 路由容器key
          */
         routerKey:number;
+        
         /**
          * 构造器
          * @param config 
@@ -212,12 +202,6 @@ namespace nodom {
                 if (main) {
                     this.main = true;
                     ModuleFactory.setMain(this);
-                    this.active();
-                }
-
-                //不延迟初始化或为主模块，需要立即初始化
-                if (!config.delayInit) {
-                    this.init();
                 }
             }
         }
@@ -226,14 +210,15 @@ namespace nodom {
          * 初始化模块（加载和编译）
          */
         async init():Promise<any> {
+            
             let config = this.initConfig;
             let urlArr:Array<object> = []; //请求url数组
             
             //app根路径
             let appPath:string = Application.templatePath || '';
-
+            
             //加载文件
-            if (Util.isArray(config.requires) && config.requires.length > 0) {
+            if (config && Util.isArray(config.requires) && config.requires.length > 0) {
                 config.requires.forEach((item) => {
                     let type:string;
                     let url:string = '';
@@ -411,7 +396,7 @@ namespace nodom {
             //渲染到html
             if (root.children) {
                 root.children.forEach((item) => {
-                    item.renderToHtml(this, { type: 'fresh' });
+                    item.renderToHtml(this, <ChangedDom>{type: 'fresh'});
                 });
             }
 

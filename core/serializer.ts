@@ -6,26 +6,14 @@ namespace nodom{
 	 */
 	export class Serializer{
 		/**
-		 * 序列化，只序列化 virtualDom、expressionFactory
+		 * 序列化，只序列化virtualDom
 		 * @param module 	模块
 		 * @return   		jsonstring
 		 */
 		static serialize(module:Module){
-			let props:Array<string> = ['virtualDom','expressionFactory'];
-			let jsonStr:string = '[';
-
-			props.forEach((p,i)=>{
-				addClsName(module[p]);
-				let s = JSON.stringify(module[p]);
-				jsonStr += s;
-				if(i<props.length-1){
-					jsonStr += ',';
-				}else{
-					jsonStr += ']'
-				}
-			});
-			
-			return jsonStr;
+			let dom = module.virtualDom;
+			addClsName(dom);
+			return JSON.stringify(dom);
 
 			/**
 			 * 为对象添加class name（递归执行）
@@ -64,11 +52,10 @@ namespace nodom{
 		 * 反序列化
 		 * @param jsonStr 	json串
 		 * @param module 	模块
-		 * @returns 		[virtualDom,expressionFactory]	
+		 * @returns 		 virtualDom	
 		 */
 		static deserialize(jsonStr:string):Element{
 			let jObj = JSON.parse(jsonStr);
-			let vdom:Element;
 			return handleCls(jObj);
 
 			function handleCls(jsonObj):Element{
@@ -83,18 +70,20 @@ namespace nodom{
 					//指令需要传入参数
 					switch(cls){
 						case 'Directive':
-							param = [jsonObj['type'],jsonObj['value'],vdom];
+							param = [jsonObj['type']];
 							break;
-						case 'Event':
+						case 'Expression':
+							param = [jsonObj['execString']];
+							break;
+						case 'Element':
+							param = [];
+							break;
+						case 'NodomEvent':
 							param = [jsonObj['name']];
 							break;
 					}
 					let clazz:any = eval(cls);
-					// retObj = new .newInstance(cls,param);
-					if(cls === 'Element'){
-						vdom = retObj;
-					}
-					
+					retObj = Reflect.construct(clazz,param);
 				}else{
 					retObj = {};
 				}
@@ -109,8 +98,9 @@ namespace nodom{
 					}else if(Util.isArray(jsonObj[item])){ //子数组
 						arrArr.push(item);
 					}else{  //普通属性
+						//className 不需要复制
 						if(item !== 'className'){
-							retObj[item] = jsonObj[item];	
+							retObj[item] = jsonObj[item];
 						}
 					}
 				});

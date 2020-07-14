@@ -69,14 +69,12 @@ namespace nodom {
         /**
          * 指令初始化
          * @param directive     指令
-         * @param dom           指令绑定的dom节点
-         * @param el            制定对应的html element
          */
          
-        static init(directive:Directive, dom:Element) {
+        static init(directive:Directive) {
             let dt = this.directiveTypes.get(directive.type);
             if (dt) {
-                return dt.init(directive, dom);
+                return dt.init(directive);
             }
         }
 
