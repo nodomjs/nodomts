@@ -9,6 +9,10 @@ namespace nodom{
          */
         tagName:string;
         /**
+         * 绑定的dom key
+         */
+        key:string;
+        /**
          * 编译时执行方法
          * @param el    待编译html element
          */

@@ -316,7 +316,9 @@ namespace nodom {
             if(!directive.extra){
                 directive.extra = 1;
                 dom.setProp('name',directive.value);
-                let eventName:string = dom.getProp('tagName') === 'input' && ['text','checkbox','radio'].includes(dom.getProp('type'))?'input':'change';
+                //默认text
+                let type = dom.getProp('type') || 'text';
+                let eventName = dom.tagName === 'input' && ['text', 'checkbox', 'radio'].includes(type) ? 'input' : 'change';
                 dom.addEvent(new NodomEvent(eventName,
                     function (dom,model,module,e,el) {
                         if(!el){

@@ -152,6 +152,9 @@ var nodom;
                     if (arr.length > 0) {
                         for (let i = 0; i < arr.length; i++) {
                             let sdom = dom.query(arr[i].domKey);
+                            if (!sdom) {
+                                continue;
+                            }
                             // 找到对应的子事件执行
                             if (eKey === sdom.key || sdom.query(eKey)) {
                                 //执行

@@ -15,7 +15,6 @@ var nodom;
              * 每个字段对象结构为{value:值[,handlers:观察器，观察器为模块方法名或函数]}
              */
             this.fields = {};
-            this.data = data;
             this.fields = {};
             // modelId
             this.id = nodom.Util.genId();
@@ -26,9 +25,14 @@ var nodom;
                     module.modelFactory.add(this.id, this);
                 }
             }
+            //如果data不存在，则初始化为空object
+            if (!data || !nodom.Util.isObject(data) && !nodom.Util.isArray(data)) {
+                data = {};
+            }
             // 给data设置modelid
             data['$modelId'] = this.id;
             this.addSetterGetter(data);
+            this.data = data;
         }
         /**
          * 设置属性，可能属性之前不存在，用于在初始化不存在的属性创建和赋值

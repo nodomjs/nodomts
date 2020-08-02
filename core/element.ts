@@ -385,7 +385,7 @@ namespace nodom {
             //不直接拷贝属性集
             if(changeKey){  //表示clone后进行新建节点
                 dst.key = Util.genId() + '';
-                let notCopyProps:string[] = ['parent','children'];
+                let notCopyProps:string[] = ['key','parent','children'];
                 //简单属性
                 Util.getOwnProps(this).forEach((p) => {
                     if (notCopyProps.includes(p)) {

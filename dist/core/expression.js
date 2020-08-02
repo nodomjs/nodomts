@@ -255,7 +255,7 @@ var nodom;
              * @returns 		计算结果
              */
             val(model) {
-                if (!model) {
+                if (!model || !model.data) {
                     return '';
                 }
                 let module = nodom.ModuleFactory.get(model.moduleName);
