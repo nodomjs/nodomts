@@ -61,7 +61,6 @@ var nodom;
                                 mdl.model = new nodom.Model(data, mdl);
                             }
                         }
-                        this.add(mdl);
                         return mdl;
                     }
                 }
@@ -81,6 +80,7 @@ var nodom;
          */
         static setMain(m) {
             this.mainModule = m;
+            m.isMain = true;
         }
         /**
          * 获取主模块
@@ -124,27 +124,29 @@ var nodom;
          */
         static initModule(cfg) {
             return __awaiter(this, void 0, void 0, function* () {
+                //增加 .js后缀
+                let path = cfg.path;
+                if (!path.endsWith('.js')) {
+                    path += '.js';
+                }
                 //加载模块类js文件
-                let url = nodom.Util.mergePath([nodom.Application.getPath('module'), cfg.path]);
-                yield nodom.ResourceManager.getResources([url]);
-                try {
-                    let cls = eval(cfg.class);
-                    if (cls) {
-                        let instance = Reflect.construct(cls, [{
-                                data: cfg.data,
-                                lazy: cfg.lazy
-                            }]);
-                        //模块初始化
-                        yield instance.init();
-                        cfg.instance = instance;
-                        //单例，则需要保存到modules
-                        if (cfg.singleton) {
-                            this.modules.set(instance.id, instance);
-                        }
-                        cfg.class = cls;
+                let url = nodom.Util.mergePath([nodom.Application.getPath('module'), path]);
+                yield nodom.ResourceManager.getResources([{ url: url, type: 'js' }]);
+                let cls = eval(cfg.class);
+                if (cls) {
+                    let instance = Reflect.construct(cls, [{
+                            data: cfg.data,
+                            lazy: cfg.lazy
+                        }]);
+                    //模块初始化
+                    yield instance.init();
+                    cfg.instance = instance;
+                    //单例，则需要保存到modules
+                    if (cfg.singleton) {
+                        this.modules.set(instance.id, instance);
                     }
                 }
-                catch (e) {
+                else {
                     throw new nodom.NodomError('notexist1', nodom.TipWords.moduleClass, cfg.class);
                 }
             });

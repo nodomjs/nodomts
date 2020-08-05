@@ -67,7 +67,18 @@ var nodom;
             return __awaiter(this, void 0, void 0, function* () {
                 let diff = this.compare(this.currentPath, path);
                 //获得当前模块，用于寻找router view
-                let parentModule = diff[0] === null ? nodom.ModuleFactory.getMain() : nodom.ModuleFactory.get(diff[0].module);
+                let parentModule;
+                if (diff[0] === null) {
+                    parentModule = nodom.ModuleFactory.getMain();
+                }
+                else {
+                    if (typeof diff[0].module === 'string') {
+                        parentModule = yield nodom.ModuleFactory.getInstance(diff[0].module);
+                    }
+                    else {
+                        parentModule = nodom.ModuleFactory.get(diff[0].module);
+                    }
+                }
                 //onleave事件，从末往前执行
                 for (let i = diff[1].length - 1; i >= 0; i--) {
                     const r = diff[1][i];
@@ -107,43 +118,64 @@ var nodom;
                         if (!route.useParentPath) {
                             showPath = route.fullPath;
                         }
-                        if (!parentModule.routerKey) {
-                            throw new nodom.NodomError('notexist', nodom.TipWords.routeView);
-                        }
+                        // if (!parentModule.routerKey) {
+                        //     throw new NodomError('notexist', TipWords.routeView);
+                        // }
+                        let module;
                         //尚未获取module，进行初始化
                         if (typeof route.module === 'string') {
-                            let m = yield nodom.ModuleFactory.get(route.module);
-                            route.module = m.id;
+                            module = yield nodom.ModuleFactory.getInstance(route.module);
+                            route.module = module.id;
                         }
-                        let module = nodom.ModuleFactory.get(route.module);
+                        else {
+                            module = nodom.ModuleFactory.get(route.module);
+                        }
                         if (!module) {
                             throw new nodom.NodomError('notexist1', nodom.TipWords.module, route.module);
                         }
-                        //设置模块容器key
-                        module.setContainerKey(parentModule.routerKey);
-                        let routerDom = parentModule.virtualDom.query(parentModule.routerKey);
-                        //清空routerDom的孩子节点
-                        routerDom.children = [];
-                        //修改routerDom节点对应的模块名
-                        routerDom.setProp('name', module.name);
-                        //清理父模块中以router view为容器的模块
-                        for (let i = 0; i < parentModule.children.length; i++) {
-                            let m = parentModule.children[i];
-                            let key = module.getContainerKey();
-                            //只有一个，删除即可
-                            if (key === parentModule.routerKey) {
-                                parentModule.children.splice(i, 1);
-                                break;
-                            }
-                        }
-                        //作为子模块添加到父模块
-                        parentModule.addChild(module.id);
-                        //设置route active
-                        route.setLinkActive(true);
                         //设置首次渲染
                         module.firstRender = true;
-                        //激活模块
-                        yield module.active();
+                        //设置模块容器key
+                        // module.setContainerKey(parentModule.routerKey);
+                        // let routerDom:Element = parentModule.virtualDom.query(parentModule.routerKey);
+                        //清空routerDom的孩子节点
+                        // routerDom.children = [];
+                        //修改routerDom节点对应的模块名
+                        // routerDom.setProp('name',module.name);
+                        //设置模块id
+                        // routerDom.setProp('moduleId',module.id);
+                        //清理父模块中以router view为容器的模块
+                        // for(let i=0;i<parentModule.children.length;i++){
+                        //     let m = parentModule.children[i];
+                        //     let key = module.getContainerKey();
+                        //     //只有一个，删除即可
+                        //     if(key === parentModule.routerKey){
+                        //         parentModule.children.splice(i,1);
+                        //         break;
+                        //     }
+                        // }
+                        //作为子模块添加到父模块
+                        // parentModule.addChild(module.id);
+                        //设置route active
+                        route.setLinkActive(true);
+                        //添加父模块渲染后操作
+                        if (i > 0) {
+                            parentModule.addAfterRenderOperation(function () {
+                                return __awaiter(this, void 0, void 0, function* () {
+                                    //this指向parentModule
+                                    if (this.routerKey) {
+                                        module.setContainerKey(this.routerKey);
+                                        yield module.active();
+                                    }
+                                    // route.setLinkActive(true);
+                                });
+                            });
+                        }
+                        else {
+                            module.setContainerKey(parentModule.routerKey);
+                            //激活模块
+                            yield module.active();
+                        }
                         //设置路由参数
                         setRouteParamToModel(route);
                         //默认全局路由enter事件
@@ -241,7 +273,7 @@ var nodom;
          * 比较两个路径对应的路由链
          * @param path1 	第一个路径
          * @param path2 	第二个路径
-         * @returns 		[不同路由的父路由，第一个需要销毁的路由数组，第二个需要增加的路由数组，第二个路由]
+         * @returns 		[不同路由的父路由，第一个需要销毁的路由数组，第二个需要增加的路由数组，上2级路由]
          */
         static compare(path1, path2) {
             // 获取路由id数组
@@ -339,7 +371,7 @@ var nodom;
                     if (!model) {
                         return;
                     }
-                    let expr = module.expressionFactory.get(dom.getProp('active')[0]);
+                    let expr = dom.getProp('active', true)[0];
                     if (!expr) {
                         return;
                     }
@@ -598,7 +630,7 @@ var nodom;
      * 增加route指令
      */
     nodom.DirectiveManager.addType('route', {
-        init: (directive, dom, module) => {
+        init: (directive, dom) => {
             let value = directive.value;
             if (nodom.Util.isEmpty(value)) {
                 return;
@@ -647,7 +679,9 @@ var nodom;
             }
             //active需要跳转路由（当前路由为该路径对应的父路由）
             if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
-                Router.addPath(path);
+                setTimeout(() => {
+                    Router.addPath(path);
+                }, 0);
             }
         }
     });
@@ -655,13 +689,12 @@ var nodom;
      * 增加router指令
      */
     nodom.DirectiveManager.addType('router', {
-        init: (directive, dom, module) => {
+        init: (directive, dom) => {
             //修改节点role
             dom.setProp('role', 'module');
-            module.routerKey = dom.key;
         },
         handle: (directive, dom, module, parent) => {
-            return;
+            module.routerKey = dom.key;
         }
     });
 })(nodom || (nodom = {}));

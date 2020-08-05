@@ -11,7 +11,7 @@ namespace nodom{
         /**
          * 调度器间隔时间(ms)，如果支持requestAnimationFrame，则不需要
          */
-        renderTick?:number;
+        scheduleCircle?:number;
 
         /**
          * 主模块配置
@@ -27,12 +27,18 @@ namespace nodom{
          *      lazy:懒加载(默认false)
          */
         modules:IMdlClassObj[];
+
+        /**
+         * 路由配置
+         */
+        routes:IRouteCfg[];
     }
     /**
      * 新建一个App
      * @param config 应用配置
      */
     export async function newApp(config?:IAppCfg):Promise<Module>{
+        
         if(window['NodomConfig']){
             config = Util.merge({},window['NodomConfig'],config);
         }
@@ -45,18 +51,32 @@ namespace nodom{
         
         //模块数组初始化
         if(config.modules){
-            ModuleFactory.init(config.modules);
+            await ModuleFactory.init(config.modules);
         }
-        
+
         //消息队列消息处理任务
         Scheduler.addTask(MessageQueue.handleQueue,MessageQueue);
         //渲染器启动渲染
         Scheduler.addTask(Renderer.render,Renderer);
         //启动调度器
-        Scheduler.start(config.renderTick);
-        let module:Module = this.createModule(config.module,true);
-        ModuleFactory.add(module);
+        Scheduler.start(config.scheduleCircle);
+        
+        //存在类名
+        let module:Module;
+        if(config.module.class){
+            module = await ModuleFactory.getInstance(config.module.class,config.module.name,config.module.data);
+            module.selector = config.module.el;
+        }else{
+            module = new Module(config.module);
+        }
+        //设置主模块
+        ModuleFactory.setMain(module);
         await module.active();
+
+        if(config.routes){
+            this.createRoute(config.routes);
+        }
+
         return module;
     }
 
@@ -75,7 +95,7 @@ namespace nodom{
                 new Module(item);
             }
         } else {
-            return new Module(<IModuleCfg>config,main);
+            return new Module(<IModuleCfg>config);
         }
     }
 

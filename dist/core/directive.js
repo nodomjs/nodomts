@@ -9,9 +9,10 @@ var nodom;
          * 构造方法
          * @param type  	类型
          * @param value 	指令值
+         * @param dom       指令对应的dom
          * @param filters   过滤器字符串或过滤器对象,如果为过滤器串，则以｜分割
          */
-        constructor(type, value, filters) {
+        constructor(type, value, dom, filters) {
             this.id = nodom.Util.genId();
             this.type = type;
             if (nodom.Util.isString(value)) {
@@ -37,14 +38,14 @@ var nodom;
                     }
                 }
             }
-            if (type !== undefined) {
-                nodom.DirectiveManager.init(this);
+            if (type !== undefined && dom) {
+                nodom.DirectiveManager.init(this, dom);
             }
         }
         /**
          * 执行指令
          * @param module    模块
-         * @param dom       指令对应虚拟dom
+         * @param dom       指令执行时dom
          * @param parent    父虚拟dom
          */
         exec(module, dom, parent) {
@@ -53,7 +54,7 @@ var nodom;
         /**
          * 克隆
          */
-        clone() {
+        clone(dst) {
             let dir = new Directive(this.type, this.value);
             if (this.filters) {
                 dir.filters = [];
@@ -64,6 +65,7 @@ var nodom;
             if (this.params) {
                 dir.params = nodom.Util.clone(this.params);
             }
+            nodom.DirectiveManager.init(dir, dst);
             return dir;
         }
     }

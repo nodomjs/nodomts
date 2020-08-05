@@ -9,7 +9,7 @@ namespace nodom {
 
     DirectiveManager.addType('model', {
         prio: 1,
-        init: (directive: Directive) => {
+        init: (directive: Directive,dom:Element) => {
             let value: string = < string > directive.value;
             //处理以.分割的字段，没有就是一个
             if (Util.isString(value)) {
@@ -75,7 +75,7 @@ namespace nodom {
      */
     DirectiveManager.addType('repeat', {
         prio: 2,
-        init: (directive: Directive) => {
+        init: (directive: Directive,dom:Element) => {
             let value = directive.value;
             if (!value) {
                 throw new NodomError("paramException", "x-repeat");
@@ -156,7 +156,7 @@ namespace nodom {
      * 描述：条件指令
      */
     DirectiveManager.addType('if', {
-        init: (directive: Directive) => {
+        init: (directive: Directive,dom:Element) => {
             if(typeof directive.value === 'string'){
                 let value = directive.value;
                 if (!value) {
@@ -227,7 +227,7 @@ namespace nodom {
      * 描述：显示指令
      */
     DirectiveManager.addType('show', {
-        init: (directive: Directive) => {
+        init: (directive: Directive,dom:Element) => {
             if(typeof directive.value === 'string'){
                 let value = directive.value;
                 if (!value) {
@@ -254,7 +254,7 @@ namespace nodom {
      * 描述：class指令
      */
     DirectiveManager.addType('class', {
-        init: (directive: Directive) => {
+        init: (directive: Directive,dom:Element) => {
             if(typeof directive.value === 'string'){
                 //转换为json数据
                 let obj = eval('(' + directive.value + ')');
@@ -278,10 +278,11 @@ namespace nodom {
             let clsArr:Array<string> = [];
             let cls:string = dom.getProp('class');
             let model = module.modelFactory.get(dom.modelId);
+
             if (Util.isString(cls) && !Util.isEmpty(cls)) {
                 clsArr = cls.trim().split(/\s+/);
             }
-
+            
             Util.getOwnProps(obj).forEach(function (key) {
                 let r = obj[key];
 
@@ -308,53 +309,49 @@ namespace nodom {
      * 描述：字段指令
      */
     DirectiveManager.addType('field', {
-        init: (directive: Directive) => {
+        init: (directive: Directive,dom:Element) => {
+            dom.setProp('name',directive.value);
+            //默认text
+            let type = dom.getProp('type') || 'text';
+            let eventName = dom.tagName === 'input' && ['text', 'checkbox', 'radio'].includes(type) ? 'input' : 'change';
+            dom.addEvent(new NodomEvent(eventName,
+                function (dom,model,module,e,el) {
+                    if(!el){
+                        return;
+                    }
+                    let type = dom.getProp('type');
+                    let field = dom.getDirective('field').value;
+                    let v = el.value;
+                    //增加value表达式
+                    if(['text','number','date','datetime','datetime-local','month','week','time','email','password','search','tel','url','color','radio'].includes(type) 
+                        || dom.tagName === 'TEXTAREA'){
+                        dom.setProp('value',new Expression(field),true);
+                    }
+                    //根据选中状态设置checkbox的value
+                    if (type === 'checkbox') {
+                        if (dom.getProp('yes-value') == v) {
+                            v = dom.getProp('no-value');
+                        } else {
+                            v = dom.getProp('yes-value');
+                        }
+                    } else if (type === 'radio') {
+                        if (!el.checked) {
+                            v = undefined;
+                        }
+                    }
+
+                    //修改字段值
+                    model.set(field,v);
+                    //修改value值，该节点不重新渲染
+                    if (type !== 'radio') {
+                        dom.setProp('value',v);
+                        el.value = v;
+                    }
+                }
+            ));
         },
 
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
-            //在附加项设置初始化标志
-            if(!directive.extra){
-                directive.extra = 1;
-                dom.setProp('name',directive.value);
-                //默认text
-                let type = dom.getProp('type') || 'text';
-                let eventName = dom.tagName === 'input' && ['text', 'checkbox', 'radio'].includes(type) ? 'input' : 'change';
-                dom.addEvent(new NodomEvent(eventName,
-                    function (dom,model,module,e,el) {
-                        if(!el){
-                            return;
-                        }
-                        let type = dom.getProp('type');
-                        let field = dom.getDirective('field').value;
-                        let v = el.value;
-                        //增加value表达式
-                        if(['text','number','date','datetime','datetime-local','month','week','time','email','password','search','tel','url','color','radio'].includes(type) 
-                            || dom.tagName === 'TEXTAREA'){
-                            dom.setProp('value',new Expression(field),true);
-                        }
-                        //根据选中状态设置checkbox的value
-                        if (type === 'checkbox') {
-                            if (dom.getProp('yes-value') == v) {
-                                v = dom.getProp('no-value');
-                            } else {
-                                v = dom.getProp('yes-value');
-                            }
-                        } else if (type === 'radio') {
-                            if (!el.checked) {
-                                v = undefined;
-                            }
-                        }
-
-                        //修改字段值
-                        model.set(field,v);
-                        //修改value值，该节点不重新渲染
-                        if (type !== 'radio') {
-                            dom.setProp('value',v);
-                            el.value = v;
-                        }
-                    }
-                ));
-            }
             const type:string = dom.getProp('type');
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
@@ -402,7 +399,7 @@ namespace nodom {
      * 描述：字段指令
      */
     DirectiveManager.addType('validity', {
-        init: (directive: Directive) => {
+        init: (directive:Directive,dom:Element) => {
             let ind, fn, method;
             let value = directive.value;
             //处理带自定义校验方法
@@ -412,7 +409,7 @@ namespace nodom {
             } else {
                 fn = value;
             }
-            directive.extra = {initChild:false,initEvent:false};
+            directive.extra = {initEvent:false};
             directive.value = fn;
 
             directive.params = {
@@ -422,27 +419,24 @@ namespace nodom {
             if (method) {
                 directive.params.method = method;
             }
+            //如果没有子节点，添加一个，需要延迟执行
+            if (dom.children.length === 0) {
+                let vd1 = new Element();
+                vd1.textContent = '';
+                dom.add(vd1);
+            } else { //子节点
+                dom.children.forEach((item) => {
+                    if (item.children.length === 0) {
+                        let vd1 = new Element();
+                        vd1.textContent = '   ';
+                        item.add(vd1);
+                    }
+                });
+            }
         },
 
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
-            if(!directive.extra.initChild){
-                directive.extra.initChild = true;
-                //如果没有子节点，添加一个，需要延迟执行
-                if (dom.children.length === 0) {
-                    let vd1 = new Element();
-                    vd1.textContent = '';
-                    dom.add(vd1);
-                } else { //子节点
-                    dom.children.forEach((item) => {
-                        if (item.children.length === 0) {
-                            let vd1 = new Element();
-                            vd1.textContent = '   ';
-                            item.add(vd1);
-                        }
-                    });
-                }
-                
-            }
+            
             setTimeout(()=>{
                 const el:HTMLInputElement = module.container.querySelector("[name='" + directive.value + "']");
                 if(!directive.extra.initEvent){

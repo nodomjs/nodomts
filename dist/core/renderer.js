@@ -46,10 +46,7 @@ var nodom;
                     let m = nodom.ModuleFactory.get(this.waitList[i]);
                     let r;
                     //渲染成功，从队列移除
-                    if (m) {
-                        r = yield m.render();
-                    }
-                    if (!m || r) {
+                    if (!m || m.render()) {
                         this.waitList.shift();
                         i--;
                     }

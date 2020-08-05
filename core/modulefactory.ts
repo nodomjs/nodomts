@@ -96,7 +96,6 @@ namespace nodom {
                             mdl.model = new Model(data,mdl);
                         }
                     }
-                    this.add(mdl);
                     return mdl;
                 }
             }
@@ -115,6 +114,7 @@ namespace nodom {
 		 */
         static setMain(m:Module) {
             this.mainModule = m;
+            m.isMain = true;
         }
 
 		/**
@@ -158,26 +158,29 @@ namespace nodom {
          * @param cfg 模块类对象
          */
         static async initModule(cfg:IMdlClassObj){
+            //增加 .js后缀
+            let path:string = cfg.path;
+            if(!path.endsWith('.js')){
+                path += '.js';
+            }
             //加载模块类js文件
-            let url:string = Util.mergePath([Application.getPath('module'),cfg.path]);
-            await ResourceManager.getResources([url]);
-            try{
-                let cls = eval(cfg.class);
-                if(cls){
-                    let instance = Reflect.construct(cls,[{
-                        data:cfg.data,
-                        lazy:cfg.lazy
-                    }]);
-                    //模块初始化
-                    await instance.init();
-                    cfg.instance = instance;
-                    //单例，则需要保存到modules
-                    if(cfg.singleton){
-                        this.modules.set(instance.id,instance);
-                    }
-                    cfg.class = cls;
+            let url:string = Util.mergePath([Application.getPath('module'),path]);
+            await ResourceManager.getResources([{url:url,type:'js'}]);
+            let cls = eval(cfg.class);
+            if(cls){
+                let instance = Reflect.construct(cls,[{
+                    data:cfg.data,
+                    lazy:cfg.lazy
+                }]);
+                
+                //模块初始化
+                await instance.init();
+                cfg.instance = instance;
+                //单例，则需要保存到modules
+                if(cfg.singleton){
+                    this.modules.set(instance.id,instance);
                 }
-            }catch(e){
+            }else{
                 throw new NodomError('notexist1',TipWords.moduleClass,cfg.class);
             }
         }

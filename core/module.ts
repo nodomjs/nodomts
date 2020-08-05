@@ -122,6 +122,7 @@ namespace nodom {
          */
         beforeFirstRenderOps: Array < Function > = [];
         
+        afterRenderOps:Array<Function> = [];
         /**
          * 状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)
          */
@@ -178,9 +179,8 @@ namespace nodom {
         /**
          * 构造器
          * @param config    模块配置
-         * @param isMain      是否根模块
          */
-        constructor(config?:IModuleCfg,isMain?:boolean) {
+        constructor(config?:IModuleCfg) {
             this.id = Util.genId();
             // 模块名字
             if (config && config.name) {
@@ -188,7 +188,7 @@ namespace nodom {
             } else {
                 this.name = 'Module' + this.id;
             }
-
+            ModuleFactory.add(this);
             this.methodFactory = new MethodFactory(this);
             this.modelFactory = new ModelFactory(this);
 
@@ -213,12 +213,6 @@ namespace nodom {
             if (this.hasContainer()) {
                 this.template = this.container.innerHTML.trim();
                 this.container.innerHTML = '';
-            }
-
-            //主模块
-            if (isMain) {
-                ModuleFactory.setMain(this);
-                this.isMain = true;
             }
         }
     
@@ -320,12 +314,9 @@ namespace nodom {
          */
         render():boolean{
             //容器没就位或state不为active则不渲染，返回渲染失败
-            // console.log(this);
             if (this.state !== 3 || !this.virtualDom || !this.hasContainer()) {
                 return false;
             }
-
-            
             
             //克隆新的树
             let root:Element = this.virtualDom.clone();
@@ -379,14 +370,19 @@ namespace nodom {
             this.renderDoms = [];
             
             //子模块渲染
-            if (Util.isArray(this.children)) {
-                this.children.forEach((item) => {
-                    let m = ModuleFactory.get(item);
-                    if(m){
-                        m.render();
-                    }
-                });
-            }
+            // if (Util.isArray(this.children)) {
+            //     this.children.forEach((item) => {
+            //         let m = ModuleFactory.get(item);
+            //         if(m){
+            //             m.render();
+            //         }
+            //     });
+            // }
+            this.afterRenderOps.forEach((f)=>{
+                f.call(this);
+            });
+            //清空after render operation
+            this.afterRenderOps = [];
             return true;
         }
 
@@ -414,6 +410,7 @@ namespace nodom {
             if(this.model){
                 m.model = new Model(Util.clone(this.model.data),m);
             }
+            ModuleFactory.add(m);
             return m;
         }
         /**
@@ -435,6 +432,8 @@ namespace nodom {
 
             root.render(this, null);
             this.doModuleEvent('onBeforeFirstRenderToHTML');
+            //清空子元素
+            Util.empty(this.container);
             //渲染到html
             if (root.children) {
                 root.children.forEach((item) => {
@@ -660,12 +659,24 @@ namespace nodom {
          * @param foo  	操作方法
          */
         addBeforeFirstRenderOperation(foo) {
-            let me = this;
             if (!Util.isFunction(foo)) {
                 return;
             }
-            if (this.beforeFirstRenderOps.indexOf(foo) === -1) {
+            if (!this.beforeFirstRenderOps.includes(foo)) {
                 this.beforeFirstRenderOps.push(foo);
+            }
+        }
+
+        /**
+         * 添加首次渲染前执行操作
+         * @param foo  	操作方法
+         */
+        addAfterRenderOperation(foo) {
+            if (!Util.isFunction(foo)) {
+                return;
+            }
+            if (!this.afterRenderOps.includes(foo)) {
+                this.afterRenderOps.push(foo);
             }
         }
     }

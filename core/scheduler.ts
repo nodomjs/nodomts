@@ -5,7 +5,6 @@ namespace nodom{
 	 */
 	export class Scheduler{
 		static tasks:Array<any> = [];
-		static renderTick:number;
 		static dispatch(){
 			Scheduler.tasks.forEach((item)=>{
 				if(Util.isFunction(item.func)){
@@ -20,14 +19,14 @@ namespace nodom{
 
 		/**
 		 * 启动调度器
-		 * @param renderTick 	渲染间隔
+		 * @param scheduleTick 	渲染间隔
 		 */
-		static start(renderTick?:number){
+		static start(scheduleTick?:number){
 			Scheduler.dispatch();
 			if(window.requestAnimationFrame){
 				window.requestAnimationFrame(Scheduler.start);
 			}else{
-				window.setTimeout(Scheduler.start,this.renderTick||50);
+				window.setTimeout(Scheduler.start,scheduleTick||50);
 			}		
 		}
 

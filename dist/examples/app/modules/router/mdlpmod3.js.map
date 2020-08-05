@@ -1,0 +1,1 @@
+{"version":3,"file":"mdlpmod3.js","sourceRoot":"","sources":["../../../../../examples/app/modules/router/mdlpmod3.ts"],"names":[],"mappings":"AAAA;;GAEG;AACH,MAAM,QAAS,SAAQ,KAAK,CAAC,MAAM;IAC/B,YAAY,GAAU;QAClB,IAAI,MAAM,GAAG,KAAK,CAAC,IAAI,CAAC,KAAK,CAAC,GAAG,EAAC;YAC9B,IAAI,EAAE,SAAS;YACf,QAAQ,EAAE,qBAAqB;SAClC,CAAC,CAAC;QACH,KAAK,CAAC,MAAM,CAAC,CAAC;IAClB,CAAC;CACJ"}

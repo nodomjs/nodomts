@@ -14,6 +14,24 @@ namespace nodom {
          */
         type?:string;
 
+        /**
+         * 需要加载
+         */
+        needLoad?:boolean;
+    }
+
+    /**
+     * 加载任务对象
+     */
+    interface ILoadTask{
+        /**
+         * 任务id
+         */
+        id:number;
+        /**
+         * 资源数组 {资源id:是否加载完成}
+         */
+        resources:Map<number,boolean>;
     }
     /**
      * 资源管理器
@@ -23,58 +41,118 @@ namespace nodom {
         /**
          * 资源map，key为url，值为整数，1表示正在加载，2表示已加载完成
          */
-        private static resources:Map<string,IResourceObj> = new Map();
+        public static resources:Map<string,IResourceObj> = new Map();
         
         /**
-         * 获取资源
-         * @param url   资源路径
-         * @returns     资源内容 
+         * 加载任务  任务id:资源对象，{id1:{url1:false,url2:false},id2:...}
          */
-        public static async getResource(url:string,type?:string):Promise<any>{
-            let rObj:IResourceObj;
-            type = type || this.getType(url);
-            //资源已存在
-            if(this.resources.has(url)){
-                rObj = this.resources.get(url);
-                //资源类型为js和css，则直接返回，因为只需要处理一次
-                if(['js','css'].includes(type)){
-                    return;
-                }
-            }else{
-                rObj = {type:type};
-                rObj.content = await request({url:url});
-            }
-            this.handleOne(url,rObj);
-            this.resources.set(url,rObj);
-            return rObj.content;
-        }
+        private static loadingTasks:Map<number,object> = new Map();
 
+        /**
+         * 资源等待列表  {资源url:[taskId1,taskId2,...]}
+         */
+        private static waitList:Map<string,number[]> = new Map();
+        
         /**
          * 获取多个资源
          * @param urls  [{url:**,type:**}]或 [url1,url2,...]
          */
-        public static async getResources(reqs:any[]){
+        public static async getResources(reqs:any[]):Promise<IResourceObj[]>{
             let me = this;
-            let re = this.preHandle(reqs);
-            let urls:string[] = re[1];
-            let types:string[] = re[2];
-            let rObjs:IResourceObj[] = [];
-            //返回promise
-            return Promise.all(re[0]).then(arr=>{
-                //返回resource obj数组
-                for(let i=0;i<arr.length;i++){
-                    let rObj:IResourceObj;
-                    if(typeof arr[i] === 'string'){ //刚加载的资源需要处理
-                        rObj = {
-                            type:types[i],
-                            content:arr[i]
-                        }
-                        me.handleOne(urls[i],rObj);
-                        rObjs.push(rObj);
-                    }
+            this.preHandle(reqs);
+            
+            let taskId:number = Util.genId();
+            let res = {};
+            
+            //设置资源对象
+            for(let item of reqs){
+                res[item.url] = false;
+            }
+            this.loadingTasks.set(taskId,res);
+
+            //保存资源id状态
+            for(let item of reqs){
+                //不需要加载
+                if(!item.needLoad){
+                    continue;
                 }
-                return rObjs;
+
+                let url:string = item.url;
+                if(this.resources.has(url)){//已加载
+                    res[url].c = item.content;
+                }else if(this.waitList.has(url)){//加载中
+                    let arr = this.waitList.get(url);
+                    arr.push(taskId);
+                }else{  //新加载
+                    //将自己的任务加入等待队列
+                    this.waitList.set(url,[taskId]);
+                    request({url:url}).then((content)=>{
+                        let rObj = {type:item.type,content:content};
+                        this.handleOne(url,rObj);
+                        this.resources.set(url,rObj);
+                        let arr = this.waitList.get(url);
+                        
+                        //设置等待队列加载状态
+                        for(let tid of arr){
+                            let tobj = this.loadingTasks.get(tid);
+                            if(url){
+                                tobj[url] = true;
+                            }
+                        }
+                        //从等待列表移除
+                        this.waitList.delete(item.url);
+                    });
+                }
+            }
+
+            return new Promise((resolve,reject)=>{
+                check();
+                function check(){
+                    let r:IResourceObj[] = me.awake(taskId);
+                    if(r){
+                        resolve(r);
+                        return;
+                    }
+                    //循环监听
+                    setTimeout(check,0);
+                }
             });
+        }
+
+        
+
+        /**
+         * 唤醒任务
+         * @param taskId    任务id
+         * @param url       资源url
+         * @param content   资源内容
+         * 
+         * @returns         加载内容数组或undefined
+         */
+        static awake(taskId:number,url?:string):IResourceObj[]{
+            if(!this.loadingTasks.has(taskId)){
+                return;
+            }
+            let tobj = this.loadingTasks.get(taskId);
+            let finish:boolean = true;
+            //资源内容数组
+            let contents = [];
+            //检查是否全部加载完成
+            for(let o in tobj){
+                //一个未加载完，则需要继续等待
+                if(tobj[o] === false){
+                    finish = false;
+                    break;
+                }
+                //放入返回对象
+                contents.push(this.resources.get(o));
+            }
+            //加载完成
+            if(finish){
+                //从loadingTask删除
+                this.loadingTasks.delete(taskId);
+                return contents;
+            }
         }
         
         /**
@@ -91,7 +169,7 @@ namespace nodom {
                     type = 'template';
                 }
             }
-            return type || 'js';
+            return type || 'text';
         }
 
         /**
@@ -120,7 +198,6 @@ namespace nodom {
                     }catch(e){
                         console.log(e);
                     }
-                    
             }
             this.resources.set(url,rObj);
         }
@@ -131,41 +208,30 @@ namespace nodom {
          * @returns     [promises(请求对象数组),urls(url数组),types(类型数组)]
          */
         static preHandle(reqs:any[]):any[]{
-            let promises = [];
             let types = [];
             let urls = [];
             let head = document.querySelector('head');
-                    
+            
             //预处理请求资源
-            for(let r of reqs){
-                let url:string;
-                let type:string;
-                //对象中已经包含类型
-                if(typeof r === 'object'){
-                    url = r.url;
-                    type = r.type || this.getType(url);
-                }else{ //只是url串
-                    url = r;
-                    type = this.getType(url);
+            for(let i=0;i<reqs.length;i++){
+                //url串，需要构造成object
+                if(typeof reqs[i] === 'string'){
+                    reqs[i] = {
+                        url:reqs[i]
+                    }
                 }
-                urls.push(url);
-                types.push(type);
-
+                reqs[i].type = reqs[i].type || this.getType(reqs[i].url);
+                reqs[i].needLoad = true;
                 //css 不需要加载
-                if(type === 'css'){
+                if(reqs[i].type === 'css'){
                     let css = <HTMLLinkElement>Util.newEl('link');
                     css.type = 'text/css';
                     css.rel = 'stylesheet'; // 保留script标签的path属性
-                    css.href = url;
+                    css.href = reqs[i].url;
                     head.appendChild(css);
-                }else{
-                    if(this.resources.has(url)){ //资源已存在，直接返回
-                        promises.push(this.resources.get(url));
-                    }else{
-                        promises.push(request(url))
-                    }
+                    reqs[i].needLoad = false;
                 }
-                return [promises,urls,types];
+                return reqs;
             }
         }
     }

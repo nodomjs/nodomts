@@ -167,28 +167,36 @@ namespace nodom {
 
             //子模块，只需要添加到父模块并设置router key
             if(this.getProp('role') === 'module'){
+                this.handleProps(module);
+                this.handleDirectives(module, parent);
+                //无class，也无moduleId，不操作
+                if(!this.hasProp('class') && !this.hasProp('moduleId')){
+                    return;
+                }
                 let mName = this.getProp('name');
                 //模块
                 let m:Module;
-                if(!this.hasProp('modelId')){
+                //首次渲染，需要加载
+                if(!this.hasProp('moduleId')){
                     ModuleFactory.getInstance(this.getProp('class'),mName,this.getProp('data'))
                         .then(
                             (m)=>{
                                 if(m){
-                                    this.setProp('modelId',m.id);
+                                    this.setProp('moduleId',m.id);
                                     m.setContainerKey(this.key);
                                     module.addChild(m.id);
                                     m.active();
                                 }
                             }
                         );
-                }else{
-                    m = ModuleFactory.get(this.getProp('modelId'));
+                }/*else{
+                    // 非首次渲染，自行渲染
+                    m = ModuleFactory.get(this.getProp('moduleId'));
                     if(m){
                         m.setContainerKey(this.key);
-                        module.addChild(m.id);
                     }
-                }   
+                }*/
+                   
                 return;
             }
             
@@ -199,19 +207,6 @@ namespace nodom {
                 // 设置modelId
                 if (!this.modelId) {
                     this.modelId = parent.modelId;
-                }
-            }
-            
-            //添加额外数据
-            if(this.extraData){
-                let model:Model = module.modelFactory.get(this.modelId);
-                if(!model){
-                    model = new Model(this.extraData,module);
-                    this.modelId = model.id;
-                }else{
-                    Util.getOwnProps(this.extraData).forEach((item)=>{
-                        model.set(item,this.extraData[item]);
-                    });
                 }
             }
             

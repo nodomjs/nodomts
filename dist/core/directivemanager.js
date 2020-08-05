@@ -57,11 +57,12 @@ var nodom;
         /**
          * 指令初始化
          * @param directive     指令
+         * @param dom           虚拟dom
          */
-        static init(directive) {
+        static init(directive, dom) {
             let dt = this.directiveTypes.get(directive.type);
             if (dt) {
-                return dt.init(directive);
+                return dt.init(directive, dom);
             }
         }
         /**

@@ -24,11 +24,6 @@ namespace nodom {
         value:any;
         
 		/**
-		 * 指令对应模块
-		 */
-		// module:Module;
-
-		/**
 		 * 编译时执行方法
 		 */
 		init:Function;
@@ -55,16 +50,17 @@ namespace nodom {
          * 构造方法
          * @param type  	类型
          * @param value 	指令值
+         * @param dom       指令对应的dom
          * @param filters   过滤器字符串或过滤器对象,如果为过滤器串，则以｜分割
          */
-        constructor(type:string, value:string, filters?:string|Filter[]) {
+        constructor(type:string, value:string, dom?:Element, filters?:string|Filter[]) {
             this.id = Util.genId();
             this.type = type;
             if (Util.isString(value)) {
                 value = value.trim();
             }
             this.value = value;
-
+            
             if(filters){
                 this.filters = [];
                 if(typeof filters === 'string'){
@@ -82,15 +78,15 @@ namespace nodom {
                     }
                 }
             }
-            if (type !== undefined) {
-                DirectiveManager.init(this);
+            if (type !== undefined && dom) {
+                DirectiveManager.init(this,dom);
             }
         }
 
         /**
          * 执行指令
          * @param module    模块 
-         * @param dom       指令对应虚拟dom
+         * @param dom       指令执行时dom
          * @param parent    父虚拟dom
          */
         exec(module:Module,dom:Element,parent?:Element) {
@@ -100,7 +96,7 @@ namespace nodom {
         /**
          * 克隆
          */
-        clone(){
+        clone(dst:Element){
             let dir = new Directive(this.type,this.value);
             if(this.filters){
                 dir.filters = [];
@@ -111,6 +107,7 @@ namespace nodom {
             if(this.params){
                 dir.params = Util.clone(this.params);
             }
+            DirectiveManager.init(dir,dst);
             return dir;
         }
     }

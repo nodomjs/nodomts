@@ -24,17 +24,29 @@ var nodom;
             nodom.Application.setPath(config.path);
             //模块数组初始化
             if (config.modules) {
-                nodom.ModuleFactory.init(config.modules);
+                yield nodom.ModuleFactory.init(config.modules);
             }
             //消息队列消息处理任务
             nodom.Scheduler.addTask(nodom.MessageQueue.handleQueue, nodom.MessageQueue);
             //渲染器启动渲染
             nodom.Scheduler.addTask(nodom.Renderer.render, nodom.Renderer);
             //启动调度器
-            nodom.Scheduler.start(config.renderTick);
-            let module = this.createModule(config.module, true);
-            nodom.ModuleFactory.add(module);
+            nodom.Scheduler.start(config.scheduleCircle);
+            //存在类名
+            let module;
+            if (config.module.class) {
+                module = yield nodom.ModuleFactory.getInstance(config.module.class, config.module.name, config.module.data);
+                module.selector = config.module.el;
+            }
+            else {
+                module = new nodom.Module(config.module);
+            }
+            //设置主模块
+            nodom.ModuleFactory.setMain(module);
             yield module.active();
+            if (config.routes) {
+                this.createRoute(config.routes);
+            }
             return module;
         });
     }
@@ -54,7 +66,7 @@ var nodom;
             }
         }
         else {
-            return new nodom.Module(config, main);
+            return new nodom.Module(config);
         }
     }
     nodom.createModule = createModule;

@@ -14,7 +14,7 @@ var nodom;
              */
             this.items = new Map();
             if (module !== undefined) {
-                this.moduleName = module.name;
+                this.moduleId = module.id;
             }
         }
         /**
