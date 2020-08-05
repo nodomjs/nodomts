@@ -11,27 +11,29 @@ var nodom;
 (function (nodom) {
     /**
      * 新建一个App
-     * @param config {global:全局配置,module:主模块配置}
-     *      global:应用全局配置，{routerPrePath:路由前置配置,templatePath:模版路径位置,renderTick:调度器间隔时间(ms)，如果支持requestAnimationFrame，则不需要}
-     *      module:主模块配置
+     * @param config 应用配置
      */
     function newApp(config) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!config.module) {
+            if (window['NodomConfig']) {
+                config = nodom.Util.merge({}, window['NodomConfig'], config);
+            }
+            if (!config || !config.module) {
                 throw new nodom.NodomError('config', nodom.TipWords.application);
             }
-            if (config.options) {
-                nodom.Application.routerPrePath = config.options['routerPrePath'] || '';
-                nodom.Application.templatePath = config.options['templatePath'] || '';
-                nodom.Application.renderTick = config.options['renderTick'] || 100;
+            nodom.Application.setPath(config.path);
+            //模块数组初始化
+            if (config.modules) {
+                nodom.ModuleFactory.init(config.modules);
             }
             //消息队列消息处理任务
             nodom.Scheduler.addTask(nodom.MessageQueue.handleQueue, nodom.MessageQueue);
             //渲染器启动渲染
             nodom.Scheduler.addTask(nodom.Renderer.render, nodom.Renderer);
             //启动调度器
-            nodom.Scheduler.start();
+            nodom.Scheduler.start(config.renderTick);
             let module = this.createModule(config.module, true);
+            nodom.ModuleFactory.add(module);
             yield module.active();
             return module;
         });

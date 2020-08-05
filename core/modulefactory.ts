@@ -1,34 +1,114 @@
 // / <reference path="nodom.ts" />
 namespace nodom {
+    
+    /**
+     * module class obj
+     */
+    export interface IMdlClassObj{
+        /**
+         * class名或class
+         */
+        class:any;
+        /**
+         * class文件路径
+         */
+        path:string;
+        /**
+         * 实例
+         */
+        instance?:Module;
+        /**
+         * 数据
+         */
+        data?:string|object;
+        /**
+         * 是否单例
+         */
+        singleton?:boolean;
+        /**
+         * 懒加载
+         */
+        lazy?:boolean;
+    }
+
 	/**
 	 * 过滤器工厂，存储模块过滤器
 	 */
     export class ModuleFactory {
-        static items: Map < string, Module > = new Map();
+        /**
+         * 模块对象工厂 {moduleId:{key:容器key,className:模块类名,instance:模块实例}}
+         */
+        static modules:Map<number,Module> = new Map();
+
+        /**
+         * 模块类集合
+         */
+        static classes:Map<string,IMdlClassObj> = new Map();
+        
+        /**
+         * 主模块
+         */
         static mainModule: Module;
         /**
          * 添加模块到工厂
+         * @param id    模块id
+         * @param item  模块存储对象
          */
-        static add(name:string, item:Module) {
-            this.items.set(name, item);
+        static add(item:Module) {
+            this.modules.set(item.id, item);
         }
 
         /**
          * 获得模块
-		 * @param name 	模块名
+		 * @param id    模块id
          */
-        static get(name:string) {
-            return this.items.get(name);
+        static get(id:number):Module {
+            return this.modules.get(id);
         }
-
+        
+        /**
+         * 获取模块实例（通过类名）
+         * @param className     模块类名
+         * @param moduleName    模块名
+         * @param data          数据或数据url
+         */
+        static async getInstance(className:string,moduleName?:string,data?:any){
+            if(!this.classes.has(className)){
+                throw new NodomError('notexist1',TipWords.moduleClass,className);
+            }
+            let cfg:IMdlClassObj = this.classes.get(className);
+            
+            if(!cfg.instance){
+                await this.initModule(cfg);
+            }
+            if(cfg.instance){
+                if(cfg.singleton){
+                    return cfg.instance;
+                }else{
+                    let mdl:Module = cfg.instance.clone(moduleName);
+                    //处理数据
+                    if(data){
+                        //如果为url，则设置dataurl和loadnewdata标志
+                        if(typeof data === 'string'){
+                            mdl.dataUrl = data;
+                            mdl.loadNewData = true;
+                        }else{ //数据模型化
+                            mdl.model = new Model(data,mdl);
+                        }
+                    }
+                    this.add(mdl);
+                    return mdl;
+                }
+            }
+            return null;
+        }
         /**
          * 从工厂移除模块
-		 * @param name	模块名
+		 * @param id    模块id
          */
-        static remove(name:string) {
-            this.items.delete(name);
+        static remove(id:number) {
+            this.modules.delete(id);
         }
-
 		/**
 		 * 设置主模块
 		 * @param m 	模块 
@@ -44,5 +124,63 @@ namespace nodom {
         static getMain() {
             return this.mainModule;
         }
+
+        /**
+         * 初始化模块类
+         * @param modules 
+         */
+        static async init(modules:Array<IMdlClassObj>){
+            for(let cfg of modules){
+                if(!cfg.path){
+                    throw new nodom.NodomError("paramException",'modules','path');
+                }
+                if(!cfg.class){
+                    throw new nodom.NodomError("paramException",'modules','class');
+                }
+                //lazy默认true
+                if(cfg.lazy === undefined){
+                    cfg.lazy = false;
+                }
+                //singleton默认true
+                if(cfg.singleton === undefined){
+                    cfg.singleton = true;
+                }
+                if(!cfg.lazy){
+                    await this.initModule(cfg);
+                }
+                //存入class工厂
+                this.classes.set(cfg.class,cfg);
+            }
+        }
+
+        /**
+         * 出事化模块
+         * @param cfg 模块类对象
+         */
+        static async initModule(cfg:IMdlClassObj){
+            //加载模块类js文件
+            let url:string = Util.mergePath([Application.getPath('module'),cfg.path]);
+            await ResourceManager.getResources([url]);
+            try{
+                let cls = eval(cfg.class);
+                if(cls){
+                    let instance = Reflect.construct(cls,[{
+                        data:cfg.data,
+                        lazy:cfg.lazy
+                    }]);
+                    //模块初始化
+                    await instance.init();
+                    cfg.instance = instance;
+                    //单例，则需要保存到modules
+                    if(cfg.singleton){
+                        this.modules.set(instance.id,instance);
+                    }
+                    cfg.class = cls;
+                }
+            }catch(e){
+                throw new NodomError('notexist1',TipWords.moduleClass,cfg.class);
+            }
+        }
+
     }
 }

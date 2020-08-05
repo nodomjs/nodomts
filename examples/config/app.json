@@ -1,0 +1,12 @@
+{
+    "path":{
+        "app":"/examples/app",
+        "template":"view",
+        "css":"css",
+        "preRoute":"route",
+        "module":"/dist/moudles"
+    },
+    "modules":[
+        {"class":"ModuleA","path":"modulea.js","data":"data/data1.json","singleton":false,"lazy":true}
+    ]
+}

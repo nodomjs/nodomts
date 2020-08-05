@@ -10,9 +10,10 @@ namespace nodom {
 		 */
 		path:string;
 		/**
-		 * 路由模块名或模块
+		 * 路由模块id或模块类名，id为数字，类名为string
 		 */
-		module?:string|Module;
+        module?:number|string;
+        
 		/**
 		 * 子路由数组
 		 */
@@ -186,25 +187,39 @@ namespace nodom {
                     if (!parentModule.routerKey) {
                         throw new NodomError('notexist', TipWords.routeView);
                     }
-
+                    //尚未获取module，进行初始化
+                    if(typeof route.module === 'string'){
+                        let m:Module = await ModuleFactory.get(route.module);
+                        route.module = m.id;
+                    }
                     let module = ModuleFactory.get(route.module);
                     if(!module){
                         throw new NodomError('notexist1',TipWords.module,route.module);
                     }
-                    //保留container参数
-                    module.containerParam = {
-                        module: parentModule.name,
-                        selector: "[key='" + parentModule.routerKey + "']"
-                    }
                     
-                    module.addBeforeFirstRenderOperation(function () {
-                        //清空模块容器
-                        Util.empty(module.container);
-                    });
+                    //设置模块容器key
+                    module.setContainerKey(parentModule.routerKey);
+                    let routerDom = parentModule.virtualDom.query(parentModule.routerKey);
+
+                    //清空routerDom的孩子节点
+                    routerDom.children = [];
+                    //修改routerDom节点对应的模块名
+                    routerDom.setProp('name',module.name);
+                    //清理父模块中以router view为容器的模块
+                    for(let i=0;i<parentModule.children.length;i++){
+                        let m = parentModule.children[i];
+                        let key = module.getContainerKey();
+                        //只有一个，删除即可
+                        if(key === parentModule.routerKey){
+                            parentModule.children.splice(i,1);
+                            break;
+                        }
+                    }
+                    //作为子模块添加到父模块
+                    parentModule.addChild(module.id);
+
                     //设置route active
                     route.setLinkActive(true);
-                    //清除container
-                    delete module.container;
                     //设置首次渲染
                     module.firstRender = true;
                     //激活模块
@@ -225,11 +240,12 @@ namespace nodom {
             
             //如果是history popstate，则不加入history
             if (this.startStyle !== 2 && showPath) {
+                let p:string = Util.mergePath([Application.getPath('route') ,showPath]);
                 //子路由，替换state
                 if (this.showPath && showPath.indexOf(this.showPath) === 0) {
-                    history.replaceState(path, '', Application.routerPrePath + showPath);
+                    history.replaceState(path, '', p);
                 } else { //路径push进history
-                    history.pushState(path, '', Application.routerPrePath + showPath);
+                    history.pushState(path, '', p);
                 }
                 //设置显示路径
                 this.showPath = showPath;
@@ -247,7 +263,7 @@ namespace nodom {
                 if (!route) {
                     return;
                 }
-                const module:Module = ModuleFactory.get(route.module);
+                const module:Module = ModuleFactory.get(<number>route.module);
                 let o = {
                     path: route.path
                 };
@@ -479,9 +495,10 @@ namespace nodom {
 		 */
 		fullPath:string;
 		/**
-		 * 路由对应模块
+		 * 路由对应模块id或类名
 		 */
-		module:string;
+        module:number|string;
+        
 		/**
 		 * 父路由
 		 */
@@ -495,8 +512,8 @@ namespace nodom {
             this.onLeave = config.onLeave;
             this.useParentPath = config.useParentPath;
             this.path = config.path;
-            this.module = config.module instanceof Module ? config.module.name : config.module;
-
+            this.module = config.module;
+            
             if (config.path === '') {
                 return;
             }
@@ -521,9 +538,9 @@ namespace nodom {
          */
         setLinkActive(ancestor:boolean) {
             let path = this.fullPath;
-            let module = ModuleFactory.get(this.module);
-            if (module && module.containerParam) {
-                let pm = ModuleFactory.get(module.containerParam['module']);
+            let module = ModuleFactory.get(<number>this.module);
+            if (module && module.parentId) {
+                let pm = ModuleFactory.get(module.parentId);
                 if (pm) {
                     Router.changeActive(pm, path);
                 }
@@ -749,6 +766,8 @@ namespace nodom {
      */
     DirectiveManager.addType('router', {
         init: (directive, dom, module) => {
+            //修改节点role
+            dom.setProp('role','module');
             module.routerKey = dom.key;
         },
         handle: (directive, dom, module, parent) => {

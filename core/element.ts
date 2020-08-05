@@ -164,6 +164,33 @@ namespace nodom {
             if(this.dontRender){
                 return;
             }
+
+            //子模块，只需要添加到父模块并设置router key
+            if(this.getProp('role') === 'module'){
+                let mName = this.getProp('name');
+                //模块
+                let m:Module;
+                if(!this.hasProp('modelId')){
+                    ModuleFactory.getInstance(this.getProp('class'),mName,this.getProp('data'))
+                        .then(
+                            (m)=>{
+                                if(m){
+                                    this.setProp('modelId',m.id);
+                                    m.setContainerKey(this.key);
+                                    module.addChild(m.id);
+                                    m.active();
+                                }
+                            }
+                        );
+                }else{
+                    m = ModuleFactory.get(this.getProp('modelId'));
+                    if(m){
+                        m.setContainerKey(this.key);
+                        module.addChild(m.id);
+                    }
+                }   
+                return;
+            }
             
             // 设置父对象
             if (parent) {
@@ -221,6 +248,8 @@ namespace nodom {
             //删除parent
             delete this.parent;
         }
+
+
         /**
          * 渲染到html element
          * @param module 	模块

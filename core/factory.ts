@@ -8,7 +8,7 @@ namespace nodom {
 		/**
 		 * 模块名
 		 */
-		moduleName:string;
+		moduleId:number;
 		/**
 		 * 工厂item对象
 		 */
@@ -19,7 +19,7 @@ namespace nodom {
 		 */
 		constructor(module?:Module) {
             if (module !== undefined) {
-                this.moduleName = module.name;
+                this.moduleId = module.id;
             }
         }
 

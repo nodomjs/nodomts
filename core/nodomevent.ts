@@ -43,9 +43,9 @@ namespace nodom {
          */
         capture: boolean;
         /**
-         * 模块名
+         * 模块id
          */
-        moduleName:string;
+        moduleId:number;
 
         /**
          * 事件所属虚拟dom的key
@@ -151,7 +151,7 @@ namespace nodom {
          * @param el    html element
          */
         fire(e:Event,el?:HTMLElement) {
-            const module:Module = ModuleFactory.get(this.moduleName);
+            const module:Module = ModuleFactory.get(this.moduleId);
             if (!module.hasContainer()) {
                 return;
             }
@@ -262,7 +262,7 @@ namespace nodom {
          * @param el        html element
          */
         bind(module:Module, dom:Element, el:HTMLElement) {
-            this.moduleName = module.name;
+            this.moduleId = module.id;
             this.domKey = dom.key;
             //触屏事件
             if (ExternalEvent.touches[this.name]) {
@@ -286,7 +286,7 @@ namespace nodom {
          */
         delegateTo(module:Module, vdom:Element, el:HTMLElement, parent?:Element, parentEl?:HTMLElement) {
             this.domKey = vdom.key;
-            this.moduleName = module.name;
+            this.moduleId = module.id;
 
             //如果不存在父对象，则用body
             if (!parentEl) {
@@ -378,7 +378,7 @@ namespace nodom {
 
             // el不存在
             if (!el) {
-                const module = ModuleFactory.get(evtObj.moduleName);
+                const module = ModuleFactory.get(evtObj.moduleId);
                 el = module.container.querySelector("[key='" + evtObj.domKey + "']");
             }
             
@@ -403,7 +403,7 @@ namespace nodom {
         static unregist(evtObj:NodomEvent, el?:HTMLElement) {
             const evt = ExternalEvent.touches[evtObj.name];
             if (!el) {
-                const module = ModuleFactory.get(evtObj.moduleName);
+                const module = ModuleFactory.get(evtObj.moduleId);
                 el = module.container.querySelector("[key='" + evtObj.domKey + "']");
             }
             if (evt) {

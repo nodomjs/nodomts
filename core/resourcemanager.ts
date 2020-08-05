@@ -55,7 +55,6 @@ namespace nodom {
          */
         public static async getResources(reqs:any[]){
             let me = this;
-            
             let re = this.preHandle(reqs);
             let urls:string[] = re[1];
             let types:string[] = re[2];
@@ -160,7 +159,7 @@ namespace nodom {
                     css.href = url;
                     head.appendChild(css);
                 }else{
-                    if(this.resources.has(url)){
+                    if(this.resources.has(url)){ //资源已存在，直接返回
                         promises.push(this.resources.get(url));
                     }else{
                         promises.push(request(url))

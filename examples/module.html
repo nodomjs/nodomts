@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>nodom-module</title>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
+    <script src='config.js'></script>
+    <style>
+        .code {
+            margin: 20px;
+        }
+
+        .tip {
+            color: darkorange;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <p>{{user0}} 的订单:</p>
+        <div role='module' name='mod1' class='ModuleA' data='data/data1.json'></div>
+        <p>{{user1}} 的列表:</p>
+        <div role='module' name='mod2' class='ModuleA' data='data/data2.json'></div>
+    </div>
+</body>
+<script>
+    nodom.newApp({
+      module:{
+            el:'div',
+            // template:`
+            //     <div>
+            //         <p>{{user0}} 的订单:</p>
+            //     </div>
+            // `,
+            data: {
+                user0: 'Yanglei',
+                user1: 'YangLuhan'
+            }
+        }
+    });
+
+</script>
+
+</html>

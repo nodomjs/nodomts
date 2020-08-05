@@ -9,9 +9,9 @@ namespace nodom {
          */
         id: number;
         /**
-         * 模型对应的模块名
+         * 模型对应的模块id
          */
-        moduleName: string;
+        moduleId: number;
 
         /**
          * 模型对应数据
@@ -33,7 +33,7 @@ namespace nodom {
             this.id = Util.genId();
             //添加到model工厂
             if (module) {
-                this.moduleName = module.name;
+                this.moduleId = module.id;
                 if (module.modelFactory) {
                     module.modelFactory.add(this.id,this);
                 }
@@ -72,7 +72,7 @@ namespace nodom {
             }
 
             if (data[fn] !== value) {
-                let module:Module = ModuleFactory.get(this.moduleName);
+                let module:Module = ModuleFactory.get(this.moduleId);
                 // object或array需要创建新model
                 if (Util.isObject(value) || Util.isArray(value)) {
                     new Model(value, module);
@@ -97,7 +97,7 @@ namespace nodom {
          */
         update(field:string, value?:any) {
             let change:boolean = false;
-            let module:Module = ModuleFactory.get(this.moduleName);
+            let module:Module = ModuleFactory.get(this.moduleId);
             //对象设置值
             if (Util.isString(field)) {
                 let fieldObj = this.fields[field];
@@ -207,7 +207,7 @@ namespace nodom {
                 Util.getOwnProps(data).forEach((p)=>{
                     let v = data[p];
                     if (Util.isObject(v) || Util.isArray(v)) {
-                        new Model(v, ModuleFactory.get(this.moduleName));
+                        new Model(v, ModuleFactory.get(this.moduleId));
                     } else {
                         this.update(p, v);
                         if(!excludes.includes(p)){
@@ -218,7 +218,7 @@ namespace nodom {
             } else if (Util.isArray(data)) {
                 //监听数组事件
                 let watcher:Array<string> = ['push', 'unshift', 'splice', 'pop', 'shift', 'reverse', 'sort'];
-                let module:Module = ModuleFactory.get(this.moduleName);
+                let module:Module = ModuleFactory.get(this.moduleId);
                 //添加自定义事件，绑定改变事件
                 watcher.forEach((item) => {
                     data[item] = function(){
@@ -256,7 +256,7 @@ namespace nodom {
                             }
                         });
                         //增加渲染
-                        Renderer.add(ModuleFactory.get(me.moduleName));
+                        Renderer.add(ModuleFactory.get(me.moduleId));
                     }
                 });
 

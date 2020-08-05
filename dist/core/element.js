@@ -1,3 +1,12 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 // / <reference path="nodom.ts" />
 var nodom;
 (function (nodom) {
@@ -73,60 +82,82 @@ var nodom;
          * @param parent 	父节点
          */
         render(module, parent) {
-            if (this.dontRender) {
-                return;
-            }
-            // 设置父对象
-            if (parent) {
-                this.parent = parent;
-                this.parentKey = parent.key;
-                // 设置modelId
-                if (!this.modelId) {
-                    this.modelId = parent.modelId;
+            return __awaiter(this, void 0, void 0, function* () {
+                if (this.dontRender) {
+                    return;
                 }
-            }
-            //添加额外数据
-            if (this.extraData) {
-                let model = module.modelFactory.get(this.modelId);
-                if (!model) {
-                    model = new nodom.Model(this.extraData, module);
-                    this.modelId = model.id;
+                //子模块，只需要添加到父模块并设置router key
+                if (this.getProp('role') === 'module') {
+                    let mName = this.getProp('name');
+                    //模块
+                    let m;
+                    if (!this.hasProp('modelId')) {
+                        m = yield nodom.ModuleFactory.getInstance(this.getProp('class'), mName, this.getProp('data'));
+                        if (m) {
+                            this.setProp('modelId', m.id);
+                        }
+                    }
+                    else {
+                        m = nodom.ModuleFactory.get(this.getProp('modelId'));
+                    }
+                    if (m) {
+                        module.setContainerKey(this.key);
+                        module.addChild(m.id);
+                    }
+                    return;
                 }
-                else {
-                    nodom.Util.getOwnProps(this.extraData).forEach((item) => {
-                        model.set(item, this.extraData[item]);
-                    });
+                // 设置父对象
+                if (parent) {
+                    this.parent = parent;
+                    this.parentKey = parent.key;
+                    // 设置modelId
+                    if (!this.modelId) {
+                        this.modelId = parent.modelId;
+                    }
                 }
-            }
-            //自定义元素的前置渲染
-            if (this.defineElement) {
-                nodom.DefineElementManager.beforeRender(module, this);
-            }
-            if (this.tagName !== undefined) { //element
-                this.handleProps(module);
-                this.handleDirectives(module, parent);
-            }
-            else { //textContent
-                this.handleTextContent(module);
-            }
-            if (this.dontRender) {
-                return;
-            }
-            //子节点渲染
-            //dontrender 为false才渲染子节点
-            for (let i = 0; i < this.children.length; i++) {
-                let item = this.children[i];
-                item.render(module, this);
-                if (item.dontRender) {
-                    this.children.splice(i--, 1);
+                //添加额外数据
+                if (this.extraData) {
+                    let model = module.modelFactory.get(this.modelId);
+                    if (!model) {
+                        model = new nodom.Model(this.extraData, module);
+                        this.modelId = model.id;
+                    }
+                    else {
+                        nodom.Util.getOwnProps(this.extraData).forEach((item) => {
+                            model.set(item, this.extraData[item]);
+                        });
+                    }
                 }
-            }
-            //自定义元素的后置渲染
-            if (this.defineElement) {
-                nodom.DefineElementManager.afterRender(module, this);
-            }
-            //删除parent
-            delete this.parent;
+                //自定义元素的前置渲染
+                if (this.defineElement) {
+                    nodom.DefineElementManager.beforeRender(module, this);
+                }
+                if (this.tagName !== undefined) { //element
+                    this.handleProps(module);
+                    this.handleDirectives(module, parent);
+                }
+                else { //textContent
+                    this.handleTextContent(module);
+                }
+                if (this.dontRender) {
+                    return;
+                }
+                //子节点渲染
+                //dontrender 为false才渲染子节点
+                for (let i = 0; i < this.children.length; i++) {
+                    let item = this.children[i];
+                    yield item.render(module, this);
+                    if (item.dontRender) {
+                        this.children.splice(i--, 1);
+                    }
+                }
+                //自定义元素的后置渲染
+                if (this.defineElement) {
+                    nodom.DefineElementManager.afterRender(module, this);
+                }
+                //删除parent
+                delete this.parent;
+            });
         }
         /**
          * 渲染到html element
@@ -293,7 +324,7 @@ var nodom;
             //不直接拷贝属性集
             if (changeKey) { //表示clone后进行新建节点
                 dst.key = nodom.Util.genId() + '';
-                let notCopyProps = ['parent', 'children'];
+                let notCopyProps = ['key', 'parent', 'children'];
                 //简单属性
                 nodom.Util.getOwnProps(this).forEach((p) => {
                     if (notCopyProps.includes(p)) {

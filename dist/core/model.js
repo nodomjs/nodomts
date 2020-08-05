@@ -20,7 +20,7 @@ var nodom;
             this.id = nodom.Util.genId();
             //添加到model工厂
             if (module) {
-                this.moduleName = module.name;
+                this.moduleId = module.id;
                 if (module.modelFactory) {
                     module.modelFactory.add(this.id, this);
                 }
@@ -56,7 +56,7 @@ var nodom;
                 throw new nodom.NodomError('notexist1', nodom.TipWords.dataItem, key);
             }
             if (data[fn] !== value) {
-                let module = nodom.ModuleFactory.get(this.moduleName);
+                let module = nodom.ModuleFactory.get(this.moduleId);
                 // object或array需要创建新model
                 if (nodom.Util.isObject(value) || nodom.Util.isArray(value)) {
                     new Model(value, module);
@@ -80,7 +80,7 @@ var nodom;
          */
         update(field, value) {
             let change = false;
-            let module = nodom.ModuleFactory.get(this.moduleName);
+            let module = nodom.ModuleFactory.get(this.moduleId);
             //对象设置值
             if (nodom.Util.isString(field)) {
                 let fieldObj = this.fields[field];
@@ -193,7 +193,7 @@ var nodom;
                 nodom.Util.getOwnProps(data).forEach((p) => {
                     let v = data[p];
                     if (nodom.Util.isObject(v) || nodom.Util.isArray(v)) {
-                        new Model(v, nodom.ModuleFactory.get(this.moduleName));
+                        new Model(v, nodom.ModuleFactory.get(this.moduleId));
                     }
                     else {
                         this.update(p, v);
@@ -206,7 +206,7 @@ var nodom;
             else if (nodom.Util.isArray(data)) {
                 //监听数组事件
                 let watcher = ['push', 'unshift', 'splice', 'pop', 'shift', 'reverse', 'sort'];
-                let module = nodom.ModuleFactory.get(this.moduleName);
+                let module = nodom.ModuleFactory.get(this.moduleId);
                 //添加自定义事件，绑定改变事件
                 watcher.forEach((item) => {
                     data[item] = function () {
@@ -243,7 +243,7 @@ var nodom;
                             }
                         });
                         //增加渲染
-                        nodom.Renderer.add(nodom.ModuleFactory.get(me.moduleName));
+                        nodom.Renderer.add(nodom.ModuleFactory.get(me.moduleId));
                     };
                 });
                 //设置model

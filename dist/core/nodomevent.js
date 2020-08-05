@@ -100,7 +100,7 @@ var nodom;
          * @param el    html element
          */
         fire(e, el) {
-            const module = nodom.ModuleFactory.get(this.moduleName);
+            const module = nodom.ModuleFactory.get(this.moduleId);
             if (!module.hasContainer()) {
                 return;
             }
@@ -210,7 +210,7 @@ var nodom;
          * @param el        html element
          */
         bind(module, dom, el) {
-            this.moduleName = module.name;
+            this.moduleId = module.id;
             this.domKey = dom.key;
             //触屏事件
             if (ExternalEvent.touches[this.name]) {
@@ -234,7 +234,7 @@ var nodom;
          */
         delegateTo(module, vdom, el, parent, parentEl) {
             this.domKey = vdom.key;
-            this.moduleName = module.name;
+            this.moduleId = module.id;
             //如果不存在父对象，则用body
             if (!parentEl) {
                 parentEl = document.body;
@@ -299,63 +299,60 @@ var nodom;
     }
     nodom.NodomEvent = NodomEvent;
     /****************扩展事件*********************/
-    let ExternalEvent = /** @class */ (() => {
-        class ExternalEvent {
-            /**
-             * 注册事件
-             * @param evtObj    event对象
-             */
-            static regist(evtObj, el) {
-                //触屏事件组
-                let touchEvts = ExternalEvent.touches[evtObj.name];
-                //如果绑定了，需要解绑
-                if (!nodom.Util.isEmpty(evtObj.touchListeners)) {
-                    this.unregist(evtObj);
-                }
-                // el不存在
-                if (!el) {
-                    const module = nodom.ModuleFactory.get(evtObj.moduleName);
-                    el = module.container.querySelector("[key='" + evtObj.domKey + "']");
-                }
-                evtObj.touchListeners = new Map();
-                if (touchEvts && el !== null) {
-                    // 绑定事件组
-                    nodom.Util.getOwnProps(touchEvts).forEach(function (ev) {
-                        //先记录下事件，为之后释放
-                        evtObj.touchListeners[ev] = function (e) {
-                            touchEvts[ev](e, evtObj);
-                        };
-                        el.addEventListener(ev, evtObj.touchListeners[ev], evtObj.capture);
-                    });
-                }
+    class ExternalEvent {
+        /**
+         * 注册事件
+         * @param evtObj    event对象
+         */
+        static regist(evtObj, el) {
+            //触屏事件组
+            let touchEvts = ExternalEvent.touches[evtObj.name];
+            //如果绑定了，需要解绑
+            if (!nodom.Util.isEmpty(evtObj.touchListeners)) {
+                this.unregist(evtObj);
             }
-            /**
-             * 取消已注册事件
-             * @param evtObj    event对象
-             * @param el        事件绑定的html element
-             */
-            static unregist(evtObj, el) {
-                const evt = ExternalEvent.touches[evtObj.name];
-                if (!el) {
-                    const module = nodom.ModuleFactory.get(evtObj.moduleName);
-                    el = module.container.querySelector("[key='" + evtObj.domKey + "']");
-                }
-                if (evt) {
-                    // 解绑事件
-                    if (el !== null) {
-                        nodom.Util.getOwnProps(evtObj.touchListeners).forEach(function (ev) {
-                            el.removeEventListener(ev, evtObj.touchListeners[ev]);
-                        });
-                    }
-                }
+            // el不存在
+            if (!el) {
+                const module = nodom.ModuleFactory.get(evtObj.moduleId);
+                el = module.container.querySelector("[key='" + evtObj.domKey + "']");
+            }
+            evtObj.touchListeners = new Map();
+            if (touchEvts && el !== null) {
+                // 绑定事件组
+                nodom.Util.getOwnProps(touchEvts).forEach(function (ev) {
+                    //先记录下事件，为之后释放
+                    evtObj.touchListeners[ev] = function (e) {
+                        touchEvts[ev](e, evtObj);
+                    };
+                    el.addEventListener(ev, evtObj.touchListeners[ev], evtObj.capture);
+                });
             }
         }
         /**
-         * 触屏事件
+         * 取消已注册事件
+         * @param evtObj    event对象
+         * @param el        事件绑定的html element
          */
-        ExternalEvent.touches = {};
-        return ExternalEvent;
-    })();
+        static unregist(evtObj, el) {
+            const evt = ExternalEvent.touches[evtObj.name];
+            if (!el) {
+                const module = nodom.ModuleFactory.get(evtObj.moduleId);
+                el = module.container.querySelector("[key='" + evtObj.domKey + "']");
+            }
+            if (evt) {
+                // 解绑事件
+                if (el !== null) {
+                    nodom.Util.getOwnProps(evtObj.touchListeners).forEach(function (ev) {
+                        el.removeEventListener(ev, evtObj.touchListeners[ev]);
+                    });
+                }
+            }
+        }
+    }
+    /**
+     * 触屏事件
+     */
+    ExternalEvent.touches = {};
     nodom.ExternalEvent = ExternalEvent;
     /**
      * 触屏事件

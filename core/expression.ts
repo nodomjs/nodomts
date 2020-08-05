@@ -296,7 +296,7 @@ namespace nodom {
             if (!model || !model.data) { 
 				return ''; 
 			}
-            let module:Module = ModuleFactory.get(model.moduleName);
+            let module:Module = ModuleFactory.get(model.moduleId);
             let fieldObj:object = model.data;
             
             let valueArr = [];

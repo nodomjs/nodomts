@@ -1,18 +1,51 @@
 namespace nodom{
     /**
-     * 新建一个App
-     * @param config {global:全局配置,module:主模块配置}
-     *      global:应用全局配置，{routerPrePath:路由前置配置,templatePath:模版路径位置,renderTick:调度器间隔时间(ms)，如果支持requestAnimationFrame，则不需要}
-     *      module:主模块配置
+     * 应用初始化配置类型
      */
-    export async function newApp(config:IApplicationCfg):Promise<Module>{
-        if(!config.module){
+    interface IAppCfg{
+        /**
+         * 路径参数，请参阅Application path属性
+         */
+        path?:any;
+
+        /**
+         * 调度器间隔时间(ms)，如果支持requestAnimationFrame，则不需要
+         */
+        renderTick?:number;
+
+        /**
+         * 主模块配置
+         */
+        module:IModuleCfg;
+
+        /**
+         * 模块配置数组，数组元素包括
+         *      class:模块类名,
+         *      path:模块路径(相对于app module路径),
+         *      data:数据路径(字符串)或数据(object),
+         *      singleton:单例(全应用公用同一个实例，默认true),
+         *      lazy:懒加载(默认false)
+         */
+        modules:IMdlClassObj[];
+    }
+    /**
+     * 新建一个App
+     * @param config 应用配置
+     */
+    export async function newApp(config?:IAppCfg):Promise<Module>{
+        if(window['NodomConfig']){
+            config = Util.merge({},window['NodomConfig'],config);
+        }
+        
+        if(!config || !config.module){
             throw new NodomError('config',TipWords.application);
         }
-        if(config.options){
-            Application.routerPrePath = config.options['routerPrePath'] || '';
-            Application.templatePath = config.options['templatePath'] || '';
-            Application.renderTick = config.options['renderTick'] || 100;
+
+        Application.setPath(config.path);
+        
+        //模块数组初始化
+        if(config.modules){
+            ModuleFactory.init(config.modules);
         }
         
         //消息队列消息处理任务
@@ -20,8 +53,9 @@ namespace nodom{
         //渲染器启动渲染
         Scheduler.addTask(Renderer.render,Renderer);
         //启动调度器
-        Scheduler.start();
-        let module = this.createModule(config.module,true);
+        Scheduler.start(config.renderTick);
+        let module:Module = this.createModule(config.module,true);
+        ModuleFactory.add(module);
         await module.active();
         return module;
     }

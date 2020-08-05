@@ -7,11 +7,11 @@ namespace nodom {
         /**
          * 来源模块名
          */
-        fromModule: string;
+        fromModule: number;
         /**
          * 目标模块名
          */
-        toModule: string;
+        toModule: number;
         /**
          * 消息内容
          */
@@ -22,11 +22,11 @@ namespace nodom {
         readed: boolean;
 
         /**
-         * @param fromModule 	来源模块名
-         * @param toModule 		目标模块名
+         * @param fromModule 	来源模块id
+         * @param toModule 		目标模块id
          * @param content 		消息内容
          */
-        constructor(fromModule: string, toModule: string, content: any) {
+        constructor(fromModule: number, toModule: number, content: any) {
             this.fromModule = fromModule;
             this.toModule = toModule;
             this.content = content;
@@ -47,7 +47,7 @@ namespace nodom {
          * @param toModule 		目标模块名
          * @param content 		消息内容
          */
-        static add(from: string, to: string, data: any) {
+        static add(from: number, to: number, data: any) {
             this.messages.push(new Message(from, to, data));
         }
 

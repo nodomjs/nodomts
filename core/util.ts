@@ -108,9 +108,10 @@ namespace nodom{
          * @returns 返回对象
          */
         static merge(o1?:object,o2?:object,o3?:object,o4?:object,o5?:object,o6?:object){
+            let me = this;
             for(let i=0;i<arguments.length;i++){
                 if(!this.isObject(arguments[i])){
-                    throw new NodomError('invoke','this.merge',i+'','object');    
+                    throw new NodomError('invoke','Util.merge',i+'','object');    
                 }
             }
 
@@ -119,10 +120,10 @@ namespace nodom{
             subObj(retObj);
             return retObj;
             //处理子对象
-            function subObj(retObj){
-                for(let o in retObj){
-                    if(this.isObject(retObj[o]) || this.isArray(retObj[o])){ //对象或数组
-                        retObj[o] = retObj[o].clone();
+            function subObj(obj){
+                for(let o in obj){
+                    if(me.isObject(obj[o]) || me.isArray(obj[o])){ //对象或数组
+                        retObj[o] = me.clone(retObj[o]);
                     }
                 }
             }
@@ -700,6 +701,15 @@ namespace nodom{
                 return;
             }
             return Reflect.apply(foo,obj||null,args);
+        }
+
+        /**
+         * 合并并修正路径，即路径中出现'//','///','\/'的情况，统一置换为'/'
+         * @param paths 待合并路径数组
+         * @returns     返回路径
+         */
+        static mergePath(paths:string[]):string{
+            return paths.join('/').replace(/(\/{2,})|\\\//g,'\/');
         }
     }
 }
