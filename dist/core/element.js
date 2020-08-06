@@ -73,38 +73,8 @@ var nodom;
          * @param parent 	父节点
          */
         render(module, parent) {
+            let me = this;
             if (this.dontRender) {
-                return;
-            }
-            //子模块，只需要添加到父模块并设置router key
-            if (this.getProp('role') === 'module') {
-                this.handleProps(module);
-                this.handleDirectives(module, parent);
-                //无class，也无moduleId，不操作
-                if (!this.hasProp('class') && !this.hasProp('moduleId')) {
-                    return;
-                }
-                let mName = this.getProp('name');
-                //模块
-                let m;
-                //首次渲染，需要加载
-                if (!this.hasProp('moduleId')) {
-                    nodom.ModuleFactory.getInstance(this.getProp('class'), mName, this.getProp('data'))
-                        .then((m) => {
-                        if (m) {
-                            this.setProp('moduleId', m.id);
-                            m.setContainerKey(this.key);
-                            module.addChild(m.id);
-                            m.active();
-                        }
-                    });
-                } /*else{
-                    // 非首次渲染，自行渲染
-                    m = ModuleFactory.get(this.getProp('moduleId'));
-                    if(m){
-                        m.setContainerKey(this.key);
-                    }
-                }*/
                 return;
             }
             // 设置父对象
@@ -131,13 +101,17 @@ var nodom;
                 return;
             }
             //子节点渲染
-            //dontrender 为false才渲染子节点
-            for (let i = 0; i < this.children.length; i++) {
-                let item = this.children[i];
-                item.render(module, this);
-                if (item.dontRender) {
-                    this.children.splice(i--, 1);
+            if (!this.hasDirective('module')) {
+                for (let i = 0; i < this.children.length; i++) {
+                    let item = this.children[i];
+                    item.render(module, this);
+                    if (item.dontRender) {
+                        this.children.splice(i--, 1);
+                    }
                 }
+            }
+            else {
+                console.log(this);
             }
             //自定义元素的后置渲染
             if (this.defineElement) {

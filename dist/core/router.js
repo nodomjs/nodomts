@@ -73,7 +73,7 @@ var nodom;
                 }
                 else {
                     if (typeof diff[0].module === 'string') {
-                        parentModule = yield nodom.ModuleFactory.getInstance(diff[0].module);
+                        parentModule = yield nodom.ModuleFactory.getInstance(diff[0].module, diff[0].moduleName);
                     }
                     else {
                         parentModule = nodom.ModuleFactory.get(diff[0].module);
@@ -102,79 +102,60 @@ var nodom;
                     if (route !== null) {
                         //如果useparentpath，则使用父路由的路径，否则使用自己的路径
                         showPath = route.useParentPath && proute ? proute.fullPath : route.fullPath;
-                        route.setLinkActive(true);
                         //给模块设置路由参数
-                        setRouteParamToModel(route);
+                        let module = nodom.ModuleFactory.get(route.module);
+                        setRouteParamToModel(route, module);
+                        route.setLinkActive();
+                        //设置首次渲染
+                        module.firstRender = true;
+                        module.active();
                     }
                 }
                 else { //路由不同
                     //加载模块
-                    for (let i = 0; i < diff[2].length; i++) {
+                    for (let i = 0, index = 0; i < diff[2].length; i++) {
                         let route = diff[2][i];
-                        //路由不存在或路由没有模块（空路由？）
+                        //路由不存在或路由没有模块（空路由）
                         if (!route || !route.module) {
                             continue;
                         }
                         if (!route.useParentPath) {
                             showPath = route.fullPath;
                         }
-                        // if (!parentModule.routerKey) {
-                        //     throw new NodomError('notexist', TipWords.routeView);
-                        // }
                         let module;
                         //尚未获取module，进行初始化
                         if (typeof route.module === 'string') {
-                            module = yield nodom.ModuleFactory.getInstance(route.module);
+                            module = yield nodom.ModuleFactory.getInstance(route.module, route.moduleName);
+                            if (!module) {
+                                throw new nodom.NodomError('notexist1', nodom.TipWords.module, route.module);
+                            }
                             route.module = module.id;
                         }
                         else {
                             module = nodom.ModuleFactory.get(route.module);
                         }
-                        if (!module) {
-                            throw new nodom.NodomError('notexist1', nodom.TipWords.module, route.module);
-                        }
                         //设置首次渲染
                         module.firstRender = true;
-                        //设置模块容器key
-                        // module.setContainerKey(parentModule.routerKey);
-                        // let routerDom:Element = parentModule.virtualDom.query(parentModule.routerKey);
-                        //清空routerDom的孩子节点
-                        // routerDom.children = [];
-                        //修改routerDom节点对应的模块名
-                        // routerDom.setProp('name',module.name);
-                        //设置模块id
-                        // routerDom.setProp('moduleId',module.id);
-                        //清理父模块中以router view为容器的模块
-                        // for(let i=0;i<parentModule.children.length;i++){
-                        //     let m = parentModule.children[i];
-                        //     let key = module.getContainerKey();
-                        //     //只有一个，删除即可
-                        //     if(key === parentModule.routerKey){
-                        //         parentModule.children.splice(i,1);
-                        //         break;
-                        //     }
-                        // }
-                        //作为子模块添加到父模块
-                        // parentModule.addChild(module.id);
-                        //设置route active
-                        route.setLinkActive(true);
-                        //添加父模块渲染后操作
-                        if (i > 0) {
-                            parentModule.addAfterRenderOperation(function () {
+                        parentModule.addChild(module.id);
+                        if (index++ === 0) { //第一个的父模块为已渲染或根模块
+                            module.setContainerKey(parentModule.routerKey);
+                            //激活模块
+                            yield module.active();
+                            //设置route active
+                            route.setLinkActive();
+                        }
+                        else { //非第一个需要等待父模块渲染结束
+                            //添加父模块渲染后操作
+                            parentModule.addRenderOperation(function () {
                                 return __awaiter(this, void 0, void 0, function* () {
                                     //this指向parentModule
                                     if (this.routerKey) {
                                         module.setContainerKey(this.routerKey);
                                         yield module.active();
                                     }
-                                    // route.setLinkActive(true);
+                                    route.setLinkActive();
                                 });
                             });
-                        }
-                        else {
-                            module.setContainerKey(parentModule.routerKey);
-                            //激活模块
-                            yield module.active();
                         }
                         //设置路由参数
                         setRouteParamToModel(route);
@@ -209,12 +190,15 @@ var nodom;
                 /**
                  * 将路由参数放入module的model中
                  * @param route 	路由
+                 * @param module    模块
                  */
-                function setRouteParamToModel(route) {
+                function setRouteParamToModel(route, module) {
                     if (!route) {
                         return;
                     }
-                    const module = nodom.ModuleFactory.get(route.module);
+                    if (!module) {
+                        module = nodom.ModuleFactory.get(route.module);
+                    }
                     let o = {
                         path: route.path
                     };
@@ -354,7 +338,7 @@ var nodom;
             if (!module || !path || path === '') {
                 return;
             }
-            let domArr = Router.activeDomMap.get(module.name);
+            let domArr = Router.activeDomMap.get(module.id);
             if (!domArr) {
                 return;
             }
@@ -421,15 +405,11 @@ var nodom;
      */
     Router.currentIndex = 0;
     /**
-     * module 和 route映射关系 {moduleName:routeId,...}
-     */
-    Router.moduleRouteMap = new Map();
-    /**
      * 启动方式 0:直接启动 1:由element active改变启动 2:popstate 启动
      */
     Router.startStyle = 0;
     /**
-     * 激活Dom map，格式为{moduleName:[]}
+     * 激活Dom map，格式为{moduleId:[]}
      */
     Router.activeDomMap = new Map();
     nodom.Router = Router;
@@ -454,11 +434,10 @@ var nodom;
              * 子路由
              */
             this.children = [];
-            this.onEnter = config.onEnter;
-            this.onLeave = config.onLeave;
-            this.useParentPath = config.useParentPath;
-            this.path = config.path;
-            this.module = config.module;
+            //参数赋值
+            for (let o in config) {
+                this[o] = config[o];
+            }
             if (config.path === '') {
                 return;
             }
@@ -476,20 +455,22 @@ var nodom;
         }
         /**
          * 设置关联标签激活状态
-         * @param ancestor 		是否激活祖先路由 true/false
          */
-        setLinkActive(ancestor) {
-            let path = this.fullPath;
-            let module = nodom.ModuleFactory.get(this.module);
-            if (module && module.parentId) {
-                let pm = nodom.ModuleFactory.get(module.parentId);
+        setLinkActive() {
+            if (this.parent) {
+                let pm = nodom.ModuleFactory.get(this.parent.module);
                 if (pm) {
-                    Router.changeActive(pm, path);
+                    Router.changeActive(pm, this.fullPath);
                 }
             }
-            if (ancestor && this.parent) {
-                this.parent.setLinkActive(true);
-            }
+        }
+        /**
+         * 添加子路由
+         * @param child
+         */
+        addChild(child) {
+            this.children.push(child);
+            child.parent = this;
         }
     }
     nodom.Route = Route;
@@ -540,7 +521,8 @@ var nodom;
                     //没找到，创建新节点
                     if (j === node.children.length) {
                         if (prePath !== '') {
-                            node.children.push(new Route({ path: prePath, notAdd: true }));
+                            let r = new Route({ path: prePath, notAdd: true });
+                            node.addChild(r);
                             node = node.children[node.children.length - 1];
                         }
                         prePath = v;
@@ -557,7 +539,7 @@ var nodom;
             //添加到树
             if (node !== undefined && node !== route) {
                 route.path = prePath;
-                node.children.push(route);
+                node.addChild(route);
             }
             return true;
         }
@@ -652,20 +634,20 @@ var nodom;
                 dom.setProp('path', value);
             }
             //添加click事件
-            dom.addEvent(new nodom.NodomEvent('click', '', (dom, model, module, e) => __awaiter(this, void 0, void 0, function* () {
+            dom.addEvent(new nodom.NodomEvent('click', '', (dom, model, module, e) => {
                 let path = dom.getProp('path');
                 if (nodom.Util.isEmpty(path)) {
                     return;
                 }
                 Router.addPath(path);
-            })));
+            }));
         },
         handle: (directive, dom, module, parent) => {
             if (dom.hasProp('active')) {
                 //添加到router的activeDomMap
-                let domArr = Router.activeDomMap.get(module.name);
+                let domArr = Router.activeDomMap.get(module.id);
                 if (!domArr) {
-                    Router.activeDomMap.set(module.name, [dom.key]);
+                    Router.activeDomMap.set(module.id, [dom.key]);
                 }
                 else {
                     if (!domArr.includes(dom.key)) {
@@ -679,9 +661,7 @@ var nodom;
             }
             //active需要跳转路由（当前路由为该路径对应的父路由）
             if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
-                setTimeout(() => {
-                    Router.addPath(path);
-                }, 0);
+                Router.addPath(path);
             }
         }
     });

@@ -4,9 +4,51 @@ var nodom;
     /**
      *  指令类型初始化
      *  每个指令类型都有一个init和handle方法，init和handle都可选
-     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块)，无返回
+     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)，无返回
      *  handle方法在渲染时执行，包含三个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
      */
+    /**
+     * module 指令
+     * 用于指定该元素为模块容器，表示该模块的子模块
+     * 用法
+     *   x-module='moduleclass|modulename|dataurl'
+     *   moduleclass 为模块类名
+     *   modulename  为模块对象名，可选
+     * 可增加 data 属性，用于指定数据url
+     * 可增加 name 属性，用于设置模块name，如果x-module已设置，则无效
+     */
+    nodom.DirectiveManager.addType('module', {
+        prio: 0,
+        init: (directive, dom) => {
+            let value = directive.value;
+            let valueArr = value.split('|');
+            directive.value = valueArr[0];
+            //初始化参数
+            directive.extra = {
+                name: valueArr.length > 1 ? valueArr[1] : undefined,
+                //是否已初始化
+                init: false
+            };
+            dom.setProp('role', 'module');
+        },
+        handle: (directive, dom, module, parent) => {
+            const ext = directive.extra;
+            console.log(directive);
+            if (!ext.init) {
+                //未初始化，进行模块初始化
+                ext.init = true;
+                nodom.ModuleFactory.getInstance(directive.value, ext.name || dom.getProp('name'), dom.getProp('data'))
+                    .then((m) => {
+                    if (m) {
+                        //保存绑定moduleid
+                        m.setContainerKey(dom.key);
+                        module.addChild(m.id);
+                        m.active();
+                    }
+                });
+            }
+        }
+    });
     nodom.DirectiveManager.addType('model', {
         prio: 1,
         init: (directive, dom) => {
@@ -135,6 +177,7 @@ var nodom;
                     }
                 }
             }
+            console.log(chds);
             // 不渲染该节点
             dom.dontRender = true;
             function setKey(node, key, id) {

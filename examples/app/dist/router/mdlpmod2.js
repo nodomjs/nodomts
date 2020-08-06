@@ -9,21 +9,18 @@ class MdlPMod2 extends nodom.Module {
             delayInit: true,
             data: {
                 routes: [{
-                        title: '首页',
+                        title:'首页2',
                         path: '/router/directive/route2/rparam/home/1',
-                        useParentPath: true,
                         active: true
                     },
                     {
-                        title: '列表',
+                        title: '列表2',
                         path: '/router/directive/route2/rparam/list/2',
-                        useParentPath: true,
                         active: false
                     },
                     {
-                        title: '数据',
+                        title: '数据2',
                         path: '/router/directive/route2/rparam/data/3',
-                        useParentPath: true,
                         active: false
                     }
                 ]

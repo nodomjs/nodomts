@@ -48,7 +48,7 @@ var nodom;
                         //不克隆的键
                         if (expKey) {
                             if (expKey.constructor === RegExp && expKey.test(prop) //正则表达式匹配的键不复制
-                                || expKey.includes(prop) //被排除的键不复制
+                                || Util.isArray(expKey) && expKey.includes(prop) //被排除的键不复制
                             ) {
                                 return;
                             }

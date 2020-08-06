@@ -41,6 +41,7 @@ var nodom;
             else {
                 module = new nodom.Module(config.module);
             }
+            // ModuleFactory.add(module);
             //设置主模块
             nodom.ModuleFactory.setMain(module);
             yield module.active();

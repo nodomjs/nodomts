@@ -3,10 +3,66 @@ namespace nodom {
     /**
      *  指令类型初始化    
      *  每个指令类型都有一个init和handle方法，init和handle都可选
-     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块)，无返回
+     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)，无返回
      *  handle方法在渲染时执行，包含三个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
      */
 
+    /**
+     * module 指令
+     * 用于指定该元素为模块容器，表示该模块的子模块
+     * 用法
+     *   x-module='moduleclass|modulename|dataurl'
+     *   moduleclass 为模块类名
+     *   modulename  为模块对象名，可选
+     * 可增加 data 属性，用于指定数据url
+     * 可增加 name 属性，用于设置模块name，如果x-module已设置，则无效
+     */
+    DirectiveManager.addType('module', {
+        prio: 0,
+        init: (directive: Directive,dom:Element) => {
+            let value: string = < string > directive.value;
+            let valueArr:string[] = value.split('|');
+            directive.value = valueArr[0];
+            //初始化参数
+            directive.extra = {
+                name:valueArr.length>1?valueArr[1]:undefined,
+                //是否已初始化
+                init:false
+            }
+            dom.setProp('role','module');
+            
+        },
+
+        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+            const ext = directive.extra;
+            let needNew:boolean = ext.moduleId === undefined;
+            //没有moduleId或与容器key不一致
+            if(ext.moduleId){
+                let m = ModuleFactory.get(ext.moduleId);
+                needNew = m.getContainerKey() !== dom.key;
+            }
+            if(needNew){
+                //未初始化，进行模块初始化
+                ext.init = true;
+                ModuleFactory.getInstance(directive.value,ext.name||dom.getProp('name'),dom.getProp('data'))
+                    .then(
+                        (m:Module)=>{
+                            if(m){
+                                //保存绑定moduleid
+                                m.setContainerKey(dom.key);
+                                ext.moduleId = m.id;
+                                module.addChild(m.id);
+                                m.active();
+                            }
+                        }
+                    );
+            }
+            
+        }
+    });
+
+
+    
     DirectiveManager.addType('model', {
         prio: 1,
         init: (directive: Directive,dom:Element) => {

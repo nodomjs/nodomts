@@ -181,7 +181,7 @@ var nodom;
                         Object.getOwnPropertyNames(src).forEach((prop) => {
                             if (expKey) {
                                 if (expKey.constructor === RegExp && expKey.test(prop)
-                                    || expKey.includes(prop)) {
+                                    || Util.isArray(expKey) && expKey.includes(prop)) {
                                     return;
                                 }
                             }
@@ -943,28 +943,8 @@ var nodom;
             this.key = nodom.Util.genId() + '';
         }
         render(module, parent) {
+            let me = this;
             if (this.dontRender) {
-                return;
-            }
-            if (this.getProp('role') === 'module') {
-                this.handleProps(module);
-                this.handleDirectives(module, parent);
-                if (!this.hasProp('class') && !this.hasProp('moduleId')) {
-                    return;
-                }
-                let mName = this.getProp('name');
-                let m;
-                if (!this.hasProp('moduleId')) {
-                    nodom.ModuleFactory.getInstance(this.getProp('class'), mName, this.getProp('data'))
-                        .then((m) => {
-                        if (m) {
-                            this.setProp('moduleId', m.id);
-                            m.setContainerKey(this.key);
-                            module.addChild(m.id);
-                            m.active();
-                        }
-                    });
-                }
                 return;
             }
             if (parent) {
@@ -987,12 +967,17 @@ var nodom;
             if (this.dontRender) {
                 return;
             }
-            for (let i = 0; i < this.children.length; i++) {
-                let item = this.children[i];
-                item.render(module, this);
-                if (item.dontRender) {
-                    this.children.splice(i--, 1);
+            if (!this.hasDirective('module')) {
+                for (let i = 0; i < this.children.length; i++) {
+                    let item = this.children[i];
+                    item.render(module, this);
+                    if (item.dontRender) {
+                        this.children.splice(i--, 1);
+                    }
                 }
+            }
+            else {
+                console.log(this);
             }
             if (this.defineElement) {
                 nodom.DefineElementManager.afterRender(module, this);
@@ -2093,10 +2078,8 @@ var nodom;
                 for (let i = 0; i < this.messages.length; i++) {
                     let msg = this.messages[i];
                     let module = nodom.ModuleFactory.get(msg.toModule);
-                    if (module && module.state === 2 || module.state === 3) {
-                        module.receive(msg.fromModule, msg.content);
-                    }
                     if (module && module.state >= 2) {
+                        module.receive(msg.fromModule, msg.content);
                         MessageQueue.messages.splice(i--, 1);
                     }
                 }
@@ -2206,38 +2189,7 @@ var nodom;
             if (dirty) {
                 return this.data;
             }
-            return copy(this.data);
-            function copy(src) {
-                let dst;
-                if (nodom.Util.isObject(src)) {
-                    dst = new Object();
-                    Object.getOwnPropertyNames(src).forEach((prop) => {
-                        if (prop.startsWith('$')) {
-                            return;
-                        }
-                        dst[prop] = copy(src);
-                    });
-                }
-                else if (nodom.Util.isMap(src)) {
-                    dst = new Map();
-                    src.forEach((value, key) => {
-                        if (key.startsWith('$')) {
-                            return;
-                        }
-                        dst.set(key, copy(value));
-                    });
-                }
-                else if (nodom.Util.isArray(src)) {
-                    dst = new Array();
-                    src.forEach(function (item, i) {
-                        dst[i] = copy(item);
-                    });
-                }
-                else {
-                    dst = src;
-                }
-                return dst;
-            }
+            return nodom.Util.clone(this.data, /^\$\S+/);
         }
         watch(key, operate, cancel) {
             let fieldObj = this.fields[key];
@@ -2378,7 +2330,8 @@ var nodom;
             this.children = [];
             this.firstRenderOps = [];
             this.beforeFirstRenderOps = [];
-            this.afterRenderOps = [];
+            this.renderOps = [];
+            this.beforeRenderOps = [];
             this.state = 0;
             this.loadNewData = false;
             this.renderDoms = [];
@@ -2491,6 +2444,7 @@ var nodom;
             if (this.state !== 3 || !this.virtualDom || !this.hasContainer()) {
                 return false;
             }
+            this.doRenderOp(this.beforeRenderOps);
             let root = this.virtualDom.clone();
             if (this.firstRender) {
                 if (this.loadNewData && this.dataUrl) {
@@ -2530,37 +2484,12 @@ var nodom;
                 this.doModuleEvent('onRender');
             }
             this.renderDoms = [];
-            this.afterRenderOps.forEach((f) => {
-                f.call(this);
-            });
-            this.afterRenderOps = [];
+            this.doRenderOp(this.renderOps);
             return true;
-        }
-        clone(moduleName) {
-            let me = this;
-            let m = {};
-            let excludes = ['id', 'name', 'model'];
-            Object.getOwnPropertyNames(this).forEach((item) => {
-                if (excludes.includes(item)) {
-                    return;
-                }
-                m[item] = me[item];
-            });
-            m.id = nodom.Util.genId();
-            m.name = moduleName || 'Module' + m.id;
-            m.__proto__ = this.__proto__;
-            if (this.model) {
-                m.model = new nodom.Model(nodom.Util.clone(this.model.data), m);
-            }
-            nodom.ModuleFactory.add(m);
-            return m;
         }
         doFirstRender(root) {
             this.doModuleEvent('onBeforeFirstRender');
-            this.beforeFirstRenderOps.forEach((foo) => {
-                nodom.Util.apply(foo, this, []);
-            });
-            this.beforeFirstRenderOps = [];
+            this.doRenderOp(this.beforeFirstRenderOps);
             this.renderTree = root;
             if (this.model) {
                 root.modelId = this.model.id;
@@ -2575,22 +2504,34 @@ var nodom;
             }
             delete this.firstRender;
             this.doModuleEvent('onFirstRender');
-            this.firstRenderOps.forEach((foo) => {
-                nodom.Util.apply(foo, this, []);
+            this.doRenderOp(this.firstRenderOps);
+        }
+        clone(moduleName) {
+            let me = this;
+            let m = {};
+            let excludes = ['id', 'name', 'model'];
+            Object.getOwnPropertyNames(this).forEach((item) => {
+                if (excludes.includes(item)) {
+                    return;
+                }
+                m[item] = me[item];
             });
-            this.firstRenderOps = [];
+            m.id = nodom.Util.genId();
+            m.name = moduleName || 'Module' + m.id;
+            m.__proto__ = this.__proto__;
+            nodom.ModuleFactory.add(m);
+            if (this.model) {
+                let d = this.model.getData();
+                m.model = new nodom.Model(nodom.Util.clone(d), m);
+            }
+            return m;
         }
         hasContainer() {
-            if (this.container) {
-                return true;
+            if (this.selector) {
+                this.container = document.querySelector(this.selector);
             }
             else {
-                if (this.selector) {
-                    this.container = document.querySelector(this.selector);
-                }
-                else {
-                    this.container = document.querySelector("[key='" + this.containerKey + "']");
-                }
+                this.container = document.querySelector("[key='" + this.containerKey + "']");
             }
             return this.container !== null;
         }
@@ -2614,21 +2555,35 @@ var nodom;
             }
         }
         send(toName, data) {
-            let toId = this.moduleMap.get(toName);
-            nodom.MessageQueue.add(this.id, toId, data);
+            let m = this;
+            let toId;
+            for (let i = 0; i < 3 && m; i++) {
+                toId = m.moduleMap.get(toName);
+                if (!toId && m.parentId) {
+                    m = nodom.ModuleFactory.get(m.parentId);
+                }
+                else {
+                    break;
+                }
+            }
+            if (toId) {
+                nodom.MessageQueue.add(this.id, toId, data);
+            }
         }
         broadcast(data) {
             if (this.parentId) {
                 let pmod = nodom.ModuleFactory.get(this.parentId);
-                if (pmod && pmod.children) {
+                if (pmod) {
                     this.send(pmod.name, data);
-                    pmod.children.forEach((item) => {
-                        if (item === this.id) {
-                            return;
-                        }
-                        let m = nodom.ModuleFactory.get(item);
-                        this.send(m.name, data);
-                    });
+                    if (pmod.children) {
+                        pmod.children.forEach((item) => {
+                            if (item === this.id) {
+                                return;
+                            }
+                            let m = nodom.ModuleFactory.get(item);
+                            this.send(m.name, data);
+                        });
+                    }
                 }
             }
             if (this.children !== undefined) {
@@ -2708,12 +2663,25 @@ var nodom;
                 this.beforeFirstRenderOps.push(foo);
             }
         }
-        addAfterRenderOperation(foo) {
+        addRenderOperation(foo) {
             if (!nodom.Util.isFunction(foo)) {
                 return;
             }
-            if (!this.afterRenderOps.includes(foo)) {
-                this.afterRenderOps.push(foo);
+            if (!this.renderOps.includes(foo)) {
+                this.renderOps.push(foo);
+            }
+        }
+        addBeforeRenderOperation(foo) {
+            if (!nodom.Util.isFunction(foo)) {
+                return;
+            }
+            if (!this.beforeRenderOps.includes(foo)) {
+                this.beforeRenderOps.push(foo);
+            }
+        }
+        doRenderOp(renderOps) {
+            for (; renderOps.length > 0;) {
+                nodom.Util.apply(renderOps.shift(), this, []);
             }
         }
     }
@@ -2735,6 +2703,9 @@ var nodom;
                         throw new nodom.NodomError('notexist1', nodom.TipWords.moduleClass, className);
                     }
                     let cfg = this.classes.get(className);
+                    if (moduleName) {
+                        cfg.name = moduleName;
+                    }
                     if (!cfg.instance) {
                         yield this.initModule(cfg);
                     }
@@ -2802,6 +2773,7 @@ var nodom;
                     let cls = eval(cfg.class);
                     if (cls) {
                         let instance = Reflect.construct(cls, [{
+                                name: cfg.name,
                                 data: cfg.data,
                                 lazy: cfg.lazy
                             }]);
@@ -3278,7 +3250,7 @@ var nodom;
                     }
                     else {
                         if (typeof diff[0].module === 'string') {
-                            parentModule = yield nodom.ModuleFactory.getInstance(diff[0].module);
+                            parentModule = yield nodom.ModuleFactory.getInstance(diff[0].module, diff[0].moduleName);
                         }
                         else {
                             parentModule = nodom.ModuleFactory.get(diff[0].module);
@@ -3304,8 +3276,11 @@ var nodom;
                         let proute = diff[3];
                         if (route !== null) {
                             showPath = route.useParentPath && proute ? proute.fullPath : route.fullPath;
-                            route.setLinkActive(true);
-                            setRouteParamToModel(route);
+                            let module = nodom.ModuleFactory.get(route.module);
+                            setRouteParamToModel(route, module);
+                            route.setLinkActive();
+                            module.firstRender = true;
+                            module.active();
                         }
                     }
                     else {
@@ -3319,7 +3294,7 @@ var nodom;
                             }
                             let module;
                             if (typeof route.module === 'string') {
-                                module = yield nodom.ModuleFactory.getInstance(route.module);
+                                module = yield nodom.ModuleFactory.getInstance(route.module, route.moduleName);
                                 if (!module) {
                                     throw new nodom.NodomError('notexist1', nodom.TipWords.module, route.module);
                                 }
@@ -3329,17 +3304,20 @@ var nodom;
                                 module = nodom.ModuleFactory.get(route.module);
                             }
                             module.firstRender = true;
+                            parentModule.addChild(module.id);
                             if (index++ === 0) {
                                 module.setContainerKey(parentModule.routerKey);
                                 yield module.active();
+                                route.setLinkActive();
                             }
                             else {
-                                parentModule.addAfterRenderOperation(function () {
+                                parentModule.addRenderOperation(function () {
                                     return __awaiter(this, void 0, void 0, function* () {
                                         if (this.routerKey) {
                                             module.setContainerKey(this.routerKey);
                                             yield module.active();
                                         }
+                                        route.setLinkActive();
                                     });
                                 });
                             }
@@ -3365,11 +3343,13 @@ var nodom;
                     }
                     this.currentPath = path;
                     this.startStyle = 0;
-                    function setRouteParamToModel(route) {
+                    function setRouteParamToModel(route, module) {
                         if (!route) {
                             return;
                         }
-                        const module = nodom.ModuleFactory.get(route.module);
+                        if (!module) {
+                            module = nodom.ModuleFactory.get(route.module);
+                        }
                         let o = {
                             path: route.path
                         };
@@ -3472,7 +3452,7 @@ var nodom;
                 if (!module || !path || path === '') {
                     return;
                 }
-                let domArr = Router.activeDomMap.get(module.name);
+                let domArr = Router.activeDomMap.get(module.id);
                 if (!domArr) {
                     return;
                 }
@@ -3516,7 +3496,6 @@ var nodom;
         Router.showPath = '';
         Router.waitList = [];
         Router.currentIndex = 0;
-        Router.moduleRouteMap = new Map();
         Router.startStyle = 0;
         Router.activeDomMap = new Map();
         return Router;
@@ -3527,11 +3506,9 @@ var nodom;
             this.params = [];
             this.data = {};
             this.children = [];
-            this.onEnter = config.onEnter;
-            this.onLeave = config.onLeave;
-            this.useParentPath = config.useParentPath;
-            this.path = config.path;
-            this.module = config.module;
+            for (let o in config) {
+                this[o] = config[o];
+            }
             if (config.path === '') {
                 return;
             }
@@ -3546,18 +3523,17 @@ var nodom;
                 });
             }
         }
-        setLinkActive(ancestor) {
-            let path = this.fullPath;
-            let module = nodom.ModuleFactory.get(this.module);
-            if (module && module.parentId) {
-                let pm = nodom.ModuleFactory.get(module.parentId);
+        setLinkActive() {
+            if (this.parent) {
+                let pm = nodom.ModuleFactory.get(this.parent.module);
                 if (pm) {
-                    Router.changeActive(pm, path);
+                    Router.changeActive(pm, this.fullPath);
                 }
             }
-            if (ancestor && this.parent) {
-                this.parent.setLinkActive(true);
-            }
+        }
+        addChild(child) {
+            this.children.push(child);
+            child.parent = this;
         }
     }
     nodom.Route = Route;
@@ -3597,7 +3573,8 @@ var nodom;
                     }
                     if (j === node.children.length) {
                         if (prePath !== '') {
-                            node.children.push(new Route({ path: prePath, notAdd: true }));
+                            let r = new Route({ path: prePath, notAdd: true });
+                            node.addChild(r);
                             node = node.children[node.children.length - 1];
                         }
                         prePath = v;
@@ -3612,7 +3589,7 @@ var nodom;
             }
             if (node !== undefined && node !== route) {
                 route.path = prePath;
-                node.children.push(route);
+                node.addChild(route);
             }
             return true;
         }
@@ -3688,19 +3665,19 @@ var nodom;
             else {
                 dom.setProp('path', value);
             }
-            dom.addEvent(new nodom.NodomEvent('click', '', (dom, model, module, e) => __awaiter(this, void 0, void 0, function* () {
+            dom.addEvent(new nodom.NodomEvent('click', '', (dom, model, module, e) => {
                 let path = dom.getProp('path');
                 if (nodom.Util.isEmpty(path)) {
                     return;
                 }
                 Router.addPath(path);
-            })));
+            }));
         },
         handle: (directive, dom, module, parent) => {
             if (dom.hasProp('active')) {
-                let domArr = Router.activeDomMap.get(module.name);
+                let domArr = Router.activeDomMap.get(module.id);
                 if (!domArr) {
-                    Router.activeDomMap.set(module.name, [dom.key]);
+                    Router.activeDomMap.set(module.id, [dom.key]);
                 }
                 else {
                     if (!domArr.includes(dom.key)) {
@@ -3869,6 +3846,39 @@ var nodom;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
+    nodom.DirectiveManager.addType('module', {
+        prio: 0,
+        init: (directive, dom) => {
+            let value = directive.value;
+            let valueArr = value.split('|');
+            directive.value = valueArr[0];
+            directive.extra = {
+                name: valueArr.length > 1 ? valueArr[1] : undefined,
+                init: false
+            };
+            dom.setProp('role', 'module');
+        },
+        handle: (directive, dom, module, parent) => {
+            const ext = directive.extra;
+            let needNew = ext.moduleId === undefined;
+            if (ext.moduleId) {
+                let m = nodom.ModuleFactory.get(ext.moduleId);
+                needNew = m.getContainerKey() !== dom.key;
+            }
+            if (needNew) {
+                ext.init = true;
+                nodom.ModuleFactory.getInstance(directive.value, ext.name || dom.getProp('name'), dom.getProp('data'))
+                    .then((m) => {
+                    if (m) {
+                        m.setContainerKey(dom.key);
+                        ext.moduleId = m.id;
+                        module.addChild(m.id);
+                        m.active();
+                    }
+                });
+            }
+        }
+    });
     nodom.DirectiveManager.addType('model', {
         prio: 1,
         init: (directive, dom) => {

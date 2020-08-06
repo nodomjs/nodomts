@@ -33,6 +33,7 @@ NodomConfig = {
             {
                 path: '/route1',
                 module: 'MdlPMod1',
+                moduleName:'r_mod1',
                 routes: [{
                     path: '/home',
                     module: 'MdlMod1'
@@ -48,7 +49,7 @@ NodomConfig = {
                 }
             },
             {
-                path: '/directive/route2',
+                path: '/route2',
                 module: 'MdlPMod2',
                 onEnter: function () {
                     // console.log('route2');
@@ -56,18 +57,18 @@ NodomConfig = {
                 routes: [{
                     path: '/rparam/:page/:id',
                     module: 'MdlMod4',
-                    useParentPath:true,
+                    // useParentPath:true,
                     onEnter: function () {
                         // console.log('route2/rparam');
                     },
                     routes:[{
                         path:'/desc',
                         module:'MdlMod7',
-                        useParentPath:true
+                        // useParentPath:true
                     },{
                         path:'/comment',
                         module:'MdlMod8',
-                        useParentPath:true
+                        // useParentPath:true
                     }]
                 }]
             }, 

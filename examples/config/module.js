@@ -11,7 +11,9 @@ NodomConfig = {
     },
     /**模块配置 */
     modules:[
-        {class:'ModuleA',path:'modulea',singleton:false,lazy:true}
+        {class:'ModuleA',path:'modulea',singleton:false,lazy:true},
+        {class:'ModuleB',path:'moduleb',singleton:false,lazy:true},
+        {class:'ModuleC',path:'modulec',singleton:false,lazy:true}
     ],
     /**路由配置 */
     routes:[

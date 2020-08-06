@@ -21,6 +21,7 @@ var nodom;
             //添加到model工厂
             if (module) {
                 this.moduleId = module.id;
+                module.model = this;
                 if (module.modelFactory) {
                     module.modelFactory.add(this.id, this);
                 }
@@ -122,38 +123,7 @@ var nodom;
             if (dirty) {
                 return this.data;
             }
-            return copy(this.data);
-            function copy(src) {
-                let dst;
-                if (nodom.Util.isObject(src)) { //object
-                    dst = new Object();
-                    Object.getOwnPropertyNames(src).forEach((prop) => {
-                        if (prop.startsWith('$')) {
-                            return;
-                        }
-                        dst[prop] = copy(src);
-                    });
-                }
-                else if (nodom.Util.isMap(src)) { //map
-                    dst = new Map();
-                    src.forEach((value, key) => {
-                        if (key.startsWith('$')) {
-                            return;
-                        }
-                        dst.set(key, copy(value));
-                    });
-                }
-                else if (nodom.Util.isArray(src)) { //array
-                    dst = new Array();
-                    src.forEach(function (item, i) {
-                        dst[i] = copy(item);
-                    });
-                }
-                else { //common value
-                    dst = src;
-                }
-                return dst;
-            }
+            return nodom.Util.clone(this.data, /^\$\S+/);
         }
         /**
          * 观察(取消观察)某个数据项

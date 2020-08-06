@@ -41,6 +41,9 @@ var nodom;
                     throw new nodom.NodomError('notexist1', nodom.TipWords.moduleClass, className);
                 }
                 let cfg = this.classes.get(className);
+                if (moduleName) {
+                    cfg.name = moduleName;
+                }
                 if (!cfg.instance) {
                     yield this.initModule(cfg);
                 }
@@ -135,6 +138,7 @@ var nodom;
                 let cls = eval(cfg.class);
                 if (cls) {
                     let instance = Reflect.construct(cls, [{
+                            name: cfg.name,
                             data: cfg.data,
                             lazy: cfg.lazy
                         }]);

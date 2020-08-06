@@ -75,6 +75,7 @@ namespace nodom {
                 let module:Module = ModuleFactory.get(this.moduleId);
                 // object或array需要创建新model
                 if (Util.isObject(value) || Util.isArray(value)) {
+                    // new Model(value, module);
                     new Model(value, module);
                 }
                 let model:Model = module.modelFactory.get(data.$modelId);
@@ -98,6 +99,7 @@ namespace nodom {
         update(field:string, value?:any) {
             let change:boolean = false;
             let module:Module = ModuleFactory.get(this.moduleId);
+            
             //对象设置值
             if (Util.isString(field)) {
                 let fieldObj = this.fields[field];
@@ -139,36 +141,7 @@ namespace nodom {
             if(dirty){
                 return this.data;
             }
-            return copy(this.data);
-            
-            function copy(src){
-                let dst;
-                if(Util.isObject(src)){ //object
-                    dst = new Object();
-                    Object.getOwnPropertyNames(src).forEach((prop)=>{
-                        if(prop.startsWith('$')){
-                            return;
-                        }
-                        dst[prop] = copy(src);
-                    });
-                } else if(Util.isMap(src)){  //map
-                    dst = new Map();
-                    src.forEach((value,key)=>{
-                        if(key.startsWith('$')){
-                            return;
-                        }
-                        dst.set(key,copy(value));
-                    });
-                }else if(Util.isArray(src)){ //array
-                    dst = new Array();
-                    src.forEach(function(item,i){
-                        dst[i] = copy(item);
-                    });
-                }else{   //common value
-                    dst = src;
-                }
-                return dst;
-            }
+            return Util.clone(this.data,/^\$\S+/);
         }
 
         /**

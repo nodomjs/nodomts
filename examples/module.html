@@ -20,24 +20,37 @@
 
 <body>
     <div>
-        <p>{{user0}} 的订单:</p>
-        <div role='module' name='mod1' class='ModuleA' data='data/data1.json'></div>
-        <p>{{user1}} 的列表:</p>
-        <div role='module' name='mod2' class='ModuleA' data='data/data2.json'></div>
+        <h3>普通模块</h3>
+        <div x-module='ModuleA|mod0' data='data/data1.json'></div>
+
+        <h3>支持外部repeat的模块</h3>
+        <div x-repeat='users'>
+            <p>{{name}} 的订单:</p>
+            <div x-module='ModuleA' name = '{{"mod" + ($index+1)}}' data='{{data}}'></div>
+        </div>
+        
+        <h3>模块消息传递</h3>
+        <p>消息只能发送给父模块、兄弟模块和子模块，定向发送消息时，必须为模块设置模块名</p>
+        <p>消息发送有两种方式：</p>
+        <ul>
+            <li>broadcast(广播):父模块、兄弟模块和孩子节点都可以收到该消息</li>
+            <li>send(发给指定模块):指定模块可以收到该消息</li>
+        </ul>
+        <p>模块1包含两个子模块</p>
+        <!-- <div x-module='ModuleB|modb1'></div> -->
+        <!-- <p>模块2包含两个子模块</p>
+        <div role='module' name='modb2' class='ModuleB'></div> -->
     </div>
 </body>
 <script>
     nodom.newApp({
       module:{
             el:'div',
-            // template:`
-            //     <div>
-            //         <p>{{user0}} 的订单:</p>
-            //     </div>
-            // `,
-            data: {
-                user0: 'Yanglei',
-                user1: 'YangLuhan'
+            data:{
+                users:[
+                    {name:'Yanglei',data:'data/data1.json'},
+                    {name:'YangLuhan',data:'data/data2.json'}
+                ]
             }
         }
     });

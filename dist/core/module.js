@@ -35,7 +35,14 @@ var nodom;
              * 首次渲染前执行操作数组
              */
             this.beforeFirstRenderOps = [];
-            this.afterRenderOps = [];
+            /**
+             * 每次渲染后执行操作数组
+             */
+            this.renderOps = [];
+            /**
+             * 每次渲染前执行操作数组
+             */
+            this.beforeRenderOps = [];
             /**
              * 状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)
              */
@@ -45,7 +52,7 @@ var nodom;
              */
             this.loadNewData = false;
             /**
-             * 修改渲染的虚拟dom数组
+             * 待渲染的虚拟dom数组
              */
             this.renderDoms = [];
             /**
@@ -137,7 +144,7 @@ var nodom;
                 //数据
                 if (config.data) { //数据
                     if (nodom.Util.isObject(config.data)) { //数据
-                        this.model = new nodom.Model(config.data, this);
+                        new nodom.Model(config.data, this);
                     }
                     else { //数据url
                         urlArr.push({
@@ -189,6 +196,7 @@ var nodom;
             if (this.state !== 3 || !this.virtualDom || !this.hasContainer()) {
                 return false;
             }
+            this.doRenderOp(this.beforeRenderOps);
             //克隆新的树
             let root = this.virtualDom.clone();
             if (this.firstRender) {
@@ -237,21 +245,38 @@ var nodom;
             }
             //数组还原
             this.renderDoms = [];
-            //子模块渲染
-            // if (Util.isArray(this.children)) {
-            //     this.children.forEach((item) => {
-            //         let m = ModuleFactory.get(item);
-            //         if(m){
-            //             m.render();
-            //         }
-            //     });
-            // }
-            this.afterRenderOps.forEach((f) => {
-                f.call(this);
-            });
-            //清空after render operation
-            this.afterRenderOps = [];
+            this.doRenderOp(this.renderOps);
             return true;
+        }
+        /**
+         * 执行首次渲染
+         * @param root 	根虚拟dom
+         */
+        doFirstRender(root) {
+            //执行首次渲染前事件
+            this.doModuleEvent('onBeforeFirstRender');
+            this.doRenderOp(this.beforeFirstRenderOps);
+            //渲染树
+            this.renderTree = root;
+            if (this.model) {
+                root.modelId = this.model.id;
+            }
+            root.render(this, null);
+            this.doModuleEvent('onBeforeFirstRenderToHTML');
+            //清空子元素
+            nodom.Util.empty(this.container);
+            //渲染到html
+            if (root.children) {
+                root.children.forEach((item) => {
+                    item.renderToHtml(this, { type: 'fresh' });
+                });
+            }
+            //删除首次渲染标志
+            delete this.firstRender;
+            //执行首次渲染后事件
+            this.doModuleEvent('onFirstRender');
+            //执行首次渲染后操作队列
+            this.doRenderOp(this.firstRenderOps);
         }
         /**
          * 克隆模块
@@ -273,64 +298,25 @@ var nodom;
             m.name = moduleName || 'Module' + m.id;
             //绑定原型
             m.__proto__ = this.__proto__;
+            //加入module factory
+            nodom.ModuleFactory.add(m);
             //构建model
             if (this.model) {
-                m.model = new nodom.Model(nodom.Util.clone(this.model.data), m);
+                let d = this.model.getData();
+                new nodom.Model(nodom.Util.clone(d), m);
             }
-            nodom.ModuleFactory.add(m);
             return m;
-        }
-        /**
-         * 执行首次渲染
-         * @param root 	根虚拟dom
-         */
-        doFirstRender(root) {
-            //执行首次渲染前事件
-            this.doModuleEvent('onBeforeFirstRender');
-            this.beforeFirstRenderOps.forEach((foo) => {
-                nodom.Util.apply(foo, this, []);
-            });
-            this.beforeFirstRenderOps = [];
-            //渲染树
-            this.renderTree = root;
-            if (this.model) {
-                root.modelId = this.model.id;
-            }
-            root.render(this, null);
-            this.doModuleEvent('onBeforeFirstRenderToHTML');
-            //清空子元素
-            nodom.Util.empty(this.container);
-            //渲染到html
-            if (root.children) {
-                root.children.forEach((item) => {
-                    item.renderToHtml(this, { type: 'fresh' });
-                });
-            }
-            //删除首次渲染标志
-            delete this.firstRender;
-            //执行首次渲染后事件
-            this.doModuleEvent('onFirstRender');
-            //执行首次渲染后操作队列
-            this.firstRenderOps.forEach((foo) => {
-                nodom.Util.apply(foo, this, []);
-            });
-            this.firstRenderOps = [];
         }
         /**
          * 检查容器是否存在，如果不存在，则尝试找到
          */
         hasContainer() {
-            if (this.container) {
-                return true;
+            //根模块，直接使用el
+            if (this.selector) {
+                this.container = document.querySelector(this.selector);
             }
-            else {
-                //根模块，直接使用el
-                if (this.selector) {
-                    this.container = document.querySelector(this.selector);
-                }
-                else { //非根模块，根据容器key获得
-                    this.container = document.querySelector("[key='" + this.containerKey + "']");
-                }
+            else { //非根模块，根据容器key获得
+                this.container = document.querySelector("[key='" + this.containerKey + "']");
             }
             return this.container !== null;
         }
@@ -377,8 +363,22 @@ var nodom;
          * @param data 			消息内容
          */
         send(toName, data) {
-            let toId = this.moduleMap.get(toName);
-            nodom.MessageQueue.add(this.id, toId, data);
+            let m = this;
+            //目标模块id
+            let toId;
+            //一共需要找3级(孩子、兄弟、父模块)
+            for (let i = 0; i < 3 && m; i++) {
+                toId = m.moduleMap.get(toName);
+                if (!toId && m.parentId) {
+                    m = nodom.ModuleFactory.get(m.parentId);
+                }
+                else {
+                    break;
+                }
+            }
+            if (toId) {
+                nodom.MessageQueue.add(this.id, toId, data);
+            }
         }
         /**
          * 广播给父、兄弟和孩子（第一级）节点
@@ -387,16 +387,20 @@ var nodom;
             //兄弟节点
             if (this.parentId) {
                 let pmod = nodom.ModuleFactory.get(this.parentId);
-                if (pmod && pmod.children) {
+                if (pmod) {
+                    //父模块
                     this.send(pmod.name, data);
-                    pmod.children.forEach((item) => {
-                        //自己不发
-                        if (item === this.id) {
-                            return;
-                        }
-                        let m = nodom.ModuleFactory.get(item);
-                        this.send(m.name, data);
-                    });
+                    if (pmod.children) {
+                        pmod.children.forEach((item) => {
+                            //自己不发
+                            if (item === this.id) {
+                                return;
+                            }
+                            let m = nodom.ModuleFactory.get(item);
+                            //兄弟模块
+                            this.send(m.name, data);
+                        });
+                    }
                 }
             }
             if (this.children !== undefined) {
@@ -430,15 +434,6 @@ var nodom;
                 this.state = 3;
                 //添加到渲染器
                 nodom.Renderer.add(this);
-                // //子模块
-                // if (Util.isArray(this.children)) {
-                //     this.children.forEach(async (item) => {
-                //         let m:Module = ModuleFactory.get(item);
-                //         if(m){
-                //             await m.active();
-                //         }
-                //     });
-                // }
             });
         }
         /**
@@ -521,15 +516,36 @@ var nodom;
             }
         }
         /**
-         * 添加首次渲染前执行操作
+         * 添加渲染后执行操作
          * @param foo  	操作方法
          */
-        addAfterRenderOperation(foo) {
+        addRenderOperation(foo) {
             if (!nodom.Util.isFunction(foo)) {
                 return;
             }
-            if (!this.afterRenderOps.includes(foo)) {
-                this.afterRenderOps.push(foo);
+            if (!this.renderOps.includes(foo)) {
+                this.renderOps.push(foo);
+            }
+        }
+        /**
+         * 添加渲染前执行操作
+         * @param foo  	操作方法
+         */
+        addBeforeRenderOperation(foo) {
+            if (!nodom.Util.isFunction(foo)) {
+                return;
+            }
+            if (!this.beforeRenderOps.includes(foo)) {
+                this.beforeRenderOps.push(foo);
+            }
+        }
+        /**
+         * 执行渲染相关附加操作
+         * @param renderOps
+         */
+        doRenderOp(renderOps) {
+            for (; renderOps.length > 0;) {
+                nodom.Util.apply(renderOps.shift(), this, []);
             }
         }
     }

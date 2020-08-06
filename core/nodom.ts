@@ -69,6 +69,7 @@ namespace nodom{
         }else{
             module = new Module(config.module);
         }
+        // ModuleFactory.add(module);
         //设置主模块
         ModuleFactory.setMain(module);
         await module.active();

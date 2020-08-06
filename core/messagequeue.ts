@@ -58,12 +58,10 @@ namespace nodom {
             for (let i = 0; i < this.messages.length; i++) {
                 let msg: Message = this.messages[i];
                 let module: Module = ModuleFactory.get(msg.toModule);
-                // 模块状态未未激活或激活才接受消息
-                if (module && module.state === 2 || module.state === 3) {
-                    module.receive(msg.fromModule, msg.content);
-                }
-                // 清除已接受消息，或已死亡模块的消息
+                // 模块状态未激活或激活才接受消息
                 if (module && module.state >= 2) {
+                    module.receive(msg.fromModule, msg.content);
+                    // 清除已接受消息，或已死亡模块的消息
                     MessageQueue.messages.splice(i--, 1);
                 }
             }

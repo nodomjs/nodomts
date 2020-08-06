@@ -53,7 +53,7 @@ namespace nodom{
                         //不克隆的键
                         if(expKey){
                             if(expKey.constructor === RegExp && (<RegExp>expKey).test(prop) //正则表达式匹配的键不复制
-                                || (<string[]>expKey).includes(prop)                        //被排除的键不复制
+                                || Util.isArray(expKey) && (<string[]>expKey).includes(prop)                        //被排除的键不复制
                                 ){
                                 return;
                             }
@@ -114,9 +114,7 @@ namespace nodom{
                     throw new NodomError('invoke','Util.merge',i+'','object');    
                 }
             }
-
             let retObj = Object.assign.apply(null,arguments);
-            
             subObj(retObj);
             return retObj;
             //处理子对象
@@ -128,7 +126,6 @@ namespace nodom{
                 }
             }
         }
-
         
         /**
          * 把obj2对象所有属性赋值给obj1

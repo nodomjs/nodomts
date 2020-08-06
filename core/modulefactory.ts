@@ -9,6 +9,12 @@ namespace nodom {
          * class名或class
          */
         class:any;
+
+        /**
+         * 模块名
+         */
+        name?:string;
+
         /**
          * class文件路径
          */
@@ -77,7 +83,9 @@ namespace nodom {
                 throw new NodomError('notexist1',TipWords.moduleClass,className);
             }
             let cfg:IMdlClassObj = this.classes.get(className);
-            
+            if(moduleName){
+                cfg.name = moduleName;
+            }
             if(!cfg.instance){
                 await this.initModule(cfg);
             }
@@ -86,6 +94,7 @@ namespace nodom {
                     return cfg.instance;
                 }else{
                     let mdl:Module = cfg.instance.clone(moduleName);
+                    
                     //处理数据
                     if(data){
                         //如果为url，则设置dataurl和loadnewdata标志
@@ -169,6 +178,7 @@ namespace nodom {
             let cls = eval(cfg.class);
             if(cls){
                 let instance = Reflect.construct(cls,[{
+                    name:cfg.name,
                     data:cfg.data,
                     lazy:cfg.lazy
                 }]);
