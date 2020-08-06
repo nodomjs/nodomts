@@ -12,8 +12,10 @@ class ModuleB extends nodom.Module {
             },
             methods: {
                 sendMsg: function (dom, model, module) {
-                    console.log(model.data);
                     module.broadcast(model.data.msg);
+                },
+                sendParent:function(dom,model,module){
+                    module.send('modb1',model.data.msg);
                 },
                 onReceive:function(model,from,msg){
                     model.set('msg1',msg);

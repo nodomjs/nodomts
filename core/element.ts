@@ -204,10 +204,7 @@ namespace nodom {
                         this.children.splice(i--,1);
                     }
                 }
-            }else{
-                console.log(this);
             }
-            
             //自定义元素的后置渲染
             if(this.defineElement){
                 DefineElementManager.afterRender(module,this);
@@ -378,63 +375,68 @@ namespace nodom {
          */
         clone(changeKey?:boolean):Element{
             let dst:Element = new Element();
-            //不直接拷贝属性集
+
+            //不直接拷贝的属性
+            let notCopyProps:string[] = ['parent','directives','props','exprProps','events','children'];
+            //简单属性
+            Util.getOwnProps(this).forEach((p) => {
+                if (notCopyProps.includes(p)) {
+                    return;
+                }
+                dst[p] = this[p];
+            });
+
             if(changeKey){  //表示clone后进行新建节点
                 dst.key = Util.genId() + '';
-                let notCopyProps:string[] = ['key','parent','children'];
-                //简单属性
-                Util.getOwnProps(this).forEach((p) => {
-                    if (notCopyProps.includes(p)) {
-                        return;
-                    }
-                    dst[p] = Util.clone(this[p],null,changeKey);
-                });
-            }else{ //表示克隆后直接渲染
-                let notCopyProps:string[] = ['parent','directives','props','exprProps','events','children'];
-                //简单属性
-                Util.getOwnProps(this).forEach((p) => {
-                    if (notCopyProps.includes(p)) {
-                        return;
-                    }
-                    dst[p] = this[p];
-                });
-
-                //指令复制
-                for(let d of this.directives){
-                    dst.directives.push(d);
-                }
-
-                //普通属性
-                Util.getOwnProps(this.props).forEach((k)=>{
-                    dst.props[k] = this.props[k];
-                });
-
-                //表达式属性
-                Util.getOwnProps(this.exprProps).forEach((k)=>{
-                    dst.exprProps[k] = this.exprProps[k];
-                });
-
-                //事件
-                for(let key of this.events.keys()){
-                    let evt = this.events.get(key);
-                    //数组需要单独clone
-                    if(Util.isArray(evt)){
-                        let a:NodomEvent[] = [];
-                        for(let e of <NodomEvent[]>evt){
-                            a.push(e.clone());
-                        }
-                        dst.events.set(key,a);
-                    }else{
-                        dst.events.set(key,(<NodomEvent>evt).clone());
-                    }
-                }
             }
 
+            //指令复制
+            for(let d of this.directives){
+                if(changeKey){
+                    d = d.clone(dst);
+                }
+                dst.directives.push(d);
+            }
+
+            //普通属性
+            Util.getOwnProps(this.props).forEach((k)=>{
+                dst.props[k] = this.props[k];
+            });
+
+            //表达式属性
+            Util.getOwnProps(this.exprProps).forEach((k)=>{
+                let item = this.exprProps[k];
+                if(changeKey){
+                    if(Array.isArray(item)){
+                        for(let i=0;i<item.length;i++){
+                            item[i] = item[i].clone();
+                        }
+                    }
+                }
+                dst.exprProps[k] = item;
+            });
+
+            //事件
+            for(let key of this.events.keys()){
+                let evt = this.events.get(key);
+                //数组需要单独clone
+                if(Util.isArray(evt)){
+                    let a:NodomEvent[] = [];
+                    for(let e of <NodomEvent[]>evt){
+                        a.push(e.clone());
+                    }
+                    dst.events.set(key,a);
+                }else{
+                    dst.events.set(key,(<NodomEvent>evt).clone());
+                }
+            }
+            
             //孩子节点
             for(let c of this.children){
                 dst.add(c.clone(changeKey));
             }
 
+            
             return dst;
         }
 

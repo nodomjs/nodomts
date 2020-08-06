@@ -41,7 +41,7 @@ namespace nodom {
                 let m = ModuleFactory.get(ext.moduleId);
                 needNew = m.getContainerKey() !== dom.key;
             }
-            if(needNew){
+            // if(needNew){
                 //未初始化，进行模块初始化
                 ext.init = true;
                 ModuleFactory.getInstance(directive.value,ext.name||dom.getProp('name'),dom.getProp('data'))
@@ -56,7 +56,7 @@ namespace nodom {
                             }
                         }
                     );
-            }
+            // }
             
         }
     });

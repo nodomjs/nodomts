@@ -15,6 +15,9 @@ class ModuleC extends nodom.Module {
                     console.log(model.data);
                     module.broadcast(model.data.msg);
                 },
+                sendParent:function(dom,model,module){
+                    module.send('modb1',model.data.msg);
+                },
                 onReceive:function(model,from,msg){
                     console.log(model);
                     model.set('msg1',msg);

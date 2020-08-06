@@ -976,9 +976,6 @@ var nodom;
                     }
                 }
             }
-            else {
-                console.log(this);
-            }
             if (this.defineElement) {
                 nodom.DefineElementManager.afterRender(module, this);
             }
@@ -1112,45 +1109,47 @@ var nodom;
         }
         clone(changeKey) {
             let dst = new Element();
+            let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
+            nodom.Util.getOwnProps(this).forEach((p) => {
+                if (notCopyProps.includes(p)) {
+                    return;
+                }
+                dst[p] = this[p];
+            });
             if (changeKey) {
                 dst.key = nodom.Util.genId() + '';
-                let notCopyProps = ['key', 'parent', 'children'];
-                nodom.Util.getOwnProps(this).forEach((p) => {
-                    if (notCopyProps.includes(p)) {
-                        return;
-                    }
-                    dst[p] = nodom.Util.clone(this[p], null, changeKey);
-                });
             }
-            else {
-                let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
-                nodom.Util.getOwnProps(this).forEach((p) => {
-                    if (notCopyProps.includes(p)) {
-                        return;
-                    }
-                    dst[p] = this[p];
-                });
-                for (let d of this.directives) {
-                    dst.directives.push(d);
+            for (let d of this.directives) {
+                if (changeKey) {
+                    d = d.clone(dst);
                 }
-                nodom.Util.getOwnProps(this.props).forEach((k) => {
-                    dst.props[k] = this.props[k];
-                });
-                nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
-                    dst.exprProps[k] = this.exprProps[k];
-                });
-                for (let key of this.events.keys()) {
-                    let evt = this.events.get(key);
-                    if (nodom.Util.isArray(evt)) {
-                        let a = [];
-                        for (let e of evt) {
-                            a.push(e.clone());
+                dst.directives.push(d);
+            }
+            nodom.Util.getOwnProps(this.props).forEach((k) => {
+                dst.props[k] = this.props[k];
+            });
+            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
+                let item = this.exprProps[k];
+                if (changeKey) {
+                    if (Array.isArray(item)) {
+                        for (let i = 0; i < item.length; i++) {
+                            item[i] = item[i].clone();
                         }
-                        dst.events.set(key, a);
                     }
-                    else {
-                        dst.events.set(key, evt.clone());
+                }
+                dst.exprProps[k] = item;
+            });
+            for (let key of this.events.keys()) {
+                let evt = this.events.get(key);
+                if (nodom.Util.isArray(evt)) {
+                    let a = [];
+                    for (let e of evt) {
+                        a.push(e.clone());
                     }
+                    dst.events.set(key, a);
+                }
+                else {
+                    dst.events.set(key, evt.clone());
                 }
             }
             for (let c of this.children) {
@@ -2509,7 +2508,7 @@ var nodom;
         clone(moduleName) {
             let me = this;
             let m = {};
-            let excludes = ['id', 'name', 'model'];
+            let excludes = ['id', 'name', 'model', 'virtualDom', 'container', 'containerKey'];
             Object.getOwnPropertyNames(this).forEach((item) => {
                 if (excludes.includes(item)) {
                     return;
@@ -2524,6 +2523,8 @@ var nodom;
                 let d = this.model.getData();
                 m.model = new nodom.Model(nodom.Util.clone(d), m);
             }
+            m.virtualDom = this.virtualDom.clone(true);
+            console.log(m.virtualDom.key);
             return m;
         }
         hasContainer() {
@@ -2555,8 +2556,12 @@ var nodom;
             }
         }
         send(toName, data) {
-            let m = this;
+            if (typeof toName === 'number') {
+                nodom.MessageQueue.add(this.id, toName, data);
+                return;
+            }
             let toId;
+            let m = this;
             for (let i = 0; i < 3 && m; i++) {
                 toId = m.moduleMap.get(toName);
                 if (!toId && m.parentId) {
@@ -3865,18 +3870,16 @@ var nodom;
                 let m = nodom.ModuleFactory.get(ext.moduleId);
                 needNew = m.getContainerKey() !== dom.key;
             }
-            if (needNew) {
-                ext.init = true;
-                nodom.ModuleFactory.getInstance(directive.value, ext.name || dom.getProp('name'), dom.getProp('data'))
-                    .then((m) => {
-                    if (m) {
-                        m.setContainerKey(dom.key);
-                        ext.moduleId = m.id;
-                        module.addChild(m.id);
-                        m.active();
-                    }
-                });
-            }
+            ext.init = true;
+            nodom.ModuleFactory.getInstance(directive.value, ext.name || dom.getProp('name'), dom.getProp('data'))
+                .then((m) => {
+                if (m) {
+                    m.setContainerKey(dom.key);
+                    ext.moduleId = m.id;
+                    module.addChild(m.id);
+                    m.active();
+                }
+            });
         }
     });
     nodom.DirectiveManager.addType('model', {

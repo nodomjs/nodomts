@@ -206,7 +206,6 @@ namespace nodom {
             if(!config){
                 return;
             }
-
             
             //保存config，存在延迟初始化情况
             this.initConfig = config;
@@ -225,7 +224,6 @@ namespace nodom {
                 this.container.innerHTML = '';
             }
         }
-    
 
         /**
          * 初始化模块（加载和编译）
@@ -327,9 +325,7 @@ namespace nodom {
             if (this.state !== 3 || !this.virtualDom || !this.hasContainer()) {
                 return false;
             }
-            
             this.doRenderOp(this.beforeRenderOps);
-            
             
             //克隆新的树
             let root:Element = this.virtualDom.clone();
@@ -425,7 +421,7 @@ namespace nodom {
         clone(moduleName:string):any{
             let me = this;
             let m:any = {};
-            let excludes = ['id','name','model'];
+            let excludes = ['id','name','model','virtualDom','container','containerKey'];
             Object.getOwnPropertyNames(this).forEach((item)=>{
                 if(excludes.includes(item)){
                     return;
@@ -444,6 +440,9 @@ namespace nodom {
                 let d = this.model.getData();
                 m.model = new Model(Util.clone(d),m);
             }
+            //克隆虚拟dom树
+            m.virtualDom = this.virtualDom.clone(true);
+            console.log(m.virtualDom.key);
             return m;
         }
         
@@ -502,13 +501,19 @@ namespace nodom {
 
         /**
          * 发送
-         * @param toName 		接收模块名
+         * @param toName 		接收模块名或模块id，如果为模块id，则直接发送，不需要转换
          * @param data 			消息内容
          */
-        send(toName:string, data:any) {
-            let m:Module = this;
+        send(toName:string|number, data:any) {
+            if(typeof toName === 'number'){
+                MessageQueue.add(this.id, toName, data);
+                return;
+            }
+
             //目标模块id
             let toId:number;
+            let m:Module = this;
+            
             //一共需要找3级(孩子、兄弟、父模块)
             for(let i=0;i<3 && m;i++){
                 toId = m.moduleMap.get(toName);
