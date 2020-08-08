@@ -55,6 +55,9 @@ var nodom;
             // }
         }
     });
+    /**
+     *  model指令
+     */
     nodom.DirectiveManager.addType('model', {
         prio: 1,
         init: (directive, dom) => {
@@ -66,53 +69,40 @@ var nodom;
                     directive.extra = 1;
                     value = value.substr(2);
                 }
-                let arr = new Array();
-                value.split('.').forEach((item) => {
-                    let ind1 = -1, ind2 = -1;
-                    if ((ind1 = item.indexOf('[')) !== -1 && (ind2 = item.indexOf(']')) !== -1) { //数组
-                        let fn = item.substr(0, ind1);
-                        let index = item.substring(ind1 + 1, ind2);
-                        arr.push(fn + ',' + index);
-                    }
-                    else { //普通字符串
-                        arr.push(item);
-                    }
-                });
-                directive.value = arr;
+                directive.value = value;
+                // let arr = new Array();
+                // value.split('.').forEach((item) => {
+                //     let ind1 = -1,
+                //         ind2 = -1;
+                //     if ((ind1 = item.indexOf('[')) !== -1 && (ind2 = item.indexOf(']')) !== -1) { //数组
+                //         let fn = item.substr(0, ind1);
+                //         let index = item.substring(ind1 + 1, ind2);
+                //         arr.push(fn + ',' + index);
+                //     } else { //普通字符串
+                //         arr.push(item);
+                //     }
+                // });
+                // directive.value = arr;
             }
         },
         handle: (directive, dom, module, parent) => {
             let startIndex = 0;
             let data;
+            let model;
             //从根获取数据,$$开始数据项
             if (directive.extra === 1) {
-                data = module.model.data[directive.value[0]];
+                model = module.model;
                 startIndex = 1;
             }
             else if (dom.modelId) {
-                let model = module.modelFactory.get(dom.modelId);
-                if (model && model.data) {
-                    data = model.data;
-                }
+                model = module.modelFactory.get(dom.modelId);
             }
-            if (!data) {
+            if (!model || !model.data) {
                 return;
             }
-            for (let i = startIndex; i < directive.value.length; i++) {
-                let item = directive.value[i];
-                if (!data) {
-                    return;
-                }
-                if (item.indexOf(',') !== -1) { //处理数组
-                    let a = item.split(',');
-                    data = data[a[0]][parseInt(a[1])];
-                }
-                else { //非数组
-                    data = data[item];
-                }
-            }
-            if (data) {
-                dom.modelId = data.$modelId;
+            model = model.get(directive.value);
+            if (model) {
+                dom.modelId = model.id;
             }
         }
     });
@@ -148,9 +138,14 @@ var nodom;
             if (!model || !model.data) {
                 return;
             }
-            let rows = model.query(directive.value);
+            //得到rows数组的model
+            model = model.get(directive.value);
+            if (!model) {
+                return;
+            }
+            let rows = model.data;
             // 无数据，不渲染
-            if (rows === undefined || rows.length === 0) {
+            if (!nodom.Util.isArray(rows) || rows.length === 0) {
                 dom.dontRender = true;
                 return;
             }

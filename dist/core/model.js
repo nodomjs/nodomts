@@ -8,8 +8,9 @@ var nodom;
         /**
          * @param data 		数据
          * @param module 	模块对象
+         * @param parent    父model
          */
-        constructor(data, module) {
+        constructor(data, module, parent, key) {
             /**
              * 模型字段集
              * 每个字段对象结构为{value:值[,handlers:观察器，观察器为模块方法名或函数]}
@@ -31,8 +32,24 @@ var nodom;
             }
             // 给data设置modelid
             data['$modelId'] = this.id;
-            this.addSetterGetter(data);
             this.data = data;
+            this.addSetterGetter(data);
+            //添加到父模块
+            if (parent) {
+                this.parent = parent;
+                if (nodom.Util.isArray(parent.data)) {
+                    if (!parent.children) {
+                        parent.children = [];
+                    }
+                    parent.children.push(this);
+                }
+                else if (key) { //object
+                    if (!parent.children) {
+                        parent.children = {};
+                    }
+                    parent.children[key] = this;
+                }
+            }
         }
         /**
          * 设置属性，可能属性之前不存在，用于在初始化不存在的属性创建和赋值
@@ -40,58 +57,96 @@ var nodom;
          * @param value     对应值
          */
         set(key, value) {
-            let fn, data;
+            let fn;
             let index = key.lastIndexOf('.');
+            let model;
             if (index !== -1) { //key中有“.”
                 fn = key.substr(index + 1);
                 key = key.substr(0, index);
-                data = this.query(key);
+                model = this.get(key);
             }
             else {
                 fn = key;
-                data = this.data;
+                model = this;
             }
             //数据不存在
-            if (data === undefined) {
+            if (!model) {
                 throw new nodom.NodomError('notexist1', nodom.TipWords.dataItem, key);
             }
+            let retMdl;
+            let data = model.data;
             if (data[fn] !== value) {
                 let module = nodom.ModuleFactory.get(this.moduleId);
                 // object或array需要创建新model
-                if (nodom.Util.isObject(value) || nodom.Util.isArray(value)) {
-                    // new Model(value, module);
-                    new Model(value, module);
+                if (nodom.Util.isArray(value) || nodom.Util.isArray(value)) {
+                    retMdl = new Model(value, module, this, fn);
                 }
-                let model = module.modelFactory.get(data.$modelId);
                 if (model) {
                     //如果未定义setter和getter，则需要定义
                     let ds = Object.getOwnPropertyDescriptor(data, fn);
                     if (ds === undefined || ds['writable']) {
-                        this.defineProp(data, fn);
+                        model.defineProp(data, fn);
                     }
                     model.update(fn, value);
                 }
                 data[fn] = value;
             }
+            //如果产生新model，则返回新model，否则返回自己
+            return retMdl || model;
+        }
+        /**
+         * 获取子孙模型
+         * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
+         */
+        get(key) {
+            if (typeof key === 'number') {
+                if (nodom.Util.isArray(this.children)) {
+                    let arr = this.children;
+                    if (arr.length > key) {
+                        return arr[key];
+                    }
+                }
+            }
+            else {
+                let arr = key.split('.');
+                let mdl = this;
+                for (let i = 0; i < arr.length && mdl; i++) {
+                    mdl = mdl.children[arr[i]];
+                }
+                return mdl;
+            }
         }
         /**
          * 删除属性
-         * @param key       键，可以带“.”，如a, a.b.c
+         * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
          */
         del(key) {
-            let fn, data;
-            let index = key.lastIndexOf('.');
-            if (index !== -1) { //key中有“.”
-                fn = key.substr(index + 1);
-                key = key.substr(0, index);
-                data = this.query(key);
+            let fn;
+            let mdl;
+            //索引号
+            if (typeof key === 'number') {
+                if (nodom.Util.isArray(this.children)) {
+                    //从模型树删除
+                    this.children.splice(key, 1);
+                    //从数据删除
+                    this.data.splice(key, 1);
+                }
             }
-            else {
-                fn = key;
-                data = this.data;
-            }
-            if (data) {
-                delete data[fn];
+            else { //带.的key
+                let k1 = key;
+                let index = k1.lastIndexOf('.');
+                if (index === -1) {
+                    mdl = this;
+                    fn = k1;
+                }
+                else {
+                    mdl = this.get(k1.substr(0, index));
+                    fn = k1.substr(index + 1);
+                }
+                //从模型树删除
+                delete mdl.children[fn];
+                // 从数据删除
+                delete this.data[fn];
             }
         }
         /**
@@ -132,6 +187,34 @@ var nodom;
             //添加到模块数据改变
             if (change) {
                 module.dataChange();
+            }
+        }
+        /**
+         * 获取数据
+         * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
+         */
+        query(key) {
+            if (typeof key === 'number') {
+                if (nodom.Util.isArray(this.data)) {
+                    return this.data[key];
+                }
+            }
+            else { //带.的key
+                let k1 = key;
+                let index = k1.lastIndexOf('.');
+                let mdl;
+                let fn;
+                if (index === -1) {
+                    mdl = this;
+                    fn = k1;
+                }
+                else {
+                    mdl = this.get(k1.substr(0, index));
+                    fn = k1.substr(index + 1);
+                }
+                if (mdl && fn) {
+                    return mdl.data[fn];
+                }
             }
         }
         /**
@@ -176,27 +259,24 @@ var nodom;
         /**
          * 为对象添加setter
          */
-        addSetterGetter(data) {
+        addSetterGetter(data, parent) {
             let me = this;
-            const excludes = ['$modelId'];
+            let module = nodom.ModuleFactory.get(this.moduleId);
             if (nodom.Util.isObject(data)) {
                 nodom.Util.getOwnProps(data).forEach((p) => {
                     let v = data[p];
-                    if (nodom.Util.isObject(v) || nodom.Util.isArray(v)) {
-                        new Model(v, nodom.ModuleFactory.get(this.moduleId));
+                    if (nodom.Util.isArray(v) || nodom.Util.isObject(v)) {
+                        new Model(v, module, this, p);
                     }
                     else {
                         this.update(p, v);
-                        if (!excludes.includes(p)) {
-                            this.defineProp(data, p);
-                        }
+                        this.defineProp(data, p);
                     }
                 });
             }
             else if (nodom.Util.isArray(data)) {
                 //监听数组事件
                 let watcher = ['push', 'unshift', 'splice', 'pop', 'shift', 'reverse', 'sort'];
-                let module = nodom.ModuleFactory.get(this.moduleId);
                 //添加自定义事件，绑定改变事件
                 watcher.forEach((item) => {
                     data[item] = function () {
@@ -229,7 +309,7 @@ var nodom;
                         //递归创建新model
                         args.forEach((arg) => {
                             if (nodom.Util.isObject(arg) || nodom.Util.isArray(arg)) {
-                                new Model(arg, module);
+                                new Model(arg, module, me);
                             }
                         });
                         //增加渲染
@@ -239,7 +319,7 @@ var nodom;
                 //设置model
                 data.forEach((item) => {
                     if (nodom.Util.isObject(item) || nodom.Util.isArray(item)) {
-                        new Model(item, module);
+                        new Model(item, module, me);
                     }
                 });
             }
@@ -251,6 +331,7 @@ var nodom;
          */
         defineProp(data, p) {
             Object.defineProperty(data, p, {
+                configurable: true,
                 set: (v) => {
                     if (this.fields[p] && this.fields[p].value === v) {
                         return;
@@ -264,34 +345,6 @@ var nodom;
                     }
                 }
             });
-        }
-        /**
-         * 查询字段值
-         * @param name 		字段名，可以是多段式 如 a.b.c
-         */
-        query(name) {
-            let data = this.data;
-            let fa = name.split(".");
-            for (let i = 0; i < fa.length && null !== data && typeof data === 'object'; i++) {
-                if (data === undefined) {
-                    return;
-                }
-                //是数组
-                if (fa[i].charAt(fa[i].length - 1) === ']') {
-                    let f = fa[i].split('[');
-                    data = data[f[0]];
-                    f.shift();
-                    //处理单重或多重数组
-                    f.forEach((istr) => {
-                        let ind = istr.substr(0, istr.length - 1);
-                        data = data[parseInt(ind)];
-                    });
-                }
-                else {
-                    data = data[fa[i]];
-                }
-            }
-            return data;
         }
     }
     nodom.Model = Model;

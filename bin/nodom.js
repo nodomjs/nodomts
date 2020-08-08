@@ -2123,7 +2123,7 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Model {
-        constructor(data, module) {
+        constructor(data, module, parent, key) {
             this.fields = {};
             this.fields = {};
             this.id = nodom.Util.genId();
@@ -2137,54 +2137,96 @@ var nodom;
                 data = {};
             }
             data['$modelId'] = this.id;
-            this.addSetterGetter(data);
             this.data = data;
+            this.addSetterGetter(data);
+            if (parent) {
+                this.parent = parent;
+                if (nodom.Util.isArray(parent.data)) {
+                    if (!parent.children) {
+                        parent.children = [];
+                    }
+                    parent.children.push(this);
+                }
+                else if (key) {
+                    if (!parent.children) {
+                        parent.children = {};
+                    }
+                    parent.children[key] = this;
+                }
+            }
         }
         set(key, value) {
-            let fn, data;
+            let fn;
             let index = key.lastIndexOf('.');
+            let model;
             if (index !== -1) {
                 fn = key.substr(index + 1);
                 key = key.substr(0, index);
-                data = this.query(key);
+                model = this.get(key);
             }
             else {
                 fn = key;
-                data = this.data;
+                model = this;
             }
-            if (data === undefined) {
+            if (!model) {
                 throw new nodom.NodomError('notexist1', nodom.TipWords.dataItem, key);
             }
+            let retMdl;
+            let data = model.data;
             if (data[fn] !== value) {
                 let module = nodom.ModuleFactory.get(this.moduleId);
                 if (nodom.Util.isObject(value) || nodom.Util.isArray(value)) {
-                    new Model(value, module);
+                    retMdl = new Model(value, module, model, fn);
                 }
-                let model = module.modelFactory.get(data.$modelId);
-                if (model) {
-                    let ds = Object.getOwnPropertyDescriptor(data, fn);
-                    if (ds === undefined || ds['writable']) {
-                        this.defineProp(data, fn);
-                    }
-                    model.update(fn, value);
+                let ds = Object.getOwnPropertyDescriptor(data, fn);
+                if (ds === undefined || ds['writable']) {
+                    model.defineProp(data, fn);
                 }
+                model.update(fn, value);
                 data[fn] = value;
+            }
+            return retMdl || model;
+        }
+        get(key) {
+            if (typeof key === 'number') {
+                if (nodom.Util.isArray(this.children)) {
+                    let arr = this.children;
+                    if (arr.length > key) {
+                        return arr[key];
+                    }
+                }
+            }
+            else {
+                let arr = key.split('.');
+                let mdl = this;
+                for (let i = 0; i < arr.length && mdl; i++) {
+                    mdl = mdl.children[arr[i]];
+                }
+                return mdl;
             }
         }
         del(key) {
-            let fn, data;
-            let index = key.lastIndexOf('.');
-            if (index !== -1) {
-                fn = key.substr(index + 1);
-                key = key.substr(0, index);
-                data = this.query(key);
+            let fn;
+            let mdl;
+            if (typeof key === 'number') {
+                if (nodom.Util.isArray(this.children)) {
+                    this.children.splice(key, 1);
+                    this.data.splice(key, 1);
+                }
             }
             else {
-                fn = key;
-                data = this.data;
-            }
-            if (data) {
-                delete data[fn];
+                let k1 = key;
+                let index = k1.lastIndexOf('.');
+                if (index === -1) {
+                    mdl = this;
+                    fn = k1;
+                }
+                else {
+                    mdl = this.get(k1.substr(0, index));
+                    fn = k1.substr(index + 1);
+                }
+                delete mdl.children[fn];
+                delete this.data[fn];
             }
         }
         update(field, value) {
@@ -2218,6 +2260,30 @@ var nodom;
                 module.dataChange();
             }
         }
+        query(key) {
+            if (typeof key === 'number') {
+                if (nodom.Util.isArray(this.data)) {
+                    return this.data[key];
+                }
+            }
+            else {
+                let k1 = key;
+                let index = k1.lastIndexOf('.');
+                let mdl;
+                let fn;
+                if (index === -1) {
+                    mdl = this;
+                    fn = k1;
+                }
+                else {
+                    mdl = this.get(k1.substr(0, index));
+                    fn = k1.substr(index + 1);
+                }
+                if (mdl && fn) {
+                    return mdl.data[fn];
+                }
+            }
+        }
         getData(dirty) {
             if (dirty) {
                 return this.data;
@@ -2246,26 +2312,23 @@ var nodom;
                 }
             }
         }
-        addSetterGetter(data) {
+        addSetterGetter(data, parent) {
             let me = this;
-            const excludes = ['$modelId'];
+            let module = nodom.ModuleFactory.get(this.moduleId);
             if (nodom.Util.isObject(data)) {
                 nodom.Util.getOwnProps(data).forEach((p) => {
                     let v = data[p];
                     if (nodom.Util.isObject(v) || nodom.Util.isArray(v)) {
-                        new Model(v, nodom.ModuleFactory.get(this.moduleId));
+                        new Model(v, module, this, p);
                     }
                     else {
                         this.update(p, v);
-                        if (!excludes.includes(p)) {
-                            this.defineProp(data, p);
-                        }
+                        this.defineProp(data, p);
                     }
                 });
             }
             else if (nodom.Util.isArray(data)) {
                 let watcher = ['push', 'unshift', 'splice', 'pop', 'shift', 'reverse', 'sort'];
-                let module = nodom.ModuleFactory.get(this.moduleId);
                 watcher.forEach((item) => {
                     data[item] = function () {
                         let args = [];
@@ -2295,7 +2358,7 @@ var nodom;
                         Array.prototype[item].apply(data, arguments);
                         args.forEach((arg) => {
                             if (nodom.Util.isObject(arg) || nodom.Util.isArray(arg)) {
-                                new Model(arg, module);
+                                new Model(arg, module, me);
                             }
                         });
                         nodom.Renderer.add(nodom.ModuleFactory.get(me.moduleId));
@@ -2303,13 +2366,14 @@ var nodom;
                 });
                 data.forEach((item) => {
                     if (nodom.Util.isObject(item) || nodom.Util.isArray(item)) {
-                        new Model(item, module);
+                        new Model(item, module, me);
                     }
                 });
             }
         }
         defineProp(data, p) {
             Object.defineProperty(data, p, {
+                configurable: true,
                 set: (v) => {
                     if (this.fields[p] && this.fields[p].value === v) {
                         return;
@@ -2323,28 +2387,6 @@ var nodom;
                     }
                 }
             });
-        }
-        query(name) {
-            let data = this.data;
-            let fa = name.split(".");
-            for (let i = 0; i < fa.length && null !== data && typeof data === 'object'; i++) {
-                if (data === undefined) {
-                    return;
-                }
-                if (fa[i].charAt(fa[i].length - 1) === ']') {
-                    let f = fa[i].split('[');
-                    data = data[f[0]];
-                    f.shift();
-                    f.forEach((istr) => {
-                        let ind = istr.substr(0, istr.length - 1);
-                        data = data[parseInt(ind)];
-                    });
-                }
-                else {
-                    data = data[fa[i]];
-                }
-            }
-            return data;
         }
     }
     nodom.Model = Model;
@@ -3934,52 +3976,26 @@ var nodom;
                     directive.extra = 1;
                     value = value.substr(2);
                 }
-                let arr = new Array();
-                value.split('.').forEach((item) => {
-                    let ind1 = -1, ind2 = -1;
-                    if ((ind1 = item.indexOf('[')) !== -1 && (ind2 = item.indexOf(']')) !== -1) {
-                        let fn = item.substr(0, ind1);
-                        let index = item.substring(ind1 + 1, ind2);
-                        arr.push(fn + ',' + index);
-                    }
-                    else {
-                        arr.push(item);
-                    }
-                });
-                directive.value = arr;
+                directive.value = value;
             }
         },
         handle: (directive, dom, module, parent) => {
             let startIndex = 0;
             let data;
+            let model;
             if (directive.extra === 1) {
-                data = module.model.data[directive.value[0]];
+                model = module.model;
                 startIndex = 1;
             }
             else if (dom.modelId) {
-                let model = module.modelFactory.get(dom.modelId);
-                if (model && model.data) {
-                    data = model.data;
-                }
+                model = module.modelFactory.get(dom.modelId);
             }
-            if (!data) {
+            if (!model || !model.data) {
                 return;
             }
-            for (let i = startIndex; i < directive.value.length; i++) {
-                let item = directive.value[i];
-                if (!data) {
-                    return;
-                }
-                if (item.indexOf(',') !== -1) {
-                    let a = item.split(',');
-                    data = data[a[0]][parseInt(a[1])];
-                }
-                else {
-                    data = data[item];
-                }
-            }
-            if (data) {
-                dom.modelId = data.$modelId;
+            model = model.get(directive.value);
+            if (model) {
+                dom.modelId = model.id;
             }
         }
     });
@@ -4009,8 +4025,12 @@ var nodom;
             if (!model || !model.data) {
                 return;
             }
-            let rows = model.query(directive.value);
-            if (rows === undefined || rows.length === 0) {
+            model = model.get(directive.value);
+            if (!model) {
+                return;
+            }
+            let rows = model.data;
+            if (!nodom.Util.isArray(rows) || rows.length === 0) {
                 dom.dontRender = true;
                 return;
             }

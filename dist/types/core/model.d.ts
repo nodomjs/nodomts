@@ -21,27 +21,46 @@ declare namespace nodom {
          */
         fields: object;
         /**
+         * 父model
+         */
+        parent: Model;
+        /**
+         * 孩子
+         */
+        children: object | Array<Model>;
+        /**
          * @param data 		数据
          * @param module 	模块对象
+         * @param parent    父model
          */
-        constructor(data: any, module: Module);
+        constructor(data: any, module: Module, parent?: Model, key?: string);
         /**
          * 设置属性，可能属性之前不存在，用于在初始化不存在的属性创建和赋值
          * @param key       键，可以带“.”，如a, a.b.c
          * @param value     对应值
          */
-        set(key: string, value: any): void;
+        set(key: string, value: any): Model;
+        /**
+         * 获取子孙模型
+         * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
+         */
+        get(key: string | number): Model;
         /**
          * 删除属性
-         * @param key       键，可以带“.”，如a, a.b.c
+         * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
          */
-        del(key: string): void;
+        del(key: string | number): void;
         /**
          * 更新字段值
          * @param field 	字段名或空(数组更新)
          * @param value 	字段对应的新值
          */
         update(field: string, value?: any): void;
+        /**
+         * 获取数据
+         * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
+         */
+        query(key: string): any;
         /**
          * 获取所有数据
          * @param dirty   是否获取脏数据（带$数据，该数据由框架生成）
@@ -57,17 +76,12 @@ declare namespace nodom {
         /**
          * 为对象添加setter
          */
-        addSetterGetter(data: any): void;
+        addSetterGetter(data: any, parent?: Model): void;
         /**
          * 定义属性set和get方法
          * @param data 	数据对象
          * @param p 	属性
          */
         defineProp(data: any, p: string): void;
-        /**
-         * 查询字段值
-         * @param name 		字段名，可以是多段式 如 a.b.c
-         */
-        query(name: string): any;
     }
 }

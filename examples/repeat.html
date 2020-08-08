@@ -27,7 +27,7 @@
                 菜名：{{name}}，价格：{{price}}
             </div>
         </div>
-        <div class="tip">索引号的使用（编号从1开始）</div>
+        <div class="tip">索引号的使用（编号从0开始）</div>
         <div class="code">
             菜单：
             <div x-repeat="foods">
@@ -45,7 +45,7 @@
         <div class="code">
             菜单：
             <div x-repeat="foods|orderby:price">
-                编号：{{$index}}，菜名：{{name}}，价格：{{price}}
+                编号：{{$index+1}}，菜名：{{name}}，价格：{{price}}
             </div>
         </div>
         <div class="tip">过滤器使用-价格升序排序且只取前三（编号从1开始）</div>
@@ -65,7 +65,6 @@
     </div>
 </body>
 <script>
-    console.log('ddd');
     nodom.newApp({
         options:{},
         module:{
