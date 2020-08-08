@@ -71,12 +71,16 @@ namespace nodom {
                 throw new NodomError('notexist1', TipWords.dataItem, key);
             }
 
+            let retMdl:Model;
+                
+
             if (data[fn] !== value) {
                 let module:Module = ModuleFactory.get(this.moduleId);
+                
                 // object或array需要创建新model
                 if (Util.isObject(value) || Util.isArray(value)) {
                     // new Model(value, module);
-                    new Model(value, module);
+                    retMdl = new Model(value, module);
                 }
                 let model:Model = module.modelFactory.get(data.$modelId);
                 if (model) {
@@ -89,8 +93,30 @@ namespace nodom {
                 }
                 data[fn] = value;
             }
+            //如果产生新model，则返回新model，否则返回自己
+            return retMdl || this;
         }
 
+        /**
+         * 删除属性
+         * @param key       键，可以带“.”，如a, a.b.c
+         */
+        del(key:string) {
+            let fn, data;
+            let index:number = key.lastIndexOf('.');
+            if (index !== -1) { //key中有“.”
+                fn = key.substr(index + 1);
+                key = key.substr(0, index);
+                data = this.query(key);
+            } else {
+                fn = key;
+                data = this.data;
+            }
+            //删除fields集合
+            if(data){
+                delete data[fn];
+            }
+        }
         /**
          * 更新字段值
          * @param field 	字段名或空(数组更新)
@@ -249,6 +275,7 @@ namespace nodom {
          */
         defineProp(data:any, p:string) {
             Object.defineProperty(data, p, {
+                configurable:true,
                 set: (v)=> {
                     if (this.fields[p] && this.fields[p].value === v) {
                         return;
@@ -289,6 +316,14 @@ namespace nodom {
                 }
             }
             return data;
+        }
+
+        /**
+         * 获取子孙节点
+         * @param key 
+         */
+        getDescendant(key:string):Model{
+
         }
     }
 }

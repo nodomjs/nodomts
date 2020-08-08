@@ -33,20 +33,26 @@ var nodom;
         },
         handle: (directive, dom, module, parent) => {
             const ext = directive.extra;
-            console.log(directive);
-            if (!ext.init) {
-                //未初始化，进行模块初始化
-                ext.init = true;
-                nodom.ModuleFactory.getInstance(directive.value, ext.name || dom.getProp('name'), dom.getProp('data'))
-                    .then((m) => {
-                    if (m) {
-                        //保存绑定moduleid
-                        m.setContainerKey(dom.key);
-                        module.addChild(m.id);
-                        m.active();
-                    }
-                });
+            let needNew = ext.moduleId === undefined;
+            //没有moduleId或与容器key不一致
+            if (ext.moduleId) {
+                let m = nodom.ModuleFactory.get(ext.moduleId);
+                needNew = m.getContainerKey() !== dom.key;
             }
+            // if(needNew){
+            //未初始化，进行模块初始化
+            ext.init = true;
+            nodom.ModuleFactory.getInstance(directive.value, ext.name || dom.getProp('name'), dom.getProp('data'))
+                .then((m) => {
+                if (m) {
+                    //保存绑定moduleid
+                    m.setContainerKey(dom.key);
+                    ext.moduleId = m.id;
+                    module.addChild(m.id);
+                    m.active();
+                }
+            });
+            // }
         }
     });
     nodom.DirectiveManager.addType('model', {
@@ -177,7 +183,6 @@ var nodom;
                     }
                 }
             }
-            console.log(chds);
             // 不渲染该节点
             dom.dontRender = true;
             function setKey(node, key, id) {

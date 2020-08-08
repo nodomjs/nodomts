@@ -748,7 +748,7 @@ var nodom;
             return oe;
         }
         static handleDefineEl(el) {
-            let de = nodom.DefineElementManager.get(el.tagName);
+            let de = nodom.PluginManager.get(el.tagName);
             if (!de) {
                 return;
             }
@@ -954,8 +954,8 @@ var nodom;
                     this.modelId = parent.modelId;
                 }
             }
-            if (this.defineElement) {
-                nodom.DefineElementManager.beforeRender(module, this);
+            if (this.plugin) {
+                this.plugin.beforeRender(module, this);
             }
             if (this.tagName !== undefined) {
                 this.handleProps(module);
@@ -976,8 +976,8 @@ var nodom;
                     }
                 }
             }
-            if (this.defineElement) {
-                nodom.DefineElementManager.afterRender(module, this);
+            if (this.plugin) {
+                this.plugin.afterRender(module, this);
             }
             delete this.parent;
         }
@@ -1119,6 +1119,14 @@ var nodom;
             if (changeKey) {
                 dst.key = nodom.Util.genId() + '';
             }
+            if (this.plugin) {
+                if (changeKey) {
+                    dst.plugin = this.plugin.clone();
+                }
+                else {
+                    dst.plugin = this.plugin;
+                }
+            }
             for (let d of this.directives) {
                 if (changeKey) {
                     d = d.clone(dst);
@@ -1129,15 +1137,25 @@ var nodom;
                 dst.props[k] = this.props[k];
             });
             nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
-                let item = this.exprProps[k];
                 if (changeKey) {
+                    let item = this.exprProps[k];
                     if (Array.isArray(item)) {
-                        for (let i = 0; i < item.length; i++) {
-                            item[i] = item[i].clone();
+                        let arr = [];
+                        for (let o of item) {
+                            arr.push(o instanceof nodom.Expression ? o.clone() : o);
                         }
+                        dst.exprProps[k] = arr;
+                    }
+                    else if (item instanceof nodom.Expression) {
+                        dst.exprProps[k] = item.clone();
+                    }
+                    else {
+                        dst.exprProps[k] = item;
                     }
                 }
-                dst.exprProps[k] = item;
+                else {
+                    dst.exprProps[k] = this.exprProps[k];
+                }
             });
             for (let key of this.events.keys()) {
                 let evt = this.events.get(key);
@@ -2153,6 +2171,22 @@ var nodom;
                 data[fn] = value;
             }
         }
+        del(key) {
+            let fn, data;
+            let index = key.lastIndexOf('.');
+            if (index !== -1) {
+                fn = key.substr(index + 1);
+                key = key.substr(0, index);
+                data = this.query(key);
+            }
+            else {
+                fn = key;
+                data = this.data;
+            }
+            if (data) {
+                delete data[fn];
+            }
+        }
         update(field, value) {
             let change = false;
             let module = nodom.ModuleFactory.get(this.moduleId);
@@ -2336,6 +2370,7 @@ var nodom;
             this.renderDoms = [];
             this.container = null;
             this.moduleMap = new Map();
+            this.plugins = new Map();
             this.id = nodom.Util.genId();
             if (config && config.name) {
                 this.name = config.name;
@@ -2524,7 +2559,7 @@ var nodom;
                 m.model = new nodom.Model(nodom.Util.clone(d), m);
             }
             m.virtualDom = this.virtualDom.clone(true);
-            console.log(m.virtualDom.key);
+            m.plugins.clear();
             return m;
         }
         hasContainer() {
@@ -2688,6 +2723,14 @@ var nodom;
             for (; renderOps.length > 0;) {
                 nodom.Util.apply(renderOps.shift(), this, []);
             }
+        }
+        addPlugin(name, ele) {
+            if (ele.name) {
+                this.plugins.set(name, ele);
+            }
+        }
+        getPlugin(name) {
+            return this.plugins.get(name);
         }
     }
     nodom.Module = Module;
@@ -4600,50 +4643,52 @@ var nodom;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
-    class DefineElement {
+    class Plugin {
         init(el) { }
-        ;
-        beforeRender(module, uidom) { }
+        beforeRender(module, uidom) {
+            if (uidom.key !== this.key) {
+                this.key = uidom.key;
+                if (uidom.hasProp('name')) {
+                    module.addPlugin(uidom.getProp('name'), this);
+                }
+                this.needPreRender = true;
+            }
+            else {
+                this.needPreRender = false;
+            }
+        }
         afterRender(module, uidom) { }
         clone() {
             let ele = Reflect.construct(this.constructor, []);
+            let excludeProps = ['key'];
             nodom.Util.getOwnProps(this).forEach((prop) => {
+                if (excludeProps.includes(prop)) {
+                    return;
+                }
                 ele[prop] = nodom.Util.clone(this[prop]);
             });
             return ele;
         }
     }
-    nodom.DefineElement = DefineElement;
+    nodom.Plugin = Plugin;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
-    let DefineElementManager = (() => {
-        class DefineElementManager {
+    let PluginManager = (() => {
+        class PluginManager {
             static add(name, cfg) {
-                if (this.elementMap.has(name)) {
+                if (this.plugins.has(name)) {
                     throw new nodom.NodomError('exist1', nodom.TipWords.element, name);
                 }
-                this.elementMap.set(name, cfg);
+                this.plugins.set(name, cfg);
             }
             static get(tagName) {
-                return this.elementMap.get(tagName);
-            }
-            static beforeRender(module, dom) {
-                let de = dom.defineElement;
-                if (de && de.beforeRender) {
-                    de.beforeRender(module, dom);
-                }
-            }
-            static afterRender(module, dom) {
-                let de = dom.defineElement;
-                if (de && de.afterRender) {
-                    de.afterRender(module, dom);
-                }
+                return this.plugins.get(tagName);
             }
         }
-        DefineElementManager.elementMap = new Map();
-        return DefineElementManager;
+        PluginManager.plugins = new Map();
+        return PluginManager;
     })();
-    nodom.DefineElementManager = DefineElementManager;
+    nodom.PluginManager = PluginManager;
 })(nodom || (nodom = {}));
 //# sourceMappingURL=nodom.js.map

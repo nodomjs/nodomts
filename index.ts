@@ -5,8 +5,8 @@
 ///<reference path='./core/compiler.ts' />
 ///<reference path='./core/directive.ts' />
 ///<reference path='./core/directivemanager.ts' />
-///<reference path='./core/defineelement.ts' />
-///<reference path='./core/defineelementmanager.ts' />
+///<reference path='./core/plugin.ts' />
+///<reference path='./core/pluginmanager.ts' />
 ///<reference path='./core/element.ts' />
 ///<reference path='./core/expression.ts' />
 ///<reference path='./core/filter.ts' />

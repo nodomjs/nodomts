@@ -87,8 +87,8 @@ var nodom;
                 }
             }
             //自定义元素的前置渲染
-            if (this.defineElement) {
-                nodom.DefineElementManager.beforeRender(module, this);
+            if (this.plugin) {
+                this.plugin.beforeRender(module, this);
             }
             if (this.tagName !== undefined) { //element
                 this.handleProps(module);
@@ -110,12 +110,9 @@ var nodom;
                     }
                 }
             }
-            else {
-                console.log(this);
-            }
             //自定义元素的后置渲染
-            if (this.defineElement) {
-                nodom.DefineElementManager.afterRender(module, this);
+            if (this.plugin) {
+                this.plugin.afterRender(module, this);
             }
             //删除parent
             delete this.parent;
@@ -282,53 +279,74 @@ var nodom;
          */
         clone(changeKey) {
             let dst = new Element();
-            //不直接拷贝属性集
-            if (changeKey) { //表示clone后进行新建节点
-                dst.key = nodom.Util.genId() + '';
-                let notCopyProps = ['key', 'parent', 'children'];
-                //简单属性
-                nodom.Util.getOwnProps(this).forEach((p) => {
-                    if (notCopyProps.includes(p)) {
-                        return;
-                    }
-                    dst[p] = nodom.Util.clone(this[p], null, changeKey);
-                });
-            }
-            else { //表示克隆后直接渲染
-                let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
-                //简单属性
-                nodom.Util.getOwnProps(this).forEach((p) => {
-                    if (notCopyProps.includes(p)) {
-                        return;
-                    }
-                    dst[p] = this[p];
-                });
-                //指令复制
-                for (let d of this.directives) {
-                    dst.directives.push(d);
+            //不直接拷贝的属性
+            let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
+            //简单属性
+            nodom.Util.getOwnProps(this).forEach((p) => {
+                if (notCopyProps.includes(p)) {
+                    return;
                 }
-                //普通属性
-                nodom.Util.getOwnProps(this.props).forEach((k) => {
-                    dst.props[k] = this.props[k];
-                });
-                //表达式属性
-                nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
-                    dst.exprProps[k] = this.exprProps[k];
-                });
-                //事件
-                for (let key of this.events.keys()) {
-                    let evt = this.events.get(key);
-                    //数组需要单独clone
-                    if (nodom.Util.isArray(evt)) {
-                        let a = [];
-                        for (let e of evt) {
-                            a.push(e.clone());
+                dst[p] = this[p];
+            });
+            //表示clone后进行新建节点
+            if (changeKey) {
+                dst.key = nodom.Util.genId() + '';
+            }
+            //define element复制
+            if (this.plugin) {
+                if (changeKey) {
+                    dst.plugin = this.plugin.clone();
+                }
+                else {
+                    dst.plugin = this.plugin;
+                }
+            }
+            //指令复制
+            for (let d of this.directives) {
+                if (changeKey) {
+                    d = d.clone(dst);
+                }
+                dst.directives.push(d);
+            }
+            //普通属性
+            nodom.Util.getOwnProps(this.props).forEach((k) => {
+                dst.props[k] = this.props[k];
+            });
+            //表达式属性
+            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
+                if (changeKey) {
+                    let item = this.exprProps[k];
+                    if (Array.isArray(item)) { //数组
+                        let arr = [];
+                        for (let o of item) {
+                            arr.push(o instanceof nodom.Expression ? o.clone() : o);
                         }
-                        dst.events.set(key, a);
+                        dst.exprProps[k] = arr;
                     }
-                    else {
-                        dst.events.set(key, evt.clone());
+                    else if (item instanceof nodom.Expression) { //表达式
+                        dst.exprProps[k] = item.clone();
                     }
+                    else { //普通属性
+                        dst.exprProps[k] = item;
+                    }
+                }
+                else {
+                    dst.exprProps[k] = this.exprProps[k];
+                }
+            });
+            //事件
+            for (let key of this.events.keys()) {
+                let evt = this.events.get(key);
+                //数组需要单独clone
+                if (nodom.Util.isArray(evt)) {
+                    let a = [];
+                    for (let e of evt) {
+                        a.push(e.clone());
+                    }
+                    dst.events.set(key, a);
+                }
+                else {
+                    dst.events.set(key, evt.clone());
                 }
             }
             //孩子节点

@@ -21,7 +21,6 @@ var nodom;
             //添加到model工厂
             if (module) {
                 this.moduleId = module.id;
-                module.model = this;
                 if (module.modelFactory) {
                     module.modelFactory.add(this.id, this);
                 }
@@ -60,6 +59,7 @@ var nodom;
                 let module = nodom.ModuleFactory.get(this.moduleId);
                 // object或array需要创建新model
                 if (nodom.Util.isObject(value) || nodom.Util.isArray(value)) {
+                    // new Model(value, module);
                     new Model(value, module);
                 }
                 let model = module.modelFactory.get(data.$modelId);
@@ -72,6 +72,26 @@ var nodom;
                     model.update(fn, value);
                 }
                 data[fn] = value;
+            }
+        }
+        /**
+         * 删除属性
+         * @param key       键，可以带“.”，如a, a.b.c
+         */
+        del(key) {
+            let fn, data;
+            let index = key.lastIndexOf('.');
+            if (index !== -1) { //key中有“.”
+                fn = key.substr(index + 1);
+                key = key.substr(0, index);
+                data = this.query(key);
+            }
+            else {
+                fn = key;
+                data = this.data;
+            }
+            if (data) {
+                delete data[fn];
             }
         }
         /**

@@ -63,6 +63,10 @@ var nodom;
              * 子模块名id映射，如 {modulea:1}
              */
             this.moduleMap = new Map();
+            /**
+             * 插件集合
+             */
+            this.plugins = new Map();
             this.id = nodom.Util.genId();
             // 模块名字
             if (config && config.name) {
@@ -144,7 +148,7 @@ var nodom;
                 //数据
                 if (config.data) { //数据
                     if (nodom.Util.isObject(config.data)) { //数据
-                        new nodom.Model(config.data, this);
+                        this.model = new nodom.Model(config.data, this);
                     }
                     else { //数据url
                         urlArr.push({
@@ -286,7 +290,7 @@ var nodom;
         clone(moduleName) {
             let me = this;
             let m = {};
-            let excludes = ['id', 'name', 'model'];
+            let excludes = ['id', 'name', 'model', 'virtualDom', 'container', 'containerKey'];
             Object.getOwnPropertyNames(this).forEach((item) => {
                 if (excludes.includes(item)) {
                     return;
@@ -303,8 +307,12 @@ var nodom;
             //构建model
             if (this.model) {
                 let d = this.model.getData();
-                new nodom.Model(nodom.Util.clone(d), m);
+                m.model = new nodom.Model(nodom.Util.clone(d), m);
             }
+            //克隆虚拟dom树
+            m.virtualDom = this.virtualDom.clone(true);
+            //插件清空
+            m.plugins.clear();
             return m;
         }
         /**
@@ -359,13 +367,17 @@ var nodom;
         }
         /**
          * 发送
-         * @param toName 		接收模块名
+         * @param toName 		接收模块名或模块id，如果为模块id，则直接发送，不需要转换
          * @param data 			消息内容
          */
         send(toName, data) {
-            let m = this;
+            if (typeof toName === 'number') {
+                nodom.MessageQueue.add(this.id, toName, data);
+                return;
+            }
             //目标模块id
             let toId;
+            let m = this;
             //一共需要找3级(孩子、兄弟、父模块)
             for (let i = 0; i < 3 && m; i++) {
                 toId = m.moduleMap.get(toName);
@@ -547,6 +559,23 @@ var nodom;
             for (; renderOps.length > 0;) {
                 nodom.Util.apply(renderOps.shift(), this, []);
             }
+        }
+        /**
+         * 添加插件
+         * @param name  插件名
+         * @param ele   插件
+         */
+        addPlugin(name, ele) {
+            if (ele.name) {
+                this.plugins.set(name, ele);
+            }
+        }
+        /**
+         * 获取插件
+         * @param name  插件名
+         */
+        getPlugin(name) {
+            return this.plugins.get(name);
         }
     }
     nodom.Module = Module;

@@ -41,8 +41,8 @@ module.exports = function (grunt) {
             './core/extend/directiveinit.ts',
             './core/extend/filterinit.ts',
             './core/locales/msg_zh.ts',
-            './core/defineelement.ts',
-            './core/defineelementmanager.ts'
+            './core/plugin.ts',
+            './core/pluginmanager.ts'
         ],
         out:'bin/nodom.js',
         options:{

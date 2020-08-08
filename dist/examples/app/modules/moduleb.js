@@ -8,11 +8,18 @@ class ModuleB extends nodom.Module {
             data: {
                 from: '',
                 msg: '发送消息',
-                msg1: '',
+                msg1: ''
             },
             methods: {
                 sendMsg: function (dom, model, module) {
                     module.broadcast(model.data.msg);
+                },
+                sendParent: function (dom, model, module) {
+                    module.send('modb1', model.data.msg);
+                },
+                onReceive: function (model, from, msg) {
+                    model.set('msg1', msg);
+                    model.set('from', from);
                 }
             }
         });

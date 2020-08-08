@@ -186,6 +186,12 @@ namespace nodom {
          * 子模块名id映射，如 {modulea:1}
          */
         moduleMap:Map<string,number> = new Map();
+
+        /**
+         * 插件集合
+         */
+        plugins:Map<string,Plugin> = new Map();
+
         /**
          * 构造器
          * @param config    模块配置
@@ -442,7 +448,8 @@ namespace nodom {
             }
             //克隆虚拟dom树
             m.virtualDom = this.virtualDom.clone(true);
-            console.log(m.virtualDom.key);
+            //插件清空
+            m.plugins.clear();
             return m;
         }
         
@@ -706,6 +713,25 @@ namespace nodom {
             for(;renderOps.length>0;){
                 Util.apply(renderOps.shift(), this, []);
             }
+        }
+
+        /**
+         * 添加插件
+         * @param name  插件名
+         * @param ele   插件
+         */
+        addPlugin(name:string,ele:Plugin){
+            if(ele.name){
+                this.plugins.set(name,ele);
+            }
+        }
+
+        /**
+         * 获取插件
+         * @param name  插件名 
+         */
+        getPlugin(name:string):Plugin{
+            return this.plugins.get(name);
         }
     }
 }

@@ -288,6 +288,9 @@ var nodom;
                 }
             }
         }
+        /**
+         * 克隆
+         */
         clone() {
             let evt = new NodomEvent(this.name);
             let arr = ['delg', 'once', 'nopopo', 'capture', 'handler'];

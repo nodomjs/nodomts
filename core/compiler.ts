@@ -76,7 +76,7 @@ namespace nodom {
          * @returns  如果识别自定义el，则返回true
          */
         static handleDefineEl(el:HTMLElement):Element{
-            let de:any = DefineElementManager.get(el.tagName);
+            let de:any = PluginManager.get(el.tagName);
             if(!de){
                 return;
             }

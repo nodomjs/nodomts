@@ -74,7 +74,7 @@ var nodom;
          * @returns  如果识别自定义el，则返回true
          */
         static handleDefineEl(el) {
-            let de = nodom.DefineElementManager.get(el.tagName);
+            let de = nodom.PluginManager.get(el.tagName);
             if (!de) {
                 return;
             }

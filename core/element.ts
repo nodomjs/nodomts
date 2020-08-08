@@ -144,9 +144,9 @@ namespace nodom {
         tmpData:object;
 
         /**
-         * 自定义element对象
+         * 绑定插件
          */
-        defineElement:DefineElement;
+        plugin:Plugin;
 		/**
 		 * @param tag 标签名
 		 */
@@ -178,8 +178,8 @@ namespace nodom {
 
             
             //自定义元素的前置渲染
-            if(this.defineElement){
-                DefineElementManager.beforeRender(module,this);
+            if(this.plugin){
+                this.plugin.beforeRender(module,this);
             }
             
             if (this.tagName !== undefined) { //element
@@ -206,8 +206,8 @@ namespace nodom {
                 }
             }
             //自定义元素的后置渲染
-            if(this.defineElement){
-                DefineElementManager.afterRender(module,this);
+            if(this.plugin){
+                this.plugin.afterRender(module,this);
             }
             //删除parent
             delete this.parent;
@@ -386,8 +386,18 @@ namespace nodom {
                 dst[p] = this[p];
             });
 
-            if(changeKey){  //表示clone后进行新建节点
+            //表示clone后进行新建节点
+            if(changeKey){  
                 dst.key = Util.genId() + '';
+            }
+
+            //define element复制
+            if(this.plugin){
+                if(changeKey){
+                    dst.plugin = this.plugin.clone();
+                }else{
+                    dst.plugin = this.plugin;
+                }
             }
 
             //指令复制
@@ -405,15 +415,22 @@ namespace nodom {
 
             //表达式属性
             Util.getOwnProps(this.exprProps).forEach((k)=>{
-                let item = this.exprProps[k];
                 if(changeKey){
-                    if(Array.isArray(item)){
-                        for(let i=0;i<item.length;i++){
-                            item[i] = item[i].clone();
+                    let item = this.exprProps[k];
+                    if(Array.isArray(item)){   //数组
+                        let arr = [];
+                        for(let o of item){
+                            arr.push(o instanceof Expression?o.clone():o);
                         }
+                        dst.exprProps[k] = arr;
+                    }else if(item instanceof Expression){ //表达式
+                        dst.exprProps[k] = item.clone();
+                    }else{  //普通属性
+                        dst.exprProps[k] = item;
                     }
+                }else{
+                    dst.exprProps[k] = this.exprProps[k];
                 }
-                dst.exprProps[k] = item;
             });
 
             //事件
