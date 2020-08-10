@@ -65,6 +65,9 @@ var nodom;
             if (this.params) {
                 dir.params = nodom.Util.clone(this.params);
             }
+            if (this.extra) {
+                dir.extra = nodom.Util.clone(this.extra);
+            }
             nodom.DirectiveManager.init(dir, dst);
             return dir;
         }

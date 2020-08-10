@@ -270,10 +270,15 @@ var nodom;
             //清空子元素
             nodom.Util.empty(this.container);
             //渲染到html
-            if (root.children) {
-                root.children.forEach((item) => {
-                    item.renderToHtml(this, { type: 'fresh' });
-                });
+            if (root.tagName) {
+                root.renderToHtml(this, { type: 'fresh' });
+            }
+            else {
+                if (root.children) {
+                    root.children.forEach((item) => {
+                        item.renderToHtml(this, { type: 'fresh' });
+                    });
+                }
             }
             //删除首次渲染标志
             delete this.firstRender;

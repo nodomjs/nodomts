@@ -8,6 +8,7 @@ var nodom;
     class Compiler {
         /**
          * 编译
+         * 如果为el innerHTML方式，则可能存在多个子节点，只能返回上一级，否则返回模块根节点
          * @param elementStr    待编译html串
          * @returns             虚拟element
          */
@@ -15,8 +16,12 @@ var nodom;
             const div = nodom.Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new nodom.Element();
-            oe.isRoot = true;
             this.handleChildren(oe, div);
+            //通过模版添加，子节点必须为一个
+            if (oe.children.length === 1) {
+                return oe.children[0];
+            }
+            //通过el子节点添加
             return oe;
         }
         /**

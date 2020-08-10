@@ -107,6 +107,9 @@ namespace nodom {
             if(this.params){
                 dir.params = Util.clone(this.params);
             }
+            if(this.extra){
+                dir.extra = Util.clone(this.extra);
+            }
             DirectiveManager.init(dir,dst);
             return dir;
         }

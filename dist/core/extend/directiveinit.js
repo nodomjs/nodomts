@@ -23,36 +23,39 @@ var nodom;
             let value = directive.value;
             let valueArr = value.split('|');
             directive.value = valueArr[0];
-            //初始化参数
-            directive.extra = {
-                name: valueArr.length > 1 ? valueArr[1] : undefined,
-                //是否已初始化
-                init: false
-            };
+            //设置dom role
             dom.setProp('role', 'module');
+            //设置module name
+            if (valueArr.length > 1) {
+                dom.setProp('modulename', valueArr[1]);
+            }
+            directive.extra = {};
         },
         handle: (directive, dom, module, parent) => {
             const ext = directive.extra;
             let needNew = ext.moduleId === undefined;
-            //没有moduleId或与容器key不一致
-            if (ext.moduleId) {
+            //没有moduleId或与容器key不一致，需要初始化模块
+            if (ext && ext.moduleId) {
                 let m = nodom.ModuleFactory.get(ext.moduleId);
                 needNew = m.getContainerKey() !== dom.key;
             }
-            // if(needNew){
-            //未初始化，进行模块初始化
-            ext.init = true;
-            nodom.ModuleFactory.getInstance(directive.value, ext.name || dom.getProp('name'), dom.getProp('data'))
-                .then((m) => {
-                if (m) {
-                    //保存绑定moduleid
-                    m.setContainerKey(dom.key);
-                    ext.moduleId = m.id;
-                    module.addChild(m.id);
-                    m.active();
-                }
-            });
-            // }
+            if (needNew) {
+                nodom.ModuleFactory.getInstance(directive.value, dom.getProp('modulename'), dom.getProp('data'))
+                    .then((m) => {
+                    if (m) {
+                        //保存绑定moduleid
+                        m.setContainerKey(dom.key);
+                        //修改virtualdom的module指令附加参数moduleId
+                        let dom1 = module.virtualDom.query(dom.key);
+                        if (dom1) {
+                            let dir = dom1.getDirective('module');
+                            dir.extra.moduleId = m.id;
+                        }
+                        module.addChild(m.id);
+                        m.active();
+                    }
+                });
+            }
         }
     });
     /**

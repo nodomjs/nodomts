@@ -78,17 +78,15 @@ var nodom;
             if (data[fn] !== value) {
                 let module = nodom.ModuleFactory.get(this.moduleId);
                 // object或array需要创建新model
-                if (nodom.Util.isArray(value) || nodom.Util.isArray(value)) {
-                    retMdl = new Model(value, module, this, fn);
+                if (nodom.Util.isObject(value) || nodom.Util.isArray(value)) {
+                    retMdl = new Model(value, module, model, fn);
                 }
-                if (model) {
-                    //如果未定义setter和getter，则需要定义
-                    let ds = Object.getOwnPropertyDescriptor(data, fn);
-                    if (ds === undefined || ds['writable']) {
-                        model.defineProp(data, fn);
-                    }
-                    model.update(fn, value);
+                //如果未定义setter和getter，则需要定义
+                let ds = Object.getOwnPropertyDescriptor(data, fn);
+                if (ds === undefined || ds['writable']) {
+                    model.defineProp(data, fn);
                 }
+                model.update(fn, value);
                 data[fn] = value;
             }
             //如果产生新model，则返回新model，否则返回自己
@@ -265,7 +263,7 @@ var nodom;
             if (nodom.Util.isObject(data)) {
                 nodom.Util.getOwnProps(data).forEach((p) => {
                     let v = data[p];
-                    if (nodom.Util.isArray(v) || nodom.Util.isObject(v)) {
+                    if (nodom.Util.isObject(v) || nodom.Util.isArray(v)) {
                         new Model(v, module, this, p);
                     }
                     else {

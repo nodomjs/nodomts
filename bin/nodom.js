@@ -707,8 +707,10 @@ var nodom;
             const div = nodom.Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new nodom.Element();
-            oe.isRoot = true;
             this.handleChildren(oe, div);
+            if (oe.children.length === 1) {
+                return oe.children[0];
+            }
             return oe;
         }
         static compileDom(ele) {
@@ -861,6 +863,9 @@ var nodom;
             if (this.params) {
                 dir.params = nodom.Util.clone(this.params);
             }
+            if (this.extra) {
+                dir.extra = nodom.Util.clone(this.extra);
+            }
             nodom.DirectiveManager.init(dir, dst);
             return dir;
         }
@@ -945,6 +950,7 @@ var nodom;
         render(module, parent) {
             let me = this;
             if (this.dontRender) {
+                this.doDontRender();
                 return;
             }
             if (parent) {
@@ -965,6 +971,7 @@ var nodom;
                 this.handleTextContent(module);
             }
             if (this.dontRender) {
+                this.doDontRender();
                 return;
             }
             if (!this.hasDirective('module')) {
@@ -972,6 +979,7 @@ var nodom;
                     let item = this.children[i];
                     item.render(module, this);
                     if (item.dontRender) {
+                        item.doDontRender();
                         this.children.splice(i--, 1);
                     }
                 }
@@ -1587,6 +1595,20 @@ var nodom;
                         return nodom.DirectiveManager.getType(a.type).prio - nodom.DirectiveManager.getType(b.type).prio;
                     });
                 }
+            }
+        }
+        doDontRender() {
+            if (this.hasDirective('module')) {
+                let d = this.getDirective('module');
+                if (d.extra && d.extra.moduleId) {
+                    let mdl = nodom.ModuleFactory.get(d.extra.moduleId);
+                    if (mdl) {
+                        mdl.unactive();
+                    }
+                }
+            }
+            for (let c of this.children) {
+                c.doDontRender();
             }
         }
     }
@@ -2573,10 +2595,15 @@ var nodom;
             root.render(this, null);
             this.doModuleEvent('onBeforeFirstRenderToHTML');
             nodom.Util.empty(this.container);
-            if (root.children) {
-                root.children.forEach((item) => {
-                    item.renderToHtml(this, { type: 'fresh' });
-                });
+            if (root.tagName) {
+                root.renderToHtml(this, { type: 'fresh' });
+            }
+            else {
+                if (root.children) {
+                    root.children.forEach((item) => {
+                        item.renderToHtml(this, { type: 'fresh' });
+                    });
+                }
             }
             delete this.firstRender;
             this.doModuleEvent('onFirstRender');
@@ -3942,29 +3969,38 @@ var nodom;
             let value = directive.value;
             let valueArr = value.split('|');
             directive.value = valueArr[0];
-            directive.extra = {
-                name: valueArr.length > 1 ? valueArr[1] : undefined,
-                init: false
-            };
             dom.setProp('role', 'module');
+            if (valueArr.length > 1) {
+                dom.setProp('modulename', valueArr[1]);
+            }
+            directive.extra = {};
         },
         handle: (directive, dom, module, parent) => {
             const ext = directive.extra;
             let needNew = ext.moduleId === undefined;
-            if (ext.moduleId) {
-                let m = nodom.ModuleFactory.get(ext.moduleId);
-                needNew = m.getContainerKey() !== dom.key;
+            let subMdl;
+            if (ext && ext.moduleId) {
+                subMdl = nodom.ModuleFactory.get(ext.moduleId);
+                needNew = subMdl.getContainerKey() !== dom.key;
             }
-            ext.init = true;
-            nodom.ModuleFactory.getInstance(directive.value, ext.name || dom.getProp('name'), dom.getProp('data'))
-                .then((m) => {
-                if (m) {
-                    m.setContainerKey(dom.key);
-                    ext.moduleId = m.id;
-                    module.addChild(m.id);
-                    m.active();
-                }
-            });
+            if (needNew) {
+                nodom.ModuleFactory.getInstance(directive.value, dom.getProp('modulename'), dom.getProp('data'))
+                    .then((m) => {
+                    if (m) {
+                        m.setContainerKey(dom.key);
+                        let dom1 = module.virtualDom.query(dom.key);
+                        if (dom1) {
+                            let dir = dom1.getDirective('module');
+                            dir.extra.moduleId = m.id;
+                        }
+                        module.addChild(m.id);
+                        m.active();
+                    }
+                });
+            }
+            else if (subMdl && subMdl.state !== 3) {
+                subMdl.active();
+            }
         }
     });
     nodom.DirectiveManager.addType('model', {

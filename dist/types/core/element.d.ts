@@ -47,10 +47,6 @@ declare namespace nodom {
          */
         key: string;
         /**
-         * 是不是虚拟dom根节点
-         */
-        isRoot: boolean;
-        /**
          * 绑定的模型id，如果没有，则从父继承
          */
         modelId: number;

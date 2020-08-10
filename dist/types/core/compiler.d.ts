@@ -7,6 +7,7 @@ declare namespace nodom {
     class Compiler {
         /**
          * 编译
+         * 如果为el innerHTML方式，则可能存在多个子节点，只能返回上一级，否则返回模块根节点
          * @param elementStr    待编译html串
          * @returns             虚拟element
          */

@@ -26,7 +26,7 @@
         <h3>支持外部repeat的模块</h3>
         <div x-repeat='users'>
             <p>{{name}} 的订单:</p>
-            <div x-module='ModuleA' name = '{{"mod" + ($index+1)}}' data='{{data}}'></div>
+            <div x-module='ModuleA' moduleName = '{{"mod" + ($index+1)}}' data='{{data}}'></div>
         </div>
         
         <h3>模块消息传递</h3>

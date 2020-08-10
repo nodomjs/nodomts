@@ -56,10 +56,7 @@ namespace nodom {
 		 * key，全局唯一
 		 */
 		key:string;
-        /**
-         * 是不是虚拟dom根节点
-         */
-        isRoot:boolean;
+        
 		/**
 		 * 绑定的模型id，如果没有，则从父继承
 		 */
@@ -163,6 +160,7 @@ namespace nodom {
         render(module:Module, parent?:Element) {
             let me = this;
             if(this.dontRender){
+                this.doDontRender();
                 return;
             }
 
@@ -188,10 +186,9 @@ namespace nodom {
             } else { //textContent
                 this.handleTextContent(module);
             }
-
-
             
             if(this.dontRender){
+                this.doDontRender();
                 return;
             }
             
@@ -201,6 +198,7 @@ namespace nodom {
                     let item = this.children[i];
                     item.render(module, this);
                     if(item.dontRender){
+                        item.doDontRender();
                         this.children.splice(i--,1);
                     }
                 }
@@ -466,6 +464,7 @@ namespace nodom {
                 return;
             }
             for(let d of this.directives.values()){
+                //指令可能改变render标志
                 if (this.dontRender) {
                     return;
                 }
@@ -1032,6 +1031,27 @@ namespace nodom {
                         return DirectiveManager.getType(a.type).prio - DirectiveManager.getType(b.type).prio;
                     });    
                 }
+            }
+        }
+
+        /**
+         * 执行不渲染关联操作
+         * 关联操作，包括
+         *  1 节点(子节点)含有module指令，需要unactive
+         */
+        doDontRender(){
+            if(this.hasDirective('module')){
+                let d:Directive = this.getDirective('module');
+                if(d.extra && d.extra.moduleId){
+                    let mdl:Module = ModuleFactory.get(d.extra.moduleId);
+                    if(mdl){
+                        mdl.unactive();
+                    }
+                }
+            }
+            //子节点递归
+            for(let c of this.children){
+                c.doDontRender();
             }
         }
     }

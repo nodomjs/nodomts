@@ -23,41 +23,48 @@ namespace nodom {
             let value: string = < string > directive.value;
             let valueArr:string[] = value.split('|');
             directive.value = valueArr[0];
-            //初始化参数
-            directive.extra = {
-                name:valueArr.length>1?valueArr[1]:undefined,
-                //是否已初始化
-                init:false
-            }
+
+            //设置dom role
             dom.setProp('role','module');
-            
+            //设置module name
+            if(valueArr.length>1){
+                dom.setProp('modulename',valueArr[1]); 
+            }
+
+            directive.extra = {};
         },
 
         handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
             const ext = directive.extra;
             let needNew:boolean = ext.moduleId === undefined;
-            //没有moduleId或与容器key不一致
-            if(ext.moduleId){
-                let m = ModuleFactory.get(ext.moduleId);
-                needNew = m.getContainerKey() !== dom.key;
+            let subMdl:Module;
+            //没有moduleId或与容器key不一致，需要初始化模块
+            if(ext && ext.moduleId){
+                subMdl = ModuleFactory.get(ext.moduleId);
+                needNew = subMdl.getContainerKey() !== dom.key;
             }
-            // if(needNew){
-                //未初始化，进行模块初始化
-                ext.init = true;
-                ModuleFactory.getInstance(directive.value,ext.name||dom.getProp('name'),dom.getProp('data'))
+            
+            if(needNew){
+                ModuleFactory.getInstance(directive.value,dom.getProp('modulename'),dom.getProp('data'))
                     .then(
                         (m:Module)=>{
                             if(m){
                                 //保存绑定moduleid
                                 m.setContainerKey(dom.key);
-                                ext.moduleId = m.id;
+                                //修改virtualdom的module指令附加参数moduleId
+                                let dom1:Element = module.virtualDom.query(dom.key);
+                                if(dom1){
+                                    let dir:Directive = dom1.getDirective('module');
+                                    dir.extra.moduleId = m.id;
+                                }
                                 module.addChild(m.id);
                                 m.active();
                             }
                         }
                     );
-            // }
-            
+            }else if(subMdl && subMdl.state !== 3){
+                subMdl.active();
+            }
         }
     });
 

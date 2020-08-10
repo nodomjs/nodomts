@@ -335,6 +335,7 @@ namespace nodom {
             
             //克隆新的树
             let root:Element = this.virtualDom.clone();
+            
             if (this.firstRender) {
                 //model无数据，如果存在dataUrl，则需要加载数据
                 if (this.loadNewData && this.dataUrl) {
@@ -406,10 +407,14 @@ namespace nodom {
             //清空子元素
             Util.empty(this.container);
             //渲染到html
-            if (root.children) {
-                root.children.forEach((item) => {
-                    item.renderToHtml(this, <ChangedDom>{type: 'fresh'});
-                });
+            if(root.tagName){
+                root.renderToHtml(this, <ChangedDom>{type: 'fresh'});
+            }else{
+                if (root.children) {
+                    root.children.forEach((item) => {
+                        item.renderToHtml(this, <ChangedDom>{type: 'fresh'});
+                    });
+                }     
             }
             //删除首次渲染标志
             delete this.firstRender;
