@@ -288,6 +288,8 @@ namespace nodom {
                     });
                     this.dataUrl = <string>config.data;
                 }
+            }else{ //空数据
+                this.model = new Model({},this);
             }
 
             //批量请求文件
@@ -598,6 +600,15 @@ namespace nodom {
             this.state = 3;
             //添加到渲染器
             Renderer.add(this);
+            //孩子节点激活
+            if (Util.isArray(this.children)) {
+                this.children.forEach((item) => {
+                    let m:Module = ModuleFactory.get(item);
+                    if(m){
+                        m.unactive();
+                    }
+                });
+            }
         }
 
         /**
@@ -726,7 +737,7 @@ namespace nodom {
          * @param ele   插件
          */
         addPlugin(name:string,ele:Plugin){
-            if(ele.name){
+            if(name){
                 this.plugins.set(name,ele);
             }
         }

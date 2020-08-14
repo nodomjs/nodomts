@@ -2222,7 +2222,12 @@ var nodom;
                 let arr = key.split('.');
                 let mdl = this;
                 for (let i = 0; i < arr.length && mdl; i++) {
-                    mdl = mdl.children[arr[i]];
+                    if (mdl.children) {
+                        mdl = mdl.children[arr[i]];
+                    }
+                    else {
+                        return;
+                    }
                 }
                 return mdl;
             }
@@ -2511,6 +2516,9 @@ var nodom;
                         this.dataUrl = config.data;
                     }
                 }
+                else {
+                    this.model = new nodom.Model({}, this);
+                }
                 if (urlArr.length > 0) {
                     let rets = yield nodom.ResourceManager.getResources(urlArr);
                     for (let r of rets) {
@@ -2715,6 +2723,14 @@ var nodom;
                 }
                 this.state = 3;
                 nodom.Renderer.add(this);
+                if (nodom.Util.isArray(this.children)) {
+                    this.children.forEach((item) => {
+                        let m = nodom.ModuleFactory.get(item);
+                        if (m) {
+                            m.unactive();
+                        }
+                    });
+                }
             });
         }
         unactive() {
