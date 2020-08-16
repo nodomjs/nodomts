@@ -409,15 +409,10 @@ namespace nodom {
             //清空子元素
             Util.empty(this.container);
             //渲染到html
-            if(root.tagName){
-                root.renderToHtml(this, <ChangedDom>{type: 'fresh'});
-            }else{
-                if (root.children) {
-                    root.children.forEach((item) => {
-                        item.renderToHtml(this, <ChangedDom>{type: 'fresh'});
-                    });
-                }     
-            }
+            root.children.forEach((item) => {
+                item.renderToHtml(this, <ChangedDom>{type: 'fresh'});
+            });
+    
             //删除首次渲染标志
             delete this.firstRender;
             //执行首次渲染后事件

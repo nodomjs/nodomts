@@ -703,12 +703,12 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Compiler {
-        static compile(elementStr) {
+        static compile(elementStr, needNotRoot) {
             const div = nodom.Util.newEl('div');
             div.innerHTML = elementStr;
             let oe = new nodom.Element();
             this.handleChildren(oe, div);
-            if (oe.children.length === 1) {
+            if (needNotRoot) {
                 return oe.children[0];
             }
             return oe;
@@ -2603,16 +2603,9 @@ var nodom;
             root.render(this, null);
             this.doModuleEvent('onBeforeFirstRenderToHTML');
             nodom.Util.empty(this.container);
-            if (root.tagName) {
-                root.renderToHtml(this, { type: 'fresh' });
-            }
-            else {
-                if (root.children) {
-                    root.children.forEach((item) => {
-                        item.renderToHtml(this, { type: 'fresh' });
-                    });
-                }
-            }
+            root.children.forEach((item) => {
+                item.renderToHtml(this, { type: 'fresh' });
+            });
             delete this.firstRender;
             this.doModuleEvent('onFirstRender');
             this.doRenderOp(this.firstRenderOps);
@@ -2810,7 +2803,7 @@ var nodom;
             }
         }
         addPlugin(name, ele) {
-            if (ele.name) {
+            if (name) {
                 this.plugins.set(name, ele);
             }
         }

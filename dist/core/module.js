@@ -158,6 +158,9 @@ var nodom;
                         this.dataUrl = config.data;
                     }
                 }
+                else { //空数据
+                    this.model = new nodom.Model({}, this);
+                }
                 //批量请求文件
                 if (urlArr.length > 0) {
                     let rets = yield nodom.ResourceManager.getResources(urlArr);
@@ -270,16 +273,9 @@ var nodom;
             //清空子元素
             nodom.Util.empty(this.container);
             //渲染到html
-            if (root.tagName) {
-                root.renderToHtml(this, { type: 'fresh' });
-            }
-            else {
-                if (root.children) {
-                    root.children.forEach((item) => {
-                        item.renderToHtml(this, { type: 'fresh' });
-                    });
-                }
-            }
+            root.children.forEach((item) => {
+                item.renderToHtml(this, { type: 'fresh' });
+            });
             //删除首次渲染标志
             delete this.firstRender;
             //执行首次渲染后事件
@@ -451,6 +447,15 @@ var nodom;
                 this.state = 3;
                 //添加到渲染器
                 nodom.Renderer.add(this);
+                //孩子节点激活
+                if (nodom.Util.isArray(this.children)) {
+                    this.children.forEach((item) => {
+                        let m = nodom.ModuleFactory.get(item);
+                        if (m) {
+                            m.unactive();
+                        }
+                    });
+                }
             });
         }
         /**
@@ -571,7 +576,7 @@ var nodom;
          * @param ele   插件
          */
         addPlugin(name, ele) {
-            if (ele.name) {
+            if (name) {
                 this.plugins.set(name, ele);
             }
         }

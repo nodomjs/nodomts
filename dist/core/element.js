@@ -75,6 +75,7 @@ var nodom;
         render(module, parent) {
             let me = this;
             if (this.dontRender) {
+                this.doDontRender();
                 return;
             }
             // 设置父对象
@@ -98,6 +99,7 @@ var nodom;
                 this.handleTextContent(module);
             }
             if (this.dontRender) {
+                this.doDontRender();
                 return;
             }
             //子节点渲染
@@ -106,6 +108,7 @@ var nodom;
                     let item = this.children[i];
                     item.render(module, this);
                     if (item.dontRender) {
+                        item.doDontRender();
                         this.children.splice(i--, 1);
                     }
                 }
@@ -364,6 +367,7 @@ var nodom;
                 return;
             }
             for (let d of this.directives.values()) {
+                //指令可能改变render标志
                 if (this.dontRender) {
                     return;
                 }
@@ -921,6 +925,26 @@ var nodom;
                         return nodom.DirectiveManager.getType(a.type).prio - nodom.DirectiveManager.getType(b.type).prio;
                     });
                 }
+            }
+        }
+        /**
+         * 执行不渲染关联操作
+         * 关联操作，包括
+         *  1 节点(子节点)含有module指令，需要unactive
+         */
+        doDontRender() {
+            if (this.hasDirective('module')) {
+                let d = this.getDirective('module');
+                if (d.extra && d.extra.moduleId) {
+                    let mdl = nodom.ModuleFactory.get(d.extra.moduleId);
+                    if (mdl) {
+                        mdl.unactive();
+                    }
+                }
+            }
+            //子节点递归
+            for (let c of this.children) {
+                c.doDontRender();
             }
         }
     }

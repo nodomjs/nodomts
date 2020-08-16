@@ -292,5 +292,11 @@ declare namespace nodom {
          * @param sort          是否排序
          */
         addDirective(directive: Directive, sort?: boolean): void;
+        /**
+         * 执行不渲染关联操作
+         * 关联操作，包括
+         *  1 节点(子节点)含有module指令，需要unactive
+         */
+        doDontRender(): void;
     }
 }

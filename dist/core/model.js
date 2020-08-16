@@ -109,7 +109,12 @@ var nodom;
                 let arr = key.split('.');
                 let mdl = this;
                 for (let i = 0; i < arr.length && mdl; i++) {
-                    mdl = mdl.children[arr[i]];
+                    if (mdl.children) {
+                        mdl = mdl.children[arr[i]];
+                    }
+                    else {
+                        return;
+                    }
                 }
                 return mdl;
             }

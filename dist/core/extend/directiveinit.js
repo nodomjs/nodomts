@@ -34,10 +34,11 @@ var nodom;
         handle: (directive, dom, module, parent) => {
             const ext = directive.extra;
             let needNew = ext.moduleId === undefined;
+            let subMdl;
             //没有moduleId或与容器key不一致，需要初始化模块
             if (ext && ext.moduleId) {
-                let m = nodom.ModuleFactory.get(ext.moduleId);
-                needNew = m.getContainerKey() !== dom.key;
+                subMdl = nodom.ModuleFactory.get(ext.moduleId);
+                needNew = subMdl.getContainerKey() !== dom.key;
             }
             if (needNew) {
                 nodom.ModuleFactory.getInstance(directive.value, dom.getProp('modulename'), dom.getProp('data'))
@@ -55,6 +56,9 @@ var nodom;
                         m.active();
                     }
                 });
+            }
+            else if (subMdl && subMdl.state !== 3) {
+                subMdl.active();
             }
         }
     });
