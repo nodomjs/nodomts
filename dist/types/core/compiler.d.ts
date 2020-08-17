@@ -7,12 +7,11 @@ declare namespace nodom {
     class Compiler {
         /**
          * 编译
-         * 如果为el innerHTML方式，则可能存在多个子节点，只能返回上一级，否则返回模块根节点
+         * 如果为el innerHTML方式，则可能存在多个子节点，则在外面包一层父节点，因为模块只能有一个根节点，否则返回模块根节点
          * @param elementStr    待编译html串
-         * @param needNotRoot   返回不需要根(根是一个虚节点，如果是对一个模块，则需要根)
          * @returns             虚拟element
          */
-        static compile(elementStr: string, needNotRoot?: boolean): Element;
+        static compile(elementStr: string): Element;
         /**
          * 编译dom
          * @param ele           待编译element

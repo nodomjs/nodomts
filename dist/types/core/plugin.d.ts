@@ -9,6 +9,14 @@ declare namespace nodom {
          */
         tagName: string;
         /**
+         * module id
+         */
+        moduleId: number;
+        /**
+         * model id
+         */
+        modelId: number;
+        /**
          * 绑定的dom key
          */
         key: string;

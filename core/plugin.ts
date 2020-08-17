@@ -8,6 +8,16 @@ namespace nodom{
          * tag name
          */
         tagName:string;
+
+        /**
+         * module id
+         */
+        moduleId:number;
+        /**
+         * model id
+         */
+        modelId:number;
+
         /**
          * 绑定的dom key
          */
@@ -33,7 +43,9 @@ namespace nodom{
          * @param uidom     虚拟dom
          */
         beforeRender(module:nodom.Module,uidom:nodom.Element){
+            this.moduleId = module.id;
             if(uidom.key !== this.key){
+                this.modelId = uidom.modelId;
                 this.key = uidom.key;
                 //添加到模块
                 if(uidom.hasProp('name')){

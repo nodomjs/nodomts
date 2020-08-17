@@ -8,17 +8,17 @@ var nodom;
     class Compiler {
         /**
          * 编译
-         * 如果为el innerHTML方式，则可能存在多个子节点，只能返回上一级，否则返回模块根节点
+         * 如果为el innerHTML方式，则可能存在多个子节点，则在外面包一层父节点，因为模块只能有一个根节点，否则返回模块根节点
          * @param elementStr    待编译html串
-         * @param needNotRoot   返回不需要根(根是一个虚节点，如果是对一个模块，则需要根)
          * @returns             虚拟element
          */
-        static compile(elementStr, needNotRoot) {
+        static compile(elementStr) {
             const div = nodom.Util.newEl('div');
             div.innerHTML = elementStr;
-            let oe = new nodom.Element();
+            let oe = new nodom.Element('div');
             this.handleChildren(oe, div);
-            if (needNotRoot) {
+            //保证模块只有一个根节点
+            if (oe.children.length === 1) {
                 return oe.children[0];
             }
             return oe;

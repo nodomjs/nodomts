@@ -703,12 +703,12 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Compiler {
-        static compile(elementStr, needNotRoot) {
+        static compile(elementStr) {
             const div = nodom.Util.newEl('div');
             div.innerHTML = elementStr;
-            let oe = new nodom.Element();
+            let oe = new nodom.Element('div');
             this.handleChildren(oe, div);
-            if (needNotRoot) {
+            if (oe.children.length === 1) {
                 return oe.children[0];
             }
             return oe;
@@ -2603,9 +2603,7 @@ var nodom;
             root.render(this, null);
             this.doModuleEvent('onBeforeFirstRenderToHTML');
             nodom.Util.empty(this.container);
-            root.children.forEach((item) => {
-                item.renderToHtml(this, { type: 'fresh' });
-            });
+            root.renderToHtml(this, { type: 'fresh' });
             delete this.firstRender;
             this.doModuleEvent('onFirstRender');
             this.doRenderOp(this.firstRenderOps);
@@ -4711,7 +4709,9 @@ var nodom;
     class Plugin {
         init(el) { }
         beforeRender(module, uidom) {
+            this.moduleId = module.id;
             if (uidom.key !== this.key) {
+                this.modelId = uidom.modelId;
                 this.key = uidom.key;
                 if (uidom.hasProp('name')) {
                     module.addPlugin(uidom.getProp('name'), this);

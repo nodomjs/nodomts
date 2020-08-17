@@ -141,6 +141,10 @@ var nodom;
             else {
                 if (type === 'fresh' || type === 'add' || type === 'text') {
                     el = module.container.querySelector("[key='" + parent.key + "']");
+                    //如果是模块容器，则找不到
+                    // if(!el){
+                    //     el = module.container;
+                    // }
                 }
                 else if (this.tagName !== undefined) { //element节点才可以查找
                     el = module.container.querySelector("[key='" + this.key + "']");
