@@ -9,6 +9,10 @@ declare namespace nodom {
          */
         tagName: string;
         /**
+         * 绑定的element
+         */
+        element: Element;
+        /**
          * module id
          */
         moduleId: number;
@@ -28,11 +32,7 @@ declare namespace nodom {
          * 是否需要前置渲染
          */
         needPreRender: boolean;
-        /**
-         * 编译时执行方法
-         * @param el    待编译html element
-         */
-        init(el: HTMLElement): void;
+        constructor(params: HTMLElement | object);
         /**
          * 前置渲染方法(dom render方法中获取modelId和parentKey后执行)
          * @param module    模块
@@ -48,6 +48,6 @@ declare namespace nodom {
         /**
          * 克隆
          */
-        clone(): any;
+        clone(dst?: Element): any;
     }
 }

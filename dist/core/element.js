@@ -302,7 +302,7 @@ var nodom;
             //define element复制
             if (this.plugin) {
                 if (changeKey) {
-                    dst.plugin = this.plugin.clone();
+                    dst.plugin = this.plugin.clone(dst);
                 }
                 else {
                     dst.plugin = this.plugin;

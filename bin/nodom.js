@@ -754,7 +754,7 @@ var nodom;
             if (!de) {
                 return;
             }
-            return Reflect.construct(de, []).init(el);
+            return Reflect.construct(de, [el]).element;
         }
         static handleAttributes(oe, el) {
             for (let i = 0; i < el.attributes.length; i++) {
@@ -1129,7 +1129,7 @@ var nodom;
             }
             if (this.plugin) {
                 if (changeKey) {
-                    dst.plugin = this.plugin.clone();
+                    dst.plugin = this.plugin.clone(dst);
                 }
                 else {
                     dst.plugin = this.plugin;
@@ -4707,11 +4707,12 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Plugin {
-        init(el) { }
+        constructor(params) { }
         beforeRender(module, uidom) {
+            this.element = uidom;
             this.moduleId = module.id;
+            this.modelId = uidom.modelId;
             if (uidom.key !== this.key) {
-                this.modelId = uidom.modelId;
                 this.key = uidom.key;
                 if (uidom.hasProp('name')) {
                     module.addPlugin(uidom.getProp('name'), this);
@@ -4723,16 +4724,19 @@ var nodom;
             }
         }
         afterRender(module, uidom) { }
-        clone() {
-            let ele = Reflect.construct(this.constructor, []);
-            let excludeProps = ['key'];
+        clone(dst) {
+            let plugin = Reflect.construct(this.constructor, []);
+            let excludeProps = ['key', 'element'];
             nodom.Util.getOwnProps(this).forEach((prop) => {
                 if (excludeProps.includes(prop)) {
                     return;
                 }
-                ele[prop] = nodom.Util.clone(this[prop]);
+                plugin[prop] = nodom.Util.clone(this[prop]);
             });
-            return ele;
+            if (dst) {
+                plugin.element = dst;
+            }
+            return plugin;
         }
     }
     nodom.Plugin = Plugin;

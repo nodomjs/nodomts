@@ -86,7 +86,7 @@ namespace nodom {
             if(!de){
                 return;
             }
-            return Reflect.construct(de,[]).init(el);
+            return Reflect.construct(de,[el]).element;
         }
 
         /**
