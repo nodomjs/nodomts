@@ -48,9 +48,9 @@ namespace nodom{
         beforeRender(module:nodom.Module,uidom:nodom.Element){
             this.element = uidom;
             this.moduleId = module.id;
-            this.modelId = uidom.modelId;
             if(uidom.key !== this.key){
                 this.key = uidom.key;
+                this.modelId = uidom.modelId;
                 //添加到模块
                 if(uidom.hasProp('name')){
                     module.addPlugin(uidom.getProp('name'),this);       

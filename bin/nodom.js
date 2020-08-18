@@ -4711,9 +4711,9 @@ var nodom;
         beforeRender(module, uidom) {
             this.element = uidom;
             this.moduleId = module.id;
-            this.modelId = uidom.modelId;
             if (uidom.key !== this.key) {
                 this.key = uidom.key;
+                this.modelId = uidom.modelId;
                 if (uidom.hasProp('name')) {
                     module.addPlugin(uidom.getProp('name'), this);
                 }
