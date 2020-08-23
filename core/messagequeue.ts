@@ -16,11 +16,7 @@ namespace nodom {
          * 消息内容
          */
         content: any;
-        /**
-         * 是否已读
-         */
-        readed: boolean;
-
+        
         /**
          * @param fromModule 	来源模块id
          * @param toModule 		目标模块id
@@ -30,7 +26,6 @@ namespace nodom {
             this.fromModule = fromModule;
             this.toModule = toModule;
             this.content = content;
-            this.readed = false;
         }
     }
     /**

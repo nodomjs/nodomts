@@ -3,8 +3,8 @@ namespace nodom {
     /**
      *  指令类型初始化    
      *  每个指令类型都有一个init和handle方法，init和handle都可选
-     *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)，无返回
-     *  handle方法在渲染时执行，包含三个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
+     *  init 方法在编译时执行，包含两个参数 directive(指令)、dom(虚拟dom)，无返回
+     *  handle方法在渲染时执行，包含四个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
      */
 
     /**
@@ -17,9 +17,9 @@ namespace nodom {
      * 可增加 data 属性，用于指定数据url
      * 可增加 name 属性，用于设置模块name，如果x-module已设置，则无效
      */
-    DirectiveManager.addType('module', {
-        prio: 0,
-        init: (directive: Directive,dom:Element) => {
+    DirectiveManager.addType('module', 
+        0,
+        (directive: Directive,dom:Element) => {
             let value: string = < string > directive.value;
             let valueArr:string[] = value.split('|');
             directive.value = valueArr[0];
@@ -34,7 +34,7 @@ namespace nodom {
             directive.extra = {};
         },
 
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             const ext = directive.extra;
             let needNew:boolean = ext.moduleId === undefined;
             let subMdl:Module;
@@ -66,15 +66,15 @@ namespace nodom {
                 subMdl.active();
             }
         }
-    });
+    );
 
 
     /**
      *  model指令
      */    
-    DirectiveManager.addType('model', {
-        prio: 1,
-        init: (directive: Directive,dom:Element) => {
+    DirectiveManager.addType('model', 
+        1,
+        (directive: Directive,dom:Element) => {
             let value: string = < string > directive.value;
             //处理以.分割的字段，没有就是一个
             if (Util.isString(value)) {
@@ -102,7 +102,7 @@ namespace nodom {
             
         },
 
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let startIndex:number=0;
             let data;
             let model:Model;
@@ -122,15 +122,15 @@ namespace nodom {
                 dom.modelId = model.id;
             }
         }
-    });
+    );
 
     /**
      * 指令名 repeat
      * 描述：重复指令
      */
-    DirectiveManager.addType('repeat', {
-        prio: 2,
-        init: (directive: Directive,dom:Element) => {
+    DirectiveManager.addType('repeat',
+        2,
+        (directive: Directive,dom:Element) => {
             let value = directive.value;
             if (!value) {
                 throw new NodomError("paramException", "x-repeat");
@@ -153,7 +153,7 @@ namespace nodom {
             }
             directive.value = modelName;
         },
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let model = module.modelFactory.get(dom.modelId);
             if(!model || !model.data){
                 return;
@@ -210,14 +210,15 @@ namespace nodom {
                 });
             }
         }
-    });
+    );
 
     /**
      * 指令名 if
      * 描述：条件指令
      */
-    DirectiveManager.addType('if', {
-        init: (directive: Directive,dom:Element) => {
+    DirectiveManager.addType('if',
+        10,
+        (directive: Directive,dom:Element) => {
             if(typeof directive.value === 'string'){
                 let value = directive.value;
                 if (!value) {
@@ -228,7 +229,7 @@ namespace nodom {
                 directive.value = expr;
             }
         },
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             //设置forceRender
             let model = module.modelFactory.get(dom.modelId);
             let v = directive.value.val(model);
@@ -267,28 +268,29 @@ namespace nodom {
                 }
             }
         }
-    });
+    );
 
     /**
      * 指令名 else
      * 描述：else指令
      */
-    DirectiveManager.addType('else', {
-        name: 'else',
-        init: (directive: Directive) => {
+    DirectiveManager.addType('else',
+        10,
+        (directive: Directive) => {
             return;
         },
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             return;
         }
-    });
+    );
 
     /**
      * 指令名 show
      * 描述：显示指令
      */
-    DirectiveManager.addType('show', {
-        init: (directive: Directive,dom:Element) => {
+    DirectiveManager.addType('show', 
+        10,
+        (directive: Directive,dom:Element) => {
             if(typeof directive.value === 'string'){
                 let value = directive.value;
                 if (!value) {
@@ -298,7 +300,7 @@ namespace nodom {
                 directive.value = expr;
             }
         },
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let model = module.modelFactory.get(dom.modelId);
             let v = directive.value.val(model);
             //渲染
@@ -308,14 +310,15 @@ namespace nodom {
                 dom.dontRender = true;
             }
         }
-    });
+    );
 
     /**
      * 指令名 class
      * 描述：class指令
      */
-    DirectiveManager.addType('class', {
-        init: (directive: Directive,dom:Element) => {
+    DirectiveManager.addType('class',
+        10,
+        (directive: Directive,dom:Element) => {
             if(typeof directive.value === 'string'){
                 //转换为json数据
                 let obj = eval('(' + directive.value + ')');
@@ -334,7 +337,7 @@ namespace nodom {
                 directive.value = robj;
             }
         },
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let obj = directive.value;
             let clsArr:Array<string> = [];
             let cls:string = dom.getProp('class');
@@ -363,14 +366,15 @@ namespace nodom {
             //刷新dom的class
             dom.setProp('class',clsArr.join(' '));
         }
-    });
+    );
 
     /**
      * 指令名 field
      * 描述：字段指令
      */
-    DirectiveManager.addType('field', {
-        init: (directive: Directive,dom:Element) => {
+    DirectiveManager.addType('field', 
+        10,
+        (directive: Directive,dom:Element) => {
             dom.setProp('name',directive.value);
             //默认text
             let type = dom.getProp('type') || 'text';
@@ -412,7 +416,7 @@ namespace nodom {
             ));
         },
 
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             const type:string = dom.getProp('type');
             const tgname = dom.tagName.toLowerCase();
             const model = module.modelFactory.get(dom.modelId);
@@ -453,14 +457,15 @@ namespace nodom {
                 dom.assets.set('value',dataValue);
             }
         }    
-    });
+    );
 
     /**
      * 指令名 validity
      * 描述：字段指令
      */
-    DirectiveManager.addType('validity', {
-        init: (directive:Directive,dom:Element) => {
+    DirectiveManager.addType('validity', 
+        10,
+        (directive:Directive,dom:Element) => {
             let ind, fn, method;
             let value = directive.value;
             //处理带自定义校验方法
@@ -496,7 +501,7 @@ namespace nodom {
             }
         },
 
-        handle: (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        (directive: Directive, dom: Element, module: Module, parent: Element) => {
             
             setTimeout(()=>{
                 const el:HTMLInputElement = module.container.querySelector("[name='" + directive.value + "']");
@@ -617,5 +622,84 @@ namespace nodom {
                 }
             }
         }
-    });
+    );
+
+    /**
+     * 增加route指令
+     */
+    DirectiveManager.addType('route',
+        10,
+        (directive:Directive, dom:Element) => {
+            let value = directive.value;
+            if (Util.isEmpty(value)) {
+                return;
+            }
+
+            //a标签需要设置href
+            if (dom.tagName === 'A') {
+                dom.setProp('href','javascript:void(0)');
+            }
+            // 表达式处理
+            if (typeof value === 'string' && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
+                value = new Expression(value.substring(2, value.length - 2));
+            } 
+            //表达式，则需要设置为exprProp
+            if(value instanceof Expression){
+                dom.setProp('path',value,true);
+                directive.value = value;
+            }else{
+                dom.setProp('path',value);
+            }
+            
+            //添加click事件
+            dom.addEvent(new NodomEvent('click', '', 
+                (dom,model,module,e) => {
+                    let path:string = dom.getProp('path');
+                    if (Util.isEmpty(path)) {
+                        return;
+                    }
+                    Router.addPath(path);
+                }
+            ));
+        },
+
+        (directive:Directive, dom:Element, module:Module, parent:Element) => {
+            if (dom.hasProp('active')) {
+                //添加到router的activeDomMap
+                let domArr:string[] = Router.activeDomMap.get(module.id);
+                if(!domArr){
+                    Router.activeDomMap.set(module.id,[dom.key]);
+                }else{
+                    if(!domArr.includes(dom.key)){
+                        domArr.push(dom.key);
+                    }
+                }
+            }
+
+            let path:string = dom.getProp('path');
+            if (path === Router.currentPath) {
+                return;
+            }
+            
+            //active需要跳转路由（当前路由为该路径对应的父路由）
+            if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
+                //可能router尚未渲染出来
+                setTimeout(()=>{Router.addPath(path)},0);
+            }
+        }
+    );
+
+    /**
+     * 增加router指令
+     */
+    DirectiveManager.addType('router', 
+        10,
+        (directive, dom) => {
+            //修改节点role
+            dom.setProp('role','module');
+        },
+        (directive, dom, module, parent) => {
+            Router.routerKeyMap.set(module.id,dom.key);
+        }
+    );
 }

@@ -14,9 +14,10 @@ namespace nodom {
         moduleId: number;
 
         /**
-         * 模型对应数据
+         * 模型对应数据，初始化后，data会增加“$modelId”数据项
          */
         data: any;
+
         /**
          * 模型字段集
          * 每个字段对象结构为{value:值[,handlers:观察器，观察器为模块方法名或函数]} 
@@ -27,8 +28,9 @@ namespace nodom {
          * 父model
          */
         parent:Model;
+
         /**
-         * 孩子
+         * 子model
          */
         children:object|Array<Model>;
 
@@ -76,7 +78,7 @@ namespace nodom {
         }
 
         /**
-         * 设置属性，可能属性之前不存在，用于在初始化不存在的属性创建和赋值
+         * 设置属性，可能属性之前不存在，用于在初始化不存在的属性增强model能力
          * @param key       键，可以带“.”，如a, a.b.c
          * @param value     对应值
          */
@@ -93,7 +95,6 @@ namespace nodom {
                 model = this;
             }
 
-            
             //数据不存在
             if (!model) {
                 throw new NodomError('notexist1', TipWords.dataItem, key);
@@ -122,7 +123,7 @@ namespace nodom {
         }
 
         /**
-         * 获取子孙模型
+         * 获取子孙model
          * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
          */
         get(key:string|number):Model{
@@ -183,7 +184,7 @@ namespace nodom {
          * @param field 	字段名或空(数组更新)
          * @param value 	字段对应的新值
          */
-        update(field:string, value?:any) {
+        private update(field:string, value?:any) {
             let change:boolean = false;
             let module:Module = ModuleFactory.get(this.moduleId);
             
@@ -248,7 +249,7 @@ namespace nodom {
 
         /**
          * 获取所有数据
-         * @param dirty   是否获取脏数据（带$数据，该数据由框架生成）
+         * @param dirty   是否获取脏数据（"$"开头数据项，这类数据项由nodom生成）
          */
         getData(dirty?:boolean):any{
             // dirty，直接返回数据
@@ -261,7 +262,7 @@ namespace nodom {
         /**
          * 观察(取消观察)某个数据项
          * @param key       数据项名    
-         * @param operate   变化时执行方法名(在module的methods中定义)
+         * @param operate   数据项变化时执行方法名(在module的methods中定义)
          * @param cancel    取消观察 
          */
         watch(key:string,operate:string|Function,cancel?:boolean){
@@ -284,10 +285,12 @@ namespace nodom {
                 }
             }
         }
+
         /**
          * 为对象添加setter
+         * @param data  数据
          */
-        addSetterGetter(data:any,parent?:Model) {
+        private addSetterGetter(data:any) {
             let me = this;
             let module:Module = ModuleFactory.get(this.moduleId);
                 
@@ -302,7 +305,6 @@ namespace nodom {
                     }
                 });
             } else if (Util.isArray(data)) {
-                
                 //监听数组事件
                 let watcher:Array<string> = ['push', 'unshift', 'splice', 'pop', 'shift', 'reverse', 'sort'];
                 //添加自定义事件，绑定改变事件
@@ -358,9 +360,9 @@ namespace nodom {
         /**
          * 定义属性set和get方法
          * @param data 	数据对象
-         * @param p 	属性
+         * @param p 	属性名
          */
-        defineProp(data:any, p:string) {
+        private defineProp(data:any, p:string) {
             Object.defineProperty(data, p, {
                 configurable:true,
                 set: (v)=> {

@@ -69,7 +69,6 @@ namespace nodom{
         }else{
             module = new Module(config.module);
         }
-        // ModuleFactory.add(module);
         //设置主模块
         ModuleFactory.setMain(module);
         await module.active();
@@ -77,7 +76,6 @@ namespace nodom{
         if(config.routes){
             this.createRoute(config.routes);
         }
-
         return module;
     }
 
@@ -122,11 +120,11 @@ namespace nodom{
      * @param handler   渲染时方法
      */
     export function createDirective(name:string,priority:number,init:Function,handler:Function){
-        return DirectiveManager.addType(name,{
-            prio:priority,
-            init:init,
-            handler:handler
-        });
+        return DirectiveManager.addType(name,
+            priority,
+            init,
+            handler
+        );
     }
 
     /**
@@ -145,7 +143,7 @@ namespace nodom{
      *                  pwd                 密码
      *                  rand                bool随机数，请求动态资源时可能需要
      */
-    export function request(config){
+    export function request(config):Promise<any>{
         return new Promise((resolve, reject) => {
             if(typeof config === 'string'){
                 config = {

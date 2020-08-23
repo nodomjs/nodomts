@@ -53,8 +53,7 @@ namespace nodom {
      *  如：从/r1/r2/r3  到 /r1/r4/r5，则onLeave响应顺序为r3、r2
      *  onEnter事件则从上往下执行
 	 * @author 		yanglei
-     * @since 		1.0.0
-     * @date		2017-01-21
+     * @since 		1.0
      */
     export class Router {
 		/**
@@ -99,6 +98,11 @@ namespace nodom {
          * 激活Dom map，格式为{moduleId:[]}
          */
         static activeDomMap:Map<number,Array<string>> = new Map();
+
+        /**
+         * 绑定到module的router指令对应的key，即router容器对应的key，格式为 {moduleId:routerKey,...}
+         */
+        static routerKeyMap:Map<number,string> = new Map();
         /**
          * 往路由管理器中添加路径
          * @param path 	路径 
@@ -143,13 +147,18 @@ namespace nodom {
             //获得当前模块，用于寻找router view
             let parentModule:Module;
             if(diff[0] === null){
-                parentModule = ModuleFactory.getMain();
+                parentModule = findParentModule();
             }else{
                 if(typeof diff[0].module === 'string'){
                     parentModule = await ModuleFactory.getInstance(diff[0].module,diff[0].moduleName);
                 }else{
                     parentModule = ModuleFactory.get(diff[0].module);
                 }
+            }
+            
+            //父模块不存在，不继续处理
+            if(!parentModule){
+                return;
             }
             //onleave事件，从末往前执行
             for (let i = diff[1].length - 1; i >= 0; i--) {
@@ -211,10 +220,20 @@ namespace nodom {
                     
                     //设置首次渲染
                     module.firstRender = true;
+                    let routerKey:string = Router.routerKeyMap.get(parentModule.id);
+                    //从父模块子节点中删除以此routerKey为containerKey的模块
+                    for(let i=0;i<parentModule.children.length;i++){
+                        let m:nodom.Module = ModuleFactory.get(parentModule.children[i]);
+                        if(m && m.containerKey === routerKey){
+                            parentModule.children.splice(i,1);
+                            break;
+                        }
+                    }
+                    //把此模块添加到父模块
                     parentModule.addChild(module.id);
-
+                   
                     if(index++ === 0){ //第一个的父模块为已渲染或根模块
-                        module.setContainerKey(parentModule.routerKey);
+                        module.setContainerKey(routerKey);
                         //激活模块
                         await module.active();
                         //设置route active
@@ -285,6 +304,23 @@ namespace nodom {
                     module.model = new Model({}, module);
                 }
                 module.model.set('$route',o);
+            }
+
+            /**
+             * 找到第一个带router的父模块
+             * @param pm    父模块
+             */
+            function findParentModule(pm?:nodom.Module){
+                if(!pm){
+                    pm = ModuleFactory.getMain();
+                }
+                if(Router.routerKeyMap.has(pm.id)){
+                    return pm;
+                }
+                for(let c of pm.children){
+                    let m:nodom.Module = ModuleFactory.get(c);
+                    return findParentModule(m);
+                }
             }
         }
 
@@ -714,81 +750,5 @@ namespace nodom {
         }
         Router.startStyle = 2;
         Router.addPath(state);
-    });
-
-    /**
-     * 增加route指令
-     */
-    DirectiveManager.addType('route', {
-        init: (directive:Directive, dom:Element) => {
-            let value = directive.value;
-            if (Util.isEmpty(value)) {
-                return;
-            }
-
-            //a标签需要设置href
-            if (dom.tagName === 'A') {
-                dom.setProp('href','javascript:void(0)');
-            }
-            // 表达式处理
-            if (typeof value === 'string' && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
-                value = new Expression(value.substring(2, value.length - 2));
-            } 
-            //表达式，则需要设置为exprProp
-            if(value instanceof Expression){
-                dom.setProp('path',value,true);
-                directive.value = value;
-            }else{
-                dom.setProp('path',value);
-            }
-            
-            //添加click事件
-            dom.addEvent(new NodomEvent('click', '', 
-                (dom,model,module,e) => {
-                    let path:string = dom.getProp('path');
-                    if (Util.isEmpty(path)) {
-                        return;
-                    }
-                    Router.addPath(path);
-                }
-            ));
-        },
-
-        handle: (directive:Directive, dom:Element, module:Module, parent:Element) => {
-            if (dom.hasProp('active')) {
-                //添加到router的activeDomMap
-                let domArr:string[] = Router.activeDomMap.get(module.id);
-                if(!domArr){
-                    Router.activeDomMap.set(module.id,[dom.key]);
-                }else{
-                    if(!domArr.includes(dom.key)){
-                        domArr.push(dom.key);
-                    }
-                }
-            }
-
-            let path:string = dom.getProp('path');
-            if (path === Router.currentPath) {
-                return;
-            }
-            
-            //active需要跳转路由（当前路由为该路径对应的父路由）
-            if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
-                Router.addPath(path);
-            }
-        }
-    });
-
-    /**
-     * 增加router指令
-     */
-    DirectiveManager.addType('router', {
-        init: (directive, dom) => {
-            //修改节点role
-            dom.setProp('role','module');
-        },
-        handle: (directive, dom, module, parent) => {
-            module.routerKey = dom.key;
-        }
     });
 }

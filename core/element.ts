@@ -1,6 +1,5 @@
 // / <reference path="nodom.ts" />
 namespace nodom {
-	
     /**
      * 改变的dom类型
      * 用于比较需要修改渲染的节点属性存储
@@ -53,18 +52,19 @@ namespace nodom {
      */
     export class Element {
 		/**
-		 * key，全局唯一
+		 * key，整颗虚拟dom树唯一
 		 */
 		key:string;
         
 		/**
 		 * 绑定的模型id，如果没有，则从父继承
 		 */
-		modelId:number;
+        modelId:number;
+        
 		/**
 		 * element为textnode时有效
 		 */
-		textContent:string|HTMLElement|HTMLFrameElement;
+		textContent:string|HTMLElement;
 
 		/**
 		 * 类型，包括: html fragment 或 html element 
@@ -82,30 +82,33 @@ namespace nodom {
         assets:Map<string,any> = new Map();
 
 		/**
-		 * 属性集合，来源于attribute
+		 * 静态属性(attribute)集合
          * {prop1:value1,...}
 		 */
-		props:object = {};
+        props:object = {};
+
 		/**
-		 * 含表达式的属性集合，来源于property
+		 * 含表达式的属性集合
          * {prop1:value1,...}
 		 */
-		exprProps:object = {};
+        exprProps:object = {};
+        
 		/**
 		 * 事件集合,{eventName1:nodomEvent1,...}
-         * 一个事件名，可以绑定多个事件对象
+         * 一个事件名，可以绑定多个事件方法对象
 		 */
 		events:Map<string,NodomEvent|NodomEvent[]> = new Map();
 
 		/**
-		 * 表达式集合
+		 * 表达式+字符串数组，用于textnode
 		 */
 		expressions:Array<Expression|string>=[];
 		
 		/**
 		 * 子element
 		 */
-		children:Array<Element> = [];
+        children:Array<Element> = [];
+        
 		/**
 		 * 父element key
 		 */
@@ -114,41 +117,29 @@ namespace nodom {
 		/**
 		 * 父虚拟dom
 		 */
-		parent:Element;
+        parent:Element;
+        
 		/**
-		 * 标签名，如div
+		 * 元素名，如div
 		 */
         tagName:string;
+
 		/**
 		 * 不渲染标志，单次渲染有效
 		 */
         dontRender:boolean = false;
         
         /**
-		 * 是否找到（dom比较时使用）
-		 */
-        finded:boolean;
-        
-        /**
-         * 扩展数据，渲染时和绑定数据合并
-         * @param tag 
-         */
-        extraData:object;
-
-        /**
-         * 暂存数据，不纳入渲染流程
-         */
-        tmpData:object;
-
-        /**
          * 绑定插件
          */
         plugin:Plugin;
+
 		/**
 		 * @param tag 标签名
 		 */
         constructor(tag?:string) {
             this.tagName = tag; //标签
+            //key
             this.key = Util.genId()+'';
         }
 
@@ -182,7 +173,7 @@ namespace nodom {
             
             if (this.tagName !== undefined) { //element
                 this.handleProps(module);
-                this.handleDirectives(module, parent);
+                this.handleDirectives(module);
             } else { //textContent
                 this.handleTextContent(module);
             }
@@ -232,10 +223,6 @@ namespace nodom {
             } else {
                 if (type === 'fresh' || type === 'add' || type === 'text') {
                     el = module.container.querySelector("[key='" + parent.key + "']");
-                    //如果是模块容器，则找不到
-                    // if(!el){
-                    //     el = module.container;
-                    // }
                 } else if (this.tagName !== undefined) { //element节点才可以查找
                     el = module.container.querySelector("[key='" + this.key + "']");
                 }
@@ -368,7 +355,6 @@ namespace nodom {
                     });
                 }
             }
-
         }
 
         /**
@@ -454,16 +440,14 @@ namespace nodom {
             for(let c of this.children){
                 dst.add(c.clone(changeKey));
             }
-
-            
             return dst;
         }
 
         /**
          * 处理指令
-         * 
+         * @param module    模块
          */
-        handleDirectives(module, parent) {
+        handleDirectives(module:Module) {
             if (this.dontRender) {
                 return;
             }
@@ -478,6 +462,8 @@ namespace nodom {
 
         /**
          * 表达式处理，添加到expression计算队列
+         * @param exprArr   表达式或字符串数组
+         * @param module    模块
          */
         handleExpression(exprArr:Array<Expression|string>, module:Module) {
             if (this.dontRender) {
@@ -499,8 +485,9 @@ namespace nodom {
 
         /**
          * 处理属性（带表达式）
+         * @param module    模块
          */
-        handleProps(module) {
+        handleProps(module:Module) {
             if (this.dontRender) {
                 return;
             }
@@ -535,8 +522,10 @@ namespace nodom {
                 el[key] = this.assets.get(key);
             }
         }
+
         /**
          * 处理文本（表达式）
+         * @param module    模块
          */
         handleTextContent(module) {
             if (this.dontRender) {
@@ -590,7 +579,7 @@ namespace nodom {
 
         /**
          * 移除指令
-         * @param directives 	待删除的指令集
+         * @param directives 	待删除的指令类型数组
          */
         removeDirectives(directives:string[]) {
             for(let i=0;i<this.directives.length;i++){
@@ -598,7 +587,7 @@ namespace nodom {
                     break;   
                 }
                 for(let j=0;j<directives.length;j++){
-                    if(directives[j].includes(this.directives[i].type)){
+                    if(directives[j].includes(this.directives[i].type.name)){
                         this.directives.splice(i--,1);
                         directives.splice(j--,1);
                         break;
@@ -629,10 +618,11 @@ namespace nodom {
          * 添加子节点
          * @param dom 	子节点
          */
-        add(dom) {
+        add(dom:Element) {
             dom.parentKey = this.key;
             this.children.push(dom);
         }
+
         /**
          * 从虚拟dom树和html dom树删除自己
          * @param module 	模块
@@ -654,7 +644,6 @@ namespace nodom {
             }
         }
 
-
         /**
          * 从html删除
          */
@@ -667,6 +656,7 @@ namespace nodom {
 
         /**
          * 移除子节点
+         * @param dom   子dom
          */
         removeChild(dom:Element) {
             let ind:number;
@@ -714,7 +704,7 @@ namespace nodom {
          * 是否包含节点
          * @param dom 	包含的节点 
          */
-        contains(dom) {
+        contains(dom:Element) {
             for (; dom !== undefined && dom !== this; dom = dom.parent);
             return dom !== undefined;
         }
@@ -729,39 +719,26 @@ namespace nodom {
             if(!clazz){
                 return false;
             }else{
-                let sa:string[] = clazz.split(' ');
-                return sa.includes(cls); 
+                return clazz.trim().split(/\s+/).includes(cls); 
             }
         }
+
         /**
          * 添加css class
          * @param cls class名
          */
         addClass(cls:string){
             let clazz = this.props['class'];
-            let finded:boolean = false;
             if(!clazz){
-                clazz = cls;
+                this.props['class'] = cls;
             }else{
-                let sa:string[] = clazz.split(' ');
-                let s:string;
-                for(let i=0;i<sa.length;i++){
-                    if(s === ''){
-                        sa.splice(i--,1);
-                        continue;
-                    }
-                    //找到则不再处理
-                    if(sa[i] === cls){
-                        finded = true;
-                        break;
-                    }
-                }
-                if(!finded){
+                let sa:string[] = clazz.trim().split(/\s+/);
+                if(!sa.includes(cls)){
                     sa.push(cls);
+                    clazz = sa.join(' ');
+                    this.props['class'] = clazz;
                 }
-                clazz = sa.join(' ');
             }
-            this.props['class'] = clazz;
         }
 
         /**
@@ -773,20 +750,12 @@ namespace nodom {
             if(!clazz){
                 return;
             }else{
-                let sa:string[] = clazz.split(' ');
-                let s:string;
-                for(let i=0;i<sa.length;i++){
-                    if(s === ''){
-                        sa.splice(i--,1);
-                        continue;
-                    }
-                    //找到则删除
-                    if(sa[i] === cls){
-                        sa.splice(i,1);
-                        break;
-                    }
+                let sa:string[] = clazz.trim().split(/\s+/);
+                let index;
+                if((index = sa.indexOf(cls)) !== -1){
+                    sa.splice(index,1);
+                    clazz = sa.join(' ');
                 }
-                clazz = sa.join(' ');
             }
             this.props['class'] = clazz;
         }
@@ -871,7 +840,6 @@ namespace nodom {
                 }
             }
         }
-
 		
         /**
          * 比较节点
@@ -885,6 +853,8 @@ namespace nodom {
             }
             let re:ChangedDom = new ChangedDom();
             let change:boolean = false;
+            //找到过的dom map {domKey:true/false}，比较后，则添加到map
+            let findedMap:Map<string,boolean> = new Map();
 
             if (this.tagName === undefined) { //文本节点
                 if (dst.tagName === undefined) {
@@ -967,7 +937,7 @@ namespace nodom {
                         if (dom2 !== undefined) {
                             dom1.compare(dom2, retArr, this);
                             //设置匹配标志，用于后面删除没有标志的节点
-                            dom2.finded = true;
+                            findedMap.set(dom2.key,true);
                         } else {
                             // dom1为新增节点
                             retArr.push(new ChangedDom(dom1,'add',this,ind));
@@ -977,10 +947,8 @@ namespace nodom {
                     //未匹配的节点设置删除标志
                     if (dst.children && dst.children.length > 0) {
                         dst.children.forEach((item) => {
-                            if (!item.finded) {
+                            if (!findedMap.has(item.key)) {
                                 retArr.push(new ChangedDom(item,'del',dst));
-                            }else{
-                                item.finded = undefined;
                             }
                         });
                     }
@@ -1032,7 +1000,7 @@ namespace nodom {
             if(sort){
                 if(this.directives.length>1){
                     this.directives.sort((a, b) => {
-                        return DirectiveManager.getType(a.type).prio - DirectiveManager.getType(b.type).prio;
+                        return a.type.prio - b.type.prio;
                     });    
                 }
             }
@@ -1040,7 +1008,7 @@ namespace nodom {
 
         /**
          * 执行不渲染关联操作
-         * 关联操作，包括
+         * 关联操作，包括:
          *  1 节点(子节点)含有module指令，需要unactive
          */
         doDontRender(){

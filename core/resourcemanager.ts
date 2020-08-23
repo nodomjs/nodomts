@@ -21,19 +21,6 @@ namespace nodom {
     }
 
     /**
-     * 加载任务对象
-     */
-    interface ILoadTask{
-        /**
-         * 任务id
-         */
-        id:number;
-        /**
-         * 资源数组 {资源id:是否加载完成}
-         */
-        resources:Map<number,boolean>;
-    }
-    /**
      * 资源管理器
      * 用于url资源的加载及管理，主要针对js、模版等
      */
@@ -56,6 +43,7 @@ namespace nodom {
         /**
          * 获取多个资源
          * @param urls  [{url:**,type:**}]或 [url1,url2,...]
+         * @returns     IResourceObj
          */
         public static async getResources(reqs:any[]):Promise<IResourceObj[]>{
             let me = this;
@@ -119,17 +107,14 @@ namespace nodom {
             });
         }
 
-        
-
         /**
          * 唤醒任务
          * @param taskId    任务id
          * @param url       资源url
          * @param content   资源内容
-         * 
          * @returns         加载内容数组或undefined
          */
-        static awake(taskId:number,url?:string):IResourceObj[]{
+        static awake(taskId:number):IResourceObj[]{
             if(!this.loadingTasks.has(taskId)){
                 return;
             }
@@ -174,7 +159,8 @@ namespace nodom {
 
         /**
          * 处理一个资源获取结果
-         * @param rObj 
+         * @param url   资源url
+         * @param rObj  资源对象
          */
         static handleOne(url:string,rObj:IResourceObj){
             switch(rObj.type){

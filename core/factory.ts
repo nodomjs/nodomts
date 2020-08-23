@@ -35,8 +35,9 @@ namespace nodom {
         /**
          * 获得item
 		 * @param name 	item name
+         * @returns     item
          */
-        get(name:string|number) {
+        get(name:string|number):any{
             return this.items.get(name);
         }
 
@@ -51,9 +52,10 @@ namespace nodom {
 
         /**
          * 是否拥有该项
-         * @param name item name
+         * @param name  item name
+         * @return      true/false
          */
-        has(name:string|number){
+        has(name:string|number):boolean{
             return this.items.has(name);
         }
     }

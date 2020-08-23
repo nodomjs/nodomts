@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>nodom-第一个应用</title>
+    <!--引入nodom.js（路径请自行修改）-->
+    <script type="text/javascript" src="../bin/nodom.js"></script>
+</head>
+<body>
+    <div>
+        爱好：
+        <ol>
+            <!--引入了repeat指令和表达式-->
+            <li x-repeat='rows'>{{name}}</li>
+        </ol>
+    </div>
+</body>
+<script>
+    //创建一个应用
+    nodom.newApp({
+        //根模块(应用的主模块)配置
+        module:{
+            //模块容器选择器
+            el: 'div',  
+            //模块数据
+            data: {
+                rows:[
+                    {name:'健身'},
+                    {name:'编码'},
+                    {name:'旅游'}
+                ]
+            }
+        }
+    });
+</script>
+</html>

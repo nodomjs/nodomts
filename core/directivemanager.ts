@@ -8,30 +8,15 @@ namespace nodom {
         /**
          * 指令类型集合
          */
-        static directiveTypes:Map<string,Directive> = new Map();
-        /**
-         * 不可编辑(被新类型替换)类型
-         */
-        static cantEditTypes:Array<string> = ['model','repeat','if','else','show','class','field'];
+        static directiveTypes:Map<string,DirectiveType> = new Map();
+        
         /**
          * 创建指令类型
          * @param name 		    指令类型名
          * @param config 	    配置对象{order:优先级,init:初始化函数,handler:渲染处理函数}
-         * @param replacable    是否可编辑
          */
-        static addType(name:string, config:any,replacable?:boolean) {
-            if (this.directiveTypes.has(name)) {
-                throw new NodomError('exist1', TipWords.directiveType, name);
-            }
-            if (!Util.isObject(config)) {
-                throw new NodomError('invoke', 'DirectiveManager.addType','1', 'Function');
-            }
-            //默认优先级10
-            config.prio = config.prio || 10;
-            if(replacable && !this.cantEditTypes.includes(name)){
-                this.cantEditTypes.push(name);
-            }
-            this.directiveTypes.set(name, config);
+        static addType(name:string, prio?:number,init?:Function,handle?:Function) {
+            this.directiveTypes.set(name, new DirectiveType(name,prio,init,handle));
         }
 
         /**
@@ -39,12 +24,6 @@ namespace nodom {
          * @param name  过滤器类型名
          */
         static removeType(name:string) {
-            if (this.cantEditTypes.indexOf(name) !== -1) {
-                throw new NodomError('notupd', TipWords.system + TipWords.directiveType, name);
-            }
-            if (!this.directiveTypes.has(name)) {
-                throw new NodomError('notexist1', TipWords.directiveType, name);
-            }
             this.directiveTypes.delete(name);
         }
 
@@ -73,7 +52,7 @@ namespace nodom {
          */
          
         static init(directive:Directive,dom:Element) {
-            let dt = this.directiveTypes.get(directive.type);
+            let dt = directive.type;
             if (dt) {
                 return dt.init(directive,dom);
             }
@@ -88,11 +67,8 @@ namespace nodom {
          * @returns             指令执行结果
          */
         static exec(directive:Directive, dom:Element, module:Module, parent:Element) {
-            if (!this.directiveTypes.has(directive.type)) {
-                throw new NodomError('notexist1', TipWords.directiveType, directive.type);
-            }
             //调用
-            return Util.apply(this.directiveTypes.get(directive.type).handle, null, [directive,dom,module,parent]);
+            return Util.apply(directive.type.handle, null, [directive,dom,module,parent]);
         }
     }
 }

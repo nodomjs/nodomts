@@ -2501,6 +2501,7 @@ var nodom;
                         });
                     }
                 }
+                delete this.template;
                 if (!nodom.Util.isEmpty(templateStr)) {
                     this.virtualDom = nodom.Compiler.compile(templateStr);
                 }
@@ -3370,7 +3371,7 @@ var nodom;
                     let diff = this.compare(this.currentPath, path);
                     let parentModule;
                     if (diff[0] === null) {
-                        parentModule = nodom.ModuleFactory.getMain();
+                        parentModule = findParentModule();
                     }
                     else {
                         if (typeof diff[0].module === 'string') {
@@ -3379,6 +3380,9 @@ var nodom;
                         else {
                             parentModule = nodom.ModuleFactory.get(diff[0].module);
                         }
+                    }
+                    if (!parentModule) {
+                        return;
                     }
                     for (let i = diff[1].length - 1; i >= 0; i--) {
                         const r = diff[1][i];
@@ -3428,9 +3432,17 @@ var nodom;
                                 module = nodom.ModuleFactory.get(route.module);
                             }
                             module.firstRender = true;
+                            let routerKey = Router.routerKeyMap.get(parentModule.id);
+                            for (let i = 0; i < parentModule.children.length; i++) {
+                                let m = nodom.ModuleFactory.get(parentModule.children[i]);
+                                if (m && m.containerKey === routerKey) {
+                                    parentModule.children.splice(i, 1);
+                                    break;
+                                }
+                            }
                             parentModule.addChild(module.id);
                             if (index++ === 0) {
-                                module.setContainerKey(parentModule.routerKey);
+                                module.setContainerKey(routerKey);
                                 yield module.active();
                                 route.setLinkActive();
                             }
@@ -3484,6 +3496,19 @@ var nodom;
                             module.model = new nodom.Model({}, module);
                         }
                         module.model.set('$route', o);
+                    }
+                    function findParentModule(pm) {
+                        if (!pm) {
+                            pm = nodom.ModuleFactory.getMain();
+                        }
+                        console.log(Router.routerKeyMap);
+                        if (Router.routerKeyMap.has(pm.id)) {
+                            return pm;
+                        }
+                        for (let c of pm.children) {
+                            let m = nodom.ModuleFactory.get(c);
+                            findParentModule(m);
+                        }
                     }
                 });
             }
@@ -3622,6 +3647,7 @@ var nodom;
         Router.currentIndex = 0;
         Router.startStyle = 0;
         Router.activeDomMap = new Map();
+        Router.routerKeyMap = new Map();
         return Router;
     })();
     nodom.Router = Router;
@@ -3814,7 +3840,7 @@ var nodom;
                 return;
             }
             if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
-                Router.addPath(path);
+                setTimeout(() => { Router.addPath(path); }, 0);
             }
         }
     });
@@ -3823,7 +3849,7 @@ var nodom;
             dom.setProp('role', 'module');
         },
         handle: (directive, dom, module, parent) => {
-            module.routerKey = dom.key;
+            Router.routerKeyMap.set(module.id, dom.key);
         }
     });
 })(nodom || (nodom = {}));

@@ -8,9 +8,9 @@ namespace nodom {
     export class Compiler {
         /**
          * 编译
-         * 如果为el innerHTML方式，则可能存在多个子节点，则在外面包一层父节点，因为模块只能有一个根节点，否则返回模块根节点
+         * 如果为el.innerHTML方式，可能存在多个子节点，则在外面包一层父节点，因为模块只能有一个根节点，否则返回模块根节点
          * @param elementStr    待编译html串
-         * @returns             虚拟element
+         * @returns             虚拟dom
          */
         static compile(elementStr:string):Element {
             const div:HTMLElement = Util.newEl('div');
@@ -27,7 +27,7 @@ namespace nodom {
 
         /**
          * 编译dom
-         * @param ele           待编译element
+         * @param ele           待编译html element
          * @param parent        父节点（virtualdom）   
          */
 
@@ -64,11 +64,11 @@ namespace nodom {
         }
 
         /**
-         * 处理element
-         * @param oe 新建的虚拟dom
-         * @param el 待处理的html element
+         * 编译html element
+         * @param oe    新建的虚拟dom
+         * @returns     虚拟dom
          */
-        static handleEl(el:HTMLElement){
+        static handleEl(el:HTMLElement):Element{
             let oe:Element = new Element(el.tagName);
             this.handleAttributes(oe,el);
             this.handleChildren(oe,el);
@@ -76,10 +76,9 @@ namespace nodom {
         }
 
         /**
-         * 处理插件
-         * @param oe 新建的虚拟dom
+         * 编译插件
          * @param el 待处理的html element
-         * @returns  如果识别自定义el，则返回true
+         * @returns  如果识别自定义el，则返回编译后的虚拟dom，否则返回undefined
          */
         static handleDefineEl(el:HTMLElement):Element{
             let de:any = PluginManager.get(el.tagName);
@@ -136,7 +135,7 @@ namespace nodom {
             });
         }
         /**
-         * 处理含表达式串
+         * 处理表达式串
          * @param exprStr   含表达式的串
          * @return          处理后的字符串和表达式数组
          */
@@ -144,7 +143,7 @@ namespace nodom {
             if (/\{\{.+?\}\}/.test(exprStr) === false) {
                 return exprStr;
             }
-            let reg = /\{\{.+?\}\}/g;
+            let reg:RegExp = /\{\{.+?\}\}/g;
             let retA = new Array();
             let re:RegExpExecArray;
             let oIndex:number = 0;

@@ -1,10 +1,8 @@
 // / <reference path="nodom.ts" />
 namespace nodom{
     /**
-     * @description 基础服务库
-     * @author      yanglei
+     * 基础服务库
      * @since       1.0.0
-     * @create      2016-09-28
      */
     export class Util{
         static generatedId:number=1;
@@ -339,19 +337,6 @@ namespace nodom{
         }
 
         /**
-         * 追加子节点
-         * @param el    父element
-         * @param dom   要添加的dom节点或dom串
-         */
-        static append(el:HTMLElement,dom:Node|string){
-            if(this.isNode(dom)){
-                el.appendChild(<Node>dom);
-            }else if(this.isString(dom)){
-                let div:HTMLElement = this.newEl('div');
-                div.innerHTML = <string>dom;
-            }
-        }
-        /**
          * 是否为element
          * @param el    传入的对象
          * @returns     true/false
@@ -425,52 +410,6 @@ namespace nodom{
             });
         }
         /**
-         * 在srcNode后面插入newNode,如果srcNode无效，则插入到第一个
-         * @param newNode   新节点或数组
-         * @param oldNode   旧节点
-         */
-        static insertAfter(newNode:Node|Array<Node>,srcNode:Node,pNode:Node){
-            if(!this.isNode(newNode)){
-                throw new NodomError('invoke','this.insertAfter','0','Node');
-            }
-            if(!this.isNode(srcNode) && !this.isNode(pNode)){
-                throw new NodomError('invoke2','this.insertAfter','1','2','Node');
-            }
-            let bNode=null;
-            //如果srcNode不存在，则添加在第一个位置
-            if(srcNode === undefined || srcNode === null){
-                bNode = pNode.firstChild;
-            }else{
-                pNode = srcNode.parentNode;
-                bNode = srcNode.nextSibling;
-            }
-            if(!this.isNode(pNode)){
-                return;
-            }
-            if(bNode === null){
-                if(this.isArray(newNode)){
-                    for(let n of <Array<Node>>newNode){
-                        if(this.isEl(n)){
-                            pNode.appendChild(n);
-                        }
-                    }
-                }else{
-                    pNode.appendChild(<Node>newNode);
-                }
-            }else{
-                if(this.isArray(newNode)){
-                    for(let n of <Array<Node>>newNode){
-                        if(this.isEl(n)){
-                            pNode.insertBefore(n,bNode);
-                        }
-                    }
-                }else{
-                    pNode.insertBefore(<Node>newNode,bNode);
-                }
-            }
-        }
-
-        /**
          * 清空子节点
          * @param el
          */
@@ -540,63 +479,6 @@ namespace nodom{
         }
         
 
-        /**
-         * 获取或设置宽度
-         * @param el        elment
-         * @param value     如果为false，则获取外部width(含padding)，否则获取内部width，如果为数字，则设置width=value + px
-         */
-        static width(el:HTMLElement,value?:number|boolean){
-            if(!this.isEl(el)){
-                throw new NodomError('invoke','Util.width','0','Element');
-            }
-            if(this.isNumber(value)){
-                el.style.width = value + 'px';
-            }else{
-                let compStyle;
-                //ie 9+ firefox chrome safari
-                if(window.getComputedStyle){
-                    compStyle = window.getComputedStyle(el,null);
-                }
-                if(!compStyle){
-                    return null;
-                }
-                let w = parseInt(compStyle['width']);
-                if(value === true){
-                    let pw = parseInt(compStyle['paddingLeft'])+parseInt(compStyle['paddingRight']);
-                    w -= pw;    
-                }
-                return w;
-            }
-        }
-
-        /**
-         * 获取或设置高度
-         * @param el        elment
-         * @param value     如果为false，则获取外部height(含padding)，否则获取内部height，如果为数字，则设置height=value + px
-         */
-        static height(el:HTMLElement,value:number|boolean){
-            if(!this.isEl(el)){
-                throw new NodomError('invoke','this.height','0','Element');
-            }
-            if(this.isNumber(value)){
-                el.style.height = value + 'px';
-            }else{
-                let compStyle;
-                //ie 9+ firefox chrome safari
-                if(window.getComputedStyle){
-                    compStyle = window.getComputedStyle(el,null);
-                }
-                if(!compStyle){
-                    return null;
-                }
-                let w = parseInt(compStyle['height']);
-                if(value === true){
-                    let pw = parseInt(compStyle['paddingTop'])+parseInt(compStyle['paddingBottom']);
-                    w -= pw;    
-                }
-                return w;
-            }
-        }
         /******日期相关******/
         /**
          * 日期格式化

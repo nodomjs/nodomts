@@ -3,6 +3,7 @@ namespace nodom{
 	/**
 	 *  编译器
 	 *  描述：用于进行预编译和预编译后的json串反序列化，处理两个部分：虚拟dom树和表达式工厂
+	 *  版本2.1预留
 	 */
 	export class Serializer{
 		/**

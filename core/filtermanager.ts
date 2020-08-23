@@ -8,12 +8,7 @@ namespace nodom {
 		 * 过滤类型
 		 */
 		static filterTypes:Map<string,Function> = new Map();
-		/**
-		 * 不可编辑类型
-		 */
-        static cantEditTypes:Array<string> = ['date','currency','number','tolowercase','touppercase','orderBy','filter'];
-        
-        
+		
         /**
          * 创建过滤器类型
          * @param name 		过滤器类型名
@@ -37,9 +32,6 @@ namespace nodom {
          * @param name  过滤器类型名
          */
         static removeType(name:string) {
-            if (this.cantEditTypes.indexOf(name) !== -1) {
-                throw new NodomError('notupd', TipWords.system + TipWords.filterType, name);
-            }
             if (!this.filterTypes.has(name)) {
                 throw new NodomError('notexist1', TipWords.filterType, name);
             }

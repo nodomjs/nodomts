@@ -13,26 +13,14 @@ namespace nodom {
         /**
 		 * 指令类型，指令管理器中定义
 		 */
-		type:string;
+        type:DirectiveType;
+        
         /**
-         * 优先级，越小优先级越高
-         */
-        prio:number;
-		/**
 		 * 指令值
 		 */
         value:any;
         
-		/**
-		 * 编译时执行方法
-		 */
-		init:Function;
-
-		/**
-		 * 渲染时执行方法
-		 */
-		handle:Function;
-        
+		
         /**
          * 过滤器组
          */
@@ -46,16 +34,17 @@ namespace nodom {
          * 附加操作
          */
         extra:any;
+
         /**
          * 构造方法
-         * @param type  	类型
+         * @param type  	类型名
          * @param value 	指令值
          * @param dom       指令对应的dom
          * @param filters   过滤器字符串或过滤器对象,如果为过滤器串，则以｜分割
          */
-        constructor(type:string, value:string, dom?:Element, filters?:string|Filter[]) {
+        constructor(value:string,type?:string, dom?:Element, filters?:string|Filter[]) {
             this.id = Util.genId();
-            this.type = type;
+            this.type = DirectiveManager.getType(type);
             if (Util.isString(value)) {
                 value = value.trim();
             }
@@ -95,9 +84,11 @@ namespace nodom {
 
         /**
          * 克隆
+         * @param dst   目标dom
+         * @returns     新指令
          */
-        clone(dst:Element){
-            let dir = new Directive(this.type,this.value);
+        clone(dst:Element):Directive{
+            let dir = new Directive(this.type.name,this.value);
             if(this.filters){
                 dir.filters = [];
                 for(let f of this.filters){

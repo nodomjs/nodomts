@@ -20,10 +20,6 @@ namespace nodom {
         execFunc:Function;
 
         /**
-         * 执行字符串，编译后生成
-         */
-        execString:string;
-		/**
 		 * 一个expression可能被多次使用，以modelid进行区分，针对不同的模型id构建对象{modelId:{fieldValue:,value:}
 		 */
 		// modelMap:object={};
@@ -38,22 +34,19 @@ namespace nodom {
 		
         /**
          * @param exprStr	表达式串
-         * @param execStr   执行串
          */
-        constructor(exprStr?:string,execStr?:string) {
-            //旧值
+        constructor(exprStr?:string) {
             this.fields = []; // 字段数组
             this.id = Util.genId();
+            let execStr:string;
             if (exprStr) {
-                this.execString = this.compile(exprStr);
-            }else if(execStr){
-                this.execString = execStr;
+                execStr = this.compile(exprStr);
             }
             
-            if(this.execString){
+            if(execStr){
                 let v:string = this.fields.length>0?','+this.fields.join(','):'';
-                this.execString = 'function($module' + v + '){return ' + this.execString + '}';
-                this.execFunc = eval('('+ this.execString +')');
+                execStr = 'function($module' + v + '){return ' + execStr + '}';
+                this.execFunc = eval('('+ execStr +')');
             }
         }
 
@@ -126,6 +119,7 @@ namespace nodom {
          * 生成执行串
          * @param arrOperator   操作数数组
          * @param arrOperand    操作符数组
+         * @returns             指令执行字符串
          */
         private genExecStr(arrOperator:string[],arrOperand:string[]):string{
             let retStr:string = '';
@@ -133,12 +127,12 @@ namespace nodom {
                 //操作数
                 let opr:string = arrOperator.pop();
                 //操作符
-                let opd = arrOperand.pop();
+                let opd:string = arrOperand.pop();
                 
                 let r:string;
                 let handled:boolean = false;
                 if(opd === '('){
-                    r = this.judgeAndHandleFunc(arrOperator,arrOperand,opr);
+                    r = this.judgeAndHandleFunc(arrOperator);
                     if(r !== undefined){
                         //模块方法,挨着方法名的那个括号不需要
                         if (r.startsWith('$module')) {
@@ -192,7 +186,7 @@ namespace nodom {
          * @param str   待还原字符串
          * @returns     还原后的字符串
          */
-        private recoveryString(str:string){
+        private recoveryString(str:string):string{
             if(str.startsWith(Expression.REP_STR)){
                 if(this.replaceMap.has(str)){
                     str = this.replaceMap.get(str);
@@ -207,11 +201,9 @@ namespace nodom {
         /**
          * 判断并处理函数
          * @param arrOperator   操作数数组
-         * @param arrOperand    操作符数组
-         * @param srcOp         前操作数
-         * @returns     转换后的串
+         * @returns             转换后的串
          */
-        private judgeAndHandleFunc(arrOperator:string[],arrOperand:string[],srcOp:string):string{
+        private judgeAndHandleFunc(arrOperator:string[]):string{
             let sp:string = arrOperator[arrOperator.length-1];
             if(sp && sp!==''){
                 //字符串阶段
@@ -289,7 +281,6 @@ namespace nodom {
         /**
          * 表达式计算
          * @param model 	模型 或 fieldObj对象 
-         * @param modelId 	模型id（model为fieldObj时不能为空）
 		 * @returns 		计算结果
          */
         val(model:Model) {
@@ -309,8 +300,10 @@ namespace nodom {
 
             /**
              * 获取字段值
-             * @param dataObj: 数据对象 
-             * @param field 
+             * @param module    模块
+             * @param dataObj   数据对象 
+             * @param field     字段名
+             * @return          字段值
              */
             function getFieldValue(module:Module,dataObj:object,field:string){
                 if(dataObj.hasOwnProperty(field)){
@@ -328,7 +321,7 @@ namespace nodom {
          * @param field 	字段
          * @returns         true/false
          */
-        addField(field:string):boolean{
+        private addField(field:string):boolean{
             //js 保留字
             const jsKeyWords = ['true','false','undefined','null','typeof',
                     'Object','Function','Array','Number', 'Date',

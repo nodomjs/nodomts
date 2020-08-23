@@ -194,6 +194,5 @@ namespace nodom {
                 throw new NodomError('notexist1',TipWords.moduleClass,cfg.class);
             }
         }
-
     }
 }

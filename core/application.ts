@@ -3,12 +3,15 @@ namespace nodom{
     
     /**
      * 应用类
+     * 全局对象
+     * @since 2.0
      */
     export class Application{
         /**
          * 路径对象 包含 {
          *              app:appPath(应用基础路径),
          *              css:css路径(css加载基础路径 app+css),
+         *              js:js路径(js加载基础路径 app+css),
          *              template:模版路径(模版加载基础 app+template)
          *              route:路由前置路径(路由完整路径为 route + routePath)
          */
@@ -26,6 +29,7 @@ namespace nodom{
         /**
          * 获取路径
          * @param type  路径类型 app,template,css,js,module,route 
+         * @returns     type对应的基础路径
          */
         static getPath(type:string):string{
             if(!this.path){
@@ -52,8 +56,9 @@ namespace nodom{
 
         /**
          * 设置path 对象
+         * @param pathObj   路径对象
          */
-        static setPath(pathObj){
+        static setPath(pathObj:object){
             this.path = pathObj;
         }
     }

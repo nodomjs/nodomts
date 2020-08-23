@@ -1,10 +1,11 @@
-NodomConfig = {
+var NodomConfig = {
     /**调度器执行周期，支持requestAnimation时无效 */
     scheduleCircle:50,
     /**全局路径 */
     path:{
         app:'/examples/app',
         template:'view',
+        js:'js',
         css:'css',
         preRoute:'route',
         module:'dist'

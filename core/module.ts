@@ -8,18 +8,14 @@ namespace nodom {
         /**
          * 模块名(模块内(父模块的子模块之间)唯一)，如果不设置，则系统会自动生成Module+id
          */
-        name ? : string;
-        /**
-         * 是否静态，如果为静态模块，则不产生虚拟dom，只需要把该模块对应模版置入容器即可
-         */
-        static ? : boolean;
+        name?: string;
         
         /**
          * 容器选择器
          */
         el?:string;
         /**
-         * 是否单例
+         * 是否单例，如果为true，则整个应用中共享一个模块实例，默认false
          */
         singleton?:boolean;
 
@@ -27,26 +23,23 @@ namespace nodom {
          * 模块类名
          */
         class?:string;
+
         /**
          * 模块路径(相对于app module路径)
          */
         path:string;
 
         /**
-         * 子模块数组
-         */
-        modules ? : Array < IModuleCfg >;
-        
-        /**
          * 模版字符串，如果以“<”开头，则表示模版字符串，否则表示模版url
          */
-        template ? : string;
+        template?: string;
         /**
          * 数据，如果为json object，直接作为模型数据，如果为字符串，则表示数据url，需要请求得到数据
          */
-        data ? : object | string;
+        data?: object | string;
         /**
          * 模块方法集合
+         * 不要用箭头"=>" 操作符定义
          * ```
          * 	{
          * 		method1:function1(){},
@@ -58,7 +51,9 @@ namespace nodom {
         methods ? : object;
         
         /**
-         * 先于模块初始化加载的文件[{type:'js'/'css',url:路径}
+         * 先于模块初始化加载的文件集合
+         * 如果为string，则表示资源路径，type为js
+         * 如果为object，则格式为{type:'js'/'css',url:路径}
          */
         requires?:Array<string|object>;
     }
@@ -74,10 +69,7 @@ namespace nodom {
          * 模块名(模块内(父模块的子模块之间)唯一)，如果不设置，则系统会自动生成Module+id
          */
         name: string;
-        /**
-         * 是否静态，如果为静态模块，则不产生虚拟dom，只需要把该模块对应模版置入容器即可
-         */
-        // static ? : boolean;
+        
         /**
          * 模型
          */
@@ -92,6 +84,7 @@ namespace nodom {
          * 是否是首次渲染
          */
         firstRender: boolean=true;
+        
         /**
          * 根虚拟dom
          */
@@ -106,18 +99,22 @@ namespace nodom {
          * 父模块名
          */
         parentId: number;
+        
         /**
          * 子模块id数组
          */
         children: Array < number > = [];
+        
         /**
          * container 选择器
          */
         selector: string;
+        
         /**
          * 首次渲染后执行操作数组
          */
         firstRenderOps: Array < Function > = [];
+        
         /**
          * 首次渲染前执行操作数组
          */
@@ -137,6 +134,7 @@ namespace nodom {
          * 状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)
          */
         state: number = 0;
+        
         /**
          * 数据url
          */
@@ -146,10 +144,12 @@ namespace nodom {
          * 需要加载新数据
          */
         loadNewData: boolean = false;
+        
         /**
          * 方法工厂
          */
         methodFactory: MethodFactory;
+        
         /**
          * 数据模型工厂
          */
@@ -159,10 +159,12 @@ namespace nodom {
          * 待渲染的虚拟dom数组
          */
         renderDoms: Array < ChangedDom >= [];
+        
         /**
          * 初始配置
          */
         initConfig: IModuleCfg;
+        
         /**
          * 放置模块的容器
          */
@@ -174,14 +176,10 @@ namespace nodom {
         template:string;
 
         /**
-         * 路由容器key
-         */
-        routerKey:string;
-        
-        /**
          * 容器key
          */
         containerKey:string;
+        
         /**
          * 子模块名id映射，如 {modulea:1}
          */
@@ -272,6 +270,8 @@ namespace nodom {
                     });
                 }
             }
+            //删除template
+            delete this.template;
             //如果已存在templateStr，则直接编译
             if (!Util.isEmpty(templateStr)) {
                 this.virtualDom = Compiler.compile(templateStr);
@@ -333,7 +333,6 @@ namespace nodom {
             if (this.state !== 3 || !this.virtualDom || !this.hasContainer()) {
                 return false;
             }
-            this.doRenderOp(this.beforeRenderOps);
             
             //克隆新的树
             let root:Element = this.virtualDom.clone();
@@ -355,6 +354,7 @@ namespace nodom {
                     this.doFirstRender(root);
                 }
             } else { //增量渲染
+                this.doRenderOp(this.beforeRenderOps);
                 //执行每次渲染前事件
                 this.doModuleEvent('onBeforeRender');
                 if (this.model) {
@@ -382,11 +382,12 @@ namespace nodom {
                 }
                 //执行每次渲染后事件，延迟执行
                 this.doModuleEvent('onRender');
+
+                this.doRenderOp(this.renderOps);
             }
 
             //数组还原
             this.renderDoms = [];
-            this.doRenderOp(this.renderOps);
             return true;
         }
 
@@ -394,10 +395,10 @@ namespace nodom {
          * 执行首次渲染
          * @param root 	根虚拟dom
          */
-        doFirstRender(root:Element) {
+        private doFirstRender(root:Element) {
             //执行首次渲染前事件
-            this.doModuleEvent('onBeforeFirstRender');
             this.doRenderOp(this.beforeFirstRenderOps);
+            this.doModuleEvent('onBeforeFirstRender');
             
             //渲染树
             this.renderTree = root;
@@ -409,9 +410,6 @@ namespace nodom {
             //清空子元素
             Util.empty(this.container);
             //渲染到html
-            // root.children.forEach((item) => {
-            //     item.renderToHtml(this, <ChangedDom>{type: 'fresh'});
-            // });
             root.renderToHtml(this, <ChangedDom>{type: 'fresh'});
             //删除首次渲染标志
             delete this.firstRender;
@@ -650,7 +648,7 @@ namespace nodom {
          * @param eventName 	事件名
          * @param param 		参数，为数组
          */
-        doModuleEvent(eventName:string, param?:Array<any>) {
+        private doModuleEvent(eventName:string, param?:Array<any>) {
             const foo:Function = this.methodFactory.get(eventName);
             if (!foo) {
                 return;
@@ -681,7 +679,7 @@ namespace nodom {
          * 添加首次渲染前执行操作
          * @param foo  	操作方法
          */
-        addBeforeFirstRenderOperation(foo) {
+        addBeforeFirstRenderOperation(foo:Function) {
             if (!Util.isFunction(foo)) {
                 return;
             }
@@ -694,7 +692,7 @@ namespace nodom {
          * 添加渲染后执行操作
          * @param foo  	操作方法
          */
-        addRenderOperation(foo) {
+        addRenderOperation(foo:Function) {
             if (!Util.isFunction(foo)) {
                 return;
             }
@@ -707,7 +705,7 @@ namespace nodom {
          * 添加渲染前执行操作
          * @param foo  	操作方法
          */
-        addBeforeRenderOperation(foo) {
+        addBeforeRenderOperation(foo:Function) {
             if (!Util.isFunction(foo)) {
                 return;
             }
@@ -720,7 +718,7 @@ namespace nodom {
          * 执行渲染相关附加操作
          * @param renderOps 
          */
-        doRenderOp(renderOps:Function[]){
+        private doRenderOp(renderOps:Function[]){
             for(;renderOps.length>0;){
                 Util.apply(renderOps.shift(), this, []);
             }
@@ -728,18 +726,19 @@ namespace nodom {
 
         /**
          * 添加插件
-         * @param name  插件名
-         * @param ele   插件
+         * @param name      插件名
+         * @param plugin    插件
          */
-        addPlugin(name:string,ele:Plugin){
+        addPlugin(name:string,plugin:Plugin){
             if(name){
-                this.plugins.set(name,ele);
+                this.plugins.set(name,plugin);
             }
         }
 
         /**
          * 获取插件
          * @param name  插件名 
+         * @returns     插件实例
          */
         getPlugin(name:string):Plugin{
             return this.plugins.get(name);

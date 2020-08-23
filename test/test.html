@@ -1,13 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<!-- <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Document</title>
-
-    <link type='text/css' rel='stylesheet' href='test.css'>
-</head> -->
+<head>
+        <script src='../bin/nodom.js'></script> 
+</head>
 
 <body>
     <div class="view" onclick='clickme()'>
@@ -16,6 +12,23 @@
         <input id='i1' type='checkbox'>选中
     </div>
 </body>
-<script src='test.js'></script>
+<script>
+let a = {
+    x:1,
+    y:{
+        c:1,
+        d:2
+    }
+}
+let b = {
+    a:a,
+    x:2
+}
 
+a.b = b;
+
+let c = nodom.Util.clone(b);
+c.a.b.x = 2;
+console.log(a,b,c);
+</script>
 </html>
