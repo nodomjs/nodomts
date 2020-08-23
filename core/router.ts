@@ -262,7 +262,6 @@ namespace nodom {
                     parentModule = module;
                 }
             }
-            console.log(showPath);
             //如果是history popstate，则不加入history
             if (this.startStyle !== 2 && showPath) {
                 let p:string = Util.mergePath([Application.getPath('route') ,showPath]);
