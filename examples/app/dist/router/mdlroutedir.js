@@ -14,7 +14,7 @@ class MdlRouteDir extends nodom.Module {
                     },
                     {
                         title: '路由用法2-路由参数用法',
-                        path: '/router/directive/route2',
+                        path: '/router/route2',
                         active: false
                     },
                     {

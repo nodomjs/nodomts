@@ -84,22 +84,7 @@ namespace nodom {
                     value = value.substr(2);
                 }
                 directive.value = value;
-                // let arr = new Array();
-                // value.split('.').forEach((item) => {
-                //     let ind1 = -1,
-                //         ind2 = -1;
-                //     if ((ind1 = item.indexOf('[')) !== -1 && (ind2 = item.indexOf(']')) !== -1) { //数组
-                //         let fn = item.substr(0, ind1);
-                //         let index = item.substring(ind1 + 1, ind2);
-                //         arr.push(fn + ',' + index);
-                //     } else { //普通字符串
-                //         arr.push(item);
-                //     }
-                // });
-                // directive.value = arr;
-
             }
-            
         },
 
         (directive: Directive, dom: Element, module: Module, parent: Element) => {

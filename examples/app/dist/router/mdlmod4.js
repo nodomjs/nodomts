@@ -8,12 +8,12 @@ class MdlMod4 extends nodom.Module {
             data: {
                 routes: [{
                         title: '商品详情',
-                        path: '/router/directive/route2/rparam/home/1/desc',
+                        path: '/router/route2/rparam/home/1/desc',
                         active: true
                     },
                     {
                         title: '评价',
-                        path: '/router/directive/route2/rparam/home/1/comment',
+                        path: '/router/route2/rparam/home/1/comment',
                         active: false
                     }
                 ]

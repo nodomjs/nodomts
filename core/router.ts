@@ -195,17 +195,16 @@ namespace nodom {
                 }
             } else { //路由不同
                 //加载模块
-                for (let i = 0,index=0; i < diff[2].length; i++) {
-                    let route = diff[2][i];
+                for (let ii = 0,index=0,len=diff[2].length; ii < len; ii++) {
+                    let route = diff[2][ii];
                     //路由不存在或路由没有模块（空路由）
                     if (!route || !route.module) {
                         continue;
                     }
-
+                    
                     if (!route.useParentPath) {
                         showPath = route.fullPath;
                     }
-                    
                     let module:Module;
                     //尚未获取module，进行初始化
                     if(typeof route.module === 'string'){
@@ -231,20 +230,19 @@ namespace nodom {
                     }
                     //把此模块添加到父模块
                     parentModule.addChild(module.id);
-                   
+                    
                     if(index++ === 0){ //第一个的父模块为已渲染或根模块
                         module.setContainerKey(routerKey);
                         //激活模块
                         await module.active();
-                        //设置route active
                         route.setLinkActive();
-                    
-                    }else{      //非第一个需要等待父模块渲染结束
+                    }else{   //非第一个需要等待父模块渲染结束
                         //添加父模块渲染后操作
-                        parentModule.addRenderOperation(async function(){
+                        parentModule.addFirstRenderOperation(async function(){
                             //this指向parentModule
-                            if(this.routerKey){
-                                module.setContainerKey(this.routerKey);
+                            let routerKey = Router.routerKeyMap.get(this.id);
+                            if(routerKey){
+                                module.setContainerKey(routerKey);
                                 await module.active();
                             }
                             route.setLinkActive();
@@ -264,7 +262,7 @@ namespace nodom {
                     parentModule = module;
                 }
             }
-            
+            console.log(showPath);
             //如果是history popstate，则不加入history
             if (this.startStyle !== 2 && showPath) {
                 let p:string = Util.mergePath([Application.getPath('route') ,showPath]);

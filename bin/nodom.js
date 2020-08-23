@@ -1178,6 +1178,26 @@ var nodom;
                 }
             }
         }
+        addDirective(directive, sort) {
+            let finded = false;
+            for (let i = 0; i < this.directives.length; i++) {
+                if (this.directives[i].type === directive.type) {
+                    this.directives[i] = directive;
+                    finded = true;
+                    break;
+                }
+            }
+            if (!finded) {
+                this.directives.push(directive);
+            }
+            if (sort) {
+                if (this.directives.length > 1) {
+                    this.directives.sort((a, b) => {
+                        return a.type.prio - b.type.prio;
+                    });
+                }
+            }
+        }
         hasDirective(directiveType) {
             return this.directives.find(item => item.type.name === directiveType) !== undefined;
         }
@@ -1443,26 +1463,6 @@ var nodom;
             }
             else {
                 this.events.set(event.name, event);
-            }
-        }
-        addDirective(directive, sort) {
-            let finded = false;
-            for (let i = 0; i < this.directives.length; i++) {
-                if (this.directives[i].type === directive.type) {
-                    this.directives[i] = directive;
-                    finded = true;
-                    break;
-                }
-            }
-            if (!finded) {
-                this.directives.push(directive);
-            }
-            if (sort) {
-                if (this.directives.length > 1) {
-                    this.directives.sort((a, b) => {
-                        return a.type.prio - b.type.prio;
-                    });
-                }
             }
         }
         doDontRender() {
@@ -3273,8 +3273,8 @@ var nodom;
                         }
                     }
                     else {
-                        for (let i = 0, index = 0; i < diff[2].length; i++) {
-                            let route = diff[2][i];
+                        for (let ii = 0, index = 0, len = diff[2].length; ii < len; ii++) {
+                            let route = diff[2][ii];
                             if (!route || !route.module) {
                                 continue;
                             }
@@ -3308,10 +3308,11 @@ var nodom;
                                 route.setLinkActive();
                             }
                             else {
-                                parentModule.addRenderOperation(function () {
+                                parentModule.addFirstRenderOperation(function () {
                                     return __awaiter(this, void 0, void 0, function* () {
-                                        if (this.routerKey) {
-                                            module.setContainerKey(this.routerKey);
+                                        let routerKey = Router.routerKeyMap.get(this.id);
+                                        if (routerKey) {
+                                            module.setContainerKey(routerKey);
                                             yield module.active();
                                         }
                                         route.setLinkActive();
@@ -3328,6 +3329,7 @@ var nodom;
                             parentModule = module;
                         }
                     }
+                    console.log(showPath);
                     if (this.startStyle !== 2 && showPath) {
                         let p = nodom.Util.mergePath([nodom.Application.getPath('route'), showPath]);
                         if (this.showPath && showPath.indexOf(this.showPath) === 0) {
@@ -3825,7 +3827,6 @@ var nodom;
                     let dom1 = module.virtualDom.query(dom.key);
                     if (dom1) {
                         let dir = dom1.getDirective('module');
-                        console.log(dom1.directives, dir);
                         dir.extra.moduleId = m.id;
                     }
                     module.addChild(m.id);
