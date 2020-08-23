@@ -4,6 +4,7 @@
 ///<reference path='./core/factory.ts' />
 ///<reference path='./core/compiler.ts' />
 ///<reference path='./core/directive.ts' />
+///<reference path='./core/directivetype.ts' />
 ///<reference path='./core/directivemanager.ts' />
 ///<reference path='./core/plugin.ts' />
 ///<reference path='./core/pluginmanager.ts' />

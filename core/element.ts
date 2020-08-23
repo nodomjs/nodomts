@@ -597,12 +597,41 @@ namespace nodom {
         }
 
         /**
+         * 添加指令
+         * @param directive     指令对象
+         * @param sort          是否排序
+         */
+        addDirective(directive:Directive,sort?:boolean){
+            let finded:boolean = false;
+            for(let i=0;i<this.directives.length;i++){
+                //如果存在相同类型，则直接替换
+                if(this.directives[i].type === directive.type){
+                    this.directives[i] = directive;
+                    finded = true;
+                    break;
+                }
+            }
+            if(!finded){
+                this.directives.push(directive);
+            }
+
+            //指令按优先级排序
+            if(sort){
+                if(this.directives.length>1){
+                    this.directives.sort((a, b) => {
+                        return a.type.prio - b.type.prio;
+                    });    
+                }
+            }
+        }
+
+        /**
          * 是否有某个类型的指令
          * @param directiveType 	指令类型名
          * @return true/false
          */
         hasDirective(directiveType):boolean {
-            return this.directives.find(item=>item.type === directiveType) !== undefined;
+            return this.directives.find(item=>item.type.name === directiveType) !== undefined;
         }
 
         /**
@@ -611,7 +640,7 @@ namespace nodom {
          * @return directive
          */
         getDirective(directiveType):Directive {
-            return this.directives.find(item=>item.type === directiveType);
+            return this.directives.find(item=>item.type.name === directiveType);
         }
 
         /**
@@ -974,35 +1003,6 @@ namespace nodom {
                 this.events.set(event.name,evs);
             }else{
                 this.events.set(event.name,event);
-            }
-        }
-
-        /**
-         * 添加指令
-         * @param directive     指令对象
-         * @param sort          是否排序
-         */
-        addDirective(directive:Directive,sort?:boolean){
-            let finded:boolean = false;
-            for(let i=0;i<this.directives.length;i++){
-                //如果存在相同类型，则直接替换
-                if(this.directives[i].type === directive.type){
-                    this.directives[i] = directive;
-                    finded = true;
-                    break;
-                }
-            }
-            if(!finded){
-                this.directives.push(directive);
-            }
-
-            //指令按优先级排序
-            if(sort){
-                if(this.directives.length>1){
-                    this.directives.sort((a, b) => {
-                        return a.type.prio - b.type.prio;
-                    });    
-                }
             }
         }
 

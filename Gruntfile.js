@@ -17,6 +17,7 @@ module.exports = function (grunt) {
             './core/factory.ts',
             './core/compiler.ts',
             './core/directive.ts',
+            './core/directivetype.ts',
             './core/directivefactory.ts',
             './core/directivemanager.ts',
             './core/element.ts',

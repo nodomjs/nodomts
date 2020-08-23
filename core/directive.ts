@@ -42,7 +42,7 @@ namespace nodom {
          * @param dom       指令对应的dom
          * @param filters   过滤器字符串或过滤器对象,如果为过滤器串，则以｜分割
          */
-        constructor(value:string,type?:string, dom?:Element, filters?:string|Filter[]) {
+        constructor(type:string, value:string,dom?:Element, filters?:string|Filter[]) {
             this.id = Util.genId();
             this.type = DirectiveManager.getType(type);
             if (Util.isString(value)) {
