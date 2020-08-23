@@ -27,6 +27,8 @@
 ///<reference path='./core/serializer.ts' />
 ///<reference path='./core/extend/directiveinit.ts' />
 ///<reference path='./core/extend/filterinit.ts' />
+///<reference path='./core/locales/tipmsg.ts' />
 ///<reference path='./core/locales/msg_zh.ts' />
+///<reference path='./core/locales/msg_en.ts' />
 ///<reference path='core/application.ts'/>
 ///<reference path='core/application.ts'/>

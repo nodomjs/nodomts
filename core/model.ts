@@ -97,7 +97,7 @@ namespace nodom {
 
             //数据不存在
             if (!model) {
-                throw new NodomError('notexist1', TipWords.dataItem, key);
+                throw new NodomError('notexist1', TipMsg.TipWords['dataItem'], key);
             }
 
             let retMdl:Model;

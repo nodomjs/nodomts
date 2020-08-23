@@ -65,7 +65,7 @@ namespace nodom {
             return '';
         }
         if (!Util.isString(value) || Util.isEmpty(value)) {
-            throw new NodomError('invoke1', TipWords.filter + ' tolowercase', '0', 'string');
+            throw new NodomError('invoke1', TipMsg.TipWords['filter'] + ' tolowercase', '0', 'string');
         }
         return value.toLowerCase();
     });
@@ -78,7 +78,7 @@ namespace nodom {
             return '';
         }
         if (!Util.isString(value) || Util.isEmpty(value)) {
-            throw new NodomError('invoke1', TipWords.filter + ' touppercase', '0', 'string');
+            throw new NodomError('invoke1', TipMsg.TipWords['filter'] + ' touppercase', '0', 'string');
         }
         return value.toUpperCase();
     });
@@ -95,7 +95,7 @@ namespace nodom {
         let field = args[1]; //比较字段
         let odr = args[2] || 'asc'; //升序或降序,默认升序
         if (!Util.isArray(arr)) {
-            throw new NodomError('invoke1', TipWords.filter + ' orderby', '0', 'array');
+            throw new NodomError('invoke1', TipMsg.TipWords['filter'] + ' orderby', '0', 'array');
         }
         //复制数组
         let ret = arr.concat([]);
@@ -128,7 +128,7 @@ namespace nodom {
      */
     FilterManager.addType('select', function () {
         if (!Util.isArray(arguments[0])) {
-            throw new NodomError('invoke1', TipWords.filter + ' filter', '0', 'array');
+            throw new NodomError('invoke1', TipMsg.TipWords['filter'] + ' filter', '0', 'array');
         }
 
         let params = new Array();
@@ -168,14 +168,14 @@ namespace nodom {
                 let first = args[1];
                 let last = args[2];
                 if (isNaN(first)) {
-                    throw new NodomError('paramException', TipWords.filter, 'filter range');
+                    throw new NodomError('paramException', TipMsg.TipWords['filter'], 'filter range');
                 }
                 if (!Util.isNumber(first)) {
                     first = parseInt(first);
                 }
                 //判断数字
                 if (isNaN(last)) {
-                    throw new NodomError('paramException', TipWords.filter, 'filter range');
+                    throw new NodomError('paramException', TipMsg.TipWords['filter'], 'filter range');
                 }
 
                 //字符串转数字
@@ -184,7 +184,7 @@ namespace nodom {
                 }
 
                 if (first > last) {
-                    throw new NodomError('paramException', TipWords.filter, 'filter range');
+                    throw new NodomError('paramException', TipMsg.TipWords['filter'], 'filter range');
                 }
                 return arr.slice(first, last + 1);
             },
@@ -193,7 +193,7 @@ namespace nodom {
                 let args = arguments;
                 let arr = args[0];
                 if (!Util.isArray(args[0])) {
-                    throw new NodomError('paramException', TipWords.filter, 'filter index');
+                    throw new NodomError('paramException', TipMsg.TipWords['filter'], 'filter index');
                 }
                 let ret = [];
                 //读取所有index
@@ -213,7 +213,7 @@ namespace nodom {
             //函数过滤
             func: function (arr, param) {
                 if (!Util.isArray(arr) || Util.isEmpty(param)) {
-                    throw new NodomError('paramException', TipWords.filter, 'filter func');
+                    throw new NodomError('paramException', TipMsg.TipWords['filter'], 'filter func');
                 }
                 //自定义函数
                 let foo = this.methodFactory.get(param);
@@ -225,7 +225,7 @@ namespace nodom {
             //值过滤
             value: function (arr, param) {
                 if (!Util.isArray(arr) || Util.isEmpty(param)) {
-                    throw new NodomError('paramException', TipWords.filter, 'filter value');
+                    throw new NodomError('paramException', TipMsg.TipWords['filter'], 'filter value');
                 }
                 //属性值对象，所有属性值满足才过滤出来
                 if (Util.isObject(param)) {
@@ -273,7 +273,7 @@ namespace nodom {
         //校验输入参数是否为空
         if (type === 'range' || type === 'index' || type === 'func') {
             if (params.length < 2) {
-                throw new NodomError('paramException', TipWords.filter);
+                throw new NodomError('paramException', TipMsg.TipWords['filter']);
             }
         }
         //方法调用

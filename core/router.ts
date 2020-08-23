@@ -210,7 +210,7 @@ namespace nodom {
                     if(typeof route.module === 'string'){
                         module = await ModuleFactory.getInstance(route.module,route.moduleName);
                         if(!module){
-                            throw new NodomError('notexist1',TipWords.module,route.module);
+                            throw new NodomError('notexist1',TipMsg.TipWords['module'],route.module);
                         }
                         route.module = module.id;
                     }else{
@@ -337,7 +337,7 @@ namespace nodom {
         static addRoute(route:Route, parent:Route) {
             //加入router tree
             if (RouterTree.add(route, parent) === false) {
-                throw new NodomError("exist1", TipWords.route, route.path);
+                throw new NodomError("exist1", TipMsg.TipWords['route'], route.path);
             }
 
             //加入map
@@ -683,7 +683,7 @@ namespace nodom {
          */
         static get(path:string):Array<Route> {
             if (!this.root) {
-                throw new NodomError("notexist", TipWords.root);
+                throw new NodomError("notexist", TipMsg.TipWords['root']);
             }
             let pathArr:string[] = path.split('/');
             let node:Route = this.root;

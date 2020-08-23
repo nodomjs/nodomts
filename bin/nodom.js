@@ -14,8 +14,13 @@ var nodom;
             if (window['NodomConfig']) {
                 config = nodom.Util.merge({}, window['NodomConfig'], config);
             }
+            let lang = config && config.language;
+            if (!lang) {
+                lang = navigator.language ? navigator.language.substr(0, 2) : 'zh';
+            }
+            nodom.TipMsg = eval('(nodom.TipMsg_' + lang + ')');
             if (!config || !config.module) {
-                throw new nodom.NodomError('config', nodom.TipWords.application);
+                throw new nodom.NodomError('config', nodom.TipMsg.TipWords['application']);
             }
             nodom.Application.setPath(config.path);
             if (config.modules) {
@@ -142,7 +147,7 @@ var nodom;
         }).catch((re) => {
             switch (re.type) {
                 case "error":
-                    throw new nodom.NodomError("notexist1", nodom.TipWords.resource, re.url);
+                    throw new nodom.NodomError("notexist1", nodom.TipMsg.TipWords['resource'], re.url);
                 case "timeout":
                     throw new nodom.NodomError("timeout");
                 case "jsonparse":
@@ -1672,7 +1677,12 @@ var nodom;
                     valueArr.push(getFieldValue(module, fieldObj, field));
                 });
                 valueArr.unshift(module);
-                return this.execFunc.apply(null, valueArr);
+                try {
+                    return this.execFunc.apply(null, valueArr);
+                }
+                catch (e) {
+                    console.log(e);
+                }
                 function getFieldValue(module, dataObj, field) {
                     if (dataObj.hasOwnProperty(field)) {
                         return dataObj[field];
@@ -1737,10 +1747,10 @@ var nodom;
         class FilterManager {
             static addType(name, handler) {
                 if (!/^[a-zA-Z]+$/.test(name)) {
-                    throw new nodom.NodomError('namedinvalid', nodom.TipWords.filterType, name);
+                    throw new nodom.NodomError('namedinvalid', nodom.TipMsg.TipWords['filterType'], name);
                 }
                 if (this.filterTypes.has(name)) {
-                    throw new nodom.NodomError('exist1', nodom.TipWords.filterType, name);
+                    throw new nodom.NodomError('exist1', nodom.TipMsg.TipWords['filterType'], name);
                 }
                 if (!nodom.Util.isFunction(handler)) {
                     throw new nodom.NodomError('invoke', 'FilterManager.addType', '1', 'Function');
@@ -1749,7 +1759,7 @@ var nodom;
             }
             static removeType(name) {
                 if (!this.filterTypes.has(name)) {
-                    throw new nodom.NodomError('notexist1', nodom.TipWords.filterType, name);
+                    throw new nodom.NodomError('notexist1', nodom.TipMsg.TipWords['filterType'], name);
                 }
                 this.filterTypes.delete(name);
             }
@@ -1762,7 +1772,7 @@ var nodom;
                     params.push(arguments[i]);
                 }
                 if (!FilterManager.filterTypes.has(type)) {
-                    throw new nodom.NodomError('notexist1', nodom.TipWords.filterType, type);
+                    throw new nodom.NodomError('notexist1', nodom.TipMsg.TipWords['filterType'], type);
                 }
                 return nodom.Util.apply(FilterManager.filterTypes.get(type), module, params);
             }
@@ -1996,7 +2006,7 @@ var nodom;
         invoke(name, params) {
             const foo = this.get(name);
             if (!nodom.Util.isFunction(foo)) {
-                throw new nodom.NodomError(nodom.ErrorMsgs.notexist1, nodom.TipWords.method, name);
+                throw new nodom.NodomError(nodom.TipMsg.ErrorMsgs['notexist1'], nodom.TipMsg.TipWords['method'], name);
             }
             return nodom.Util.apply(foo, this.module.model, params);
         }
@@ -2052,7 +2062,7 @@ var nodom;
                 model = this;
             }
             if (!model) {
-                throw new nodom.NodomError('notexist1', nodom.TipWords.dataItem, key);
+                throw new nodom.NodomError('notexist1', nodom.TipMsg.TipWords['dataItem'], key);
             }
             let retMdl;
             let data = model.data;
@@ -2686,7 +2696,7 @@ var nodom;
             static getInstance(className, moduleName, data) {
                 return __awaiter(this, void 0, void 0, function* () {
                     if (!this.classes.has(className)) {
-                        throw new nodom.NodomError('notexist1', nodom.TipWords.moduleClass, className);
+                        throw new nodom.NodomError('notexist1', nodom.TipMsg.TipWords['moduleClass'], className);
                     }
                     let cfg = this.classes.get(className);
                     if (moduleName) {
@@ -2770,7 +2780,7 @@ var nodom;
                         }
                     }
                     else {
-                        throw new nodom.NodomError('notexist1', nodom.TipWords.moduleClass, cfg.class);
+                        throw new nodom.NodomError('notexist1', nodom.TipMsg.TipWords['moduleClass'], cfg.class);
                     }
                 });
             }
@@ -2786,7 +2796,7 @@ var nodom;
     class NodomError extends Error {
         constructor(errorName, p1, p2, p3, p4) {
             super(errorName);
-            let msg = nodom.ErrorMsgs[errorName];
+            let msg = nodom.TipMsg.ErrorMsgs[errorName];
             if (msg === undefined) {
                 this.message = "未知错误";
                 return;
@@ -3182,7 +3192,6 @@ var nodom;
                 return __awaiter(this, void 0, void 0, function* () {
                     for (let i = 0; i < this.waitList.length; i++) {
                         let m = nodom.ModuleFactory.get(this.waitList[i]);
-                        let r;
                         if (!m || m.render()) {
                             this.waitList.shift();
                             i--;
@@ -3285,7 +3294,7 @@ var nodom;
                             if (typeof route.module === 'string') {
                                 module = yield nodom.ModuleFactory.getInstance(route.module, route.moduleName);
                                 if (!module) {
-                                    throw new nodom.NodomError('notexist1', nodom.TipWords.module, route.module);
+                                    throw new nodom.NodomError('notexist1', nodom.TipMsg.TipWords['module'], route.module);
                                 }
                                 route.module = module.id;
                             }
@@ -3329,7 +3338,6 @@ var nodom;
                             parentModule = module;
                         }
                     }
-                    console.log(showPath);
                     if (this.startStyle !== 2 && showPath) {
                         let p = nodom.Util.mergePath([nodom.Application.getPath('route'), showPath]);
                         if (this.showPath && showPath.indexOf(this.showPath) === 0) {
@@ -3379,7 +3387,7 @@ var nodom;
             }
             static addRoute(route, parent) {
                 if (RouterTree.add(route, parent) === false) {
-                    throw new nodom.NodomError("exist1", nodom.TipWords.route, route.path);
+                    throw new nodom.NodomError("exist1", nodom.TipMsg.TipWords['route'], route.path);
                 }
                 this.routes.set(route.id, route);
             }
@@ -3607,7 +3615,7 @@ var nodom;
         }
         static get(path) {
             if (!this.root) {
-                throw new nodom.NodomError("notexist", nodom.TipWords.root);
+                throw new nodom.NodomError("notexist", nodom.TipMsg.TipWords['root']);
             }
             let pathArr = path.split('/');
             let node = this.root;
@@ -4213,7 +4221,7 @@ var nodom;
         function setTip(vd, vn, el) {
             let text = vd.children[0].textContent.trim();
             if (text === '') {
-                text = nodom.Util.compileStr(nodom.FormMsgs[vn], el.getAttribute(vn));
+                text = nodom.Util.compileStr(nodom.TipMsg.FormMsgs[vn], el.getAttribute(vn));
             }
             vd.children[0].textContent = text;
         }
@@ -4329,7 +4337,7 @@ var nodom;
             return '';
         }
         if (!nodom.Util.isString(value) || nodom.Util.isEmpty(value)) {
-            throw new nodom.NodomError('invoke1', nodom.TipWords.filter + ' tolowercase', '0', 'string');
+            throw new nodom.NodomError('invoke1', nodom.TipMsg.TipWords['filter'] + ' tolowercase', '0', 'string');
         }
         return value.toLowerCase();
     });
@@ -4338,7 +4346,7 @@ var nodom;
             return '';
         }
         if (!nodom.Util.isString(value) || nodom.Util.isEmpty(value)) {
-            throw new nodom.NodomError('invoke1', nodom.TipWords.filter + ' touppercase', '0', 'string');
+            throw new nodom.NodomError('invoke1', nodom.TipMsg.TipWords['filter'] + ' touppercase', '0', 'string');
         }
         return value.toUpperCase();
     });
@@ -4348,7 +4356,7 @@ var nodom;
         let field = args[1];
         let odr = args[2] || 'asc';
         if (!nodom.Util.isArray(arr)) {
-            throw new nodom.NodomError('invoke1', nodom.TipWords.filter + ' orderby', '0', 'array');
+            throw new nodom.NodomError('invoke1', nodom.TipMsg.TipWords['filter'] + ' orderby', '0', 'array');
         }
         let ret = arr.concat([]);
         if (field && nodom.Util.isObject(arr[0])) {
@@ -4371,7 +4379,7 @@ var nodom;
     });
     nodom.FilterManager.addType('select', function () {
         if (!nodom.Util.isArray(arguments[0])) {
-            throw new nodom.NodomError('invoke1', nodom.TipWords.filter + ' filter', '0', 'array');
+            throw new nodom.NodomError('invoke1', nodom.TipMsg.TipWords['filter'] + ' filter', '0', 'array');
         }
         let params = new Array();
         for (let i = 0; i < arguments.length; i++) {
@@ -4405,19 +4413,19 @@ var nodom;
                 let first = args[1];
                 let last = args[2];
                 if (isNaN(first)) {
-                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter range');
+                    throw new nodom.NodomError('paramException', nodom.TipMsg.TipWords['filter'], 'filter range');
                 }
                 if (!nodom.Util.isNumber(first)) {
                     first = parseInt(first);
                 }
                 if (isNaN(last)) {
-                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter range');
+                    throw new nodom.NodomError('paramException', nodom.TipMsg.TipWords['filter'], 'filter range');
                 }
                 if (!nodom.Util.isNumber(last)) {
                     last = parseInt(last);
                 }
                 if (first > last) {
-                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter range');
+                    throw new nodom.NodomError('paramException', nodom.TipMsg.TipWords['filter'], 'filter range');
                 }
                 return arr.slice(first, last + 1);
             },
@@ -4425,7 +4433,7 @@ var nodom;
                 let args = arguments;
                 let arr = args[0];
                 if (!nodom.Util.isArray(args[0])) {
-                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter index');
+                    throw new nodom.NodomError('paramException', nodom.TipMsg.TipWords['filter'], 'filter index');
                 }
                 let ret = [];
                 if (arr.length > 0) {
@@ -4443,7 +4451,7 @@ var nodom;
             },
             func: function (arr, param) {
                 if (!nodom.Util.isArray(arr) || nodom.Util.isEmpty(param)) {
-                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter func');
+                    throw new nodom.NodomError('paramException', nodom.TipMsg.TipWords['filter'], 'filter func');
                 }
                 let foo = this.methodFactory.get(param);
                 if (nodom.Util.isFunction(foo)) {
@@ -4453,7 +4461,7 @@ var nodom;
             },
             value: function (arr, param) {
                 if (!nodom.Util.isArray(arr) || nodom.Util.isEmpty(param)) {
-                    throw new nodom.NodomError('paramException', nodom.TipWords.filter, 'filter value');
+                    throw new nodom.NodomError('paramException', nodom.TipMsg.TipWords['filter'], 'filter value');
                 }
                 if (nodom.Util.isObject(param)) {
                     let keys = nodom.Util.getOwnProps(param);
@@ -4496,7 +4504,7 @@ var nodom;
         }
         if (type === 'range' || type === 'index' || type === 'func') {
             if (params.length < 2) {
-                throw new nodom.NodomError('paramException', nodom.TipWords.filter);
+                throw new nodom.NodomError('paramException', nodom.TipMsg.TipWords['filter']);
             }
         }
         return nodom.Util.apply(handler[type], this, params);
@@ -4504,55 +4512,120 @@ var nodom;
 })(nodom || (nodom = {}));
 var nodom;
 (function (nodom) {
-    nodom.TipWords = {
-        application: "应用",
-        system: "系统",
-        module: "模块",
-        moduleClass: '模块类',
-        model: "模型",
-        directive: "指令",
-        directiveType: "指令类型",
-        expression: "表达式",
-        event: "事件",
-        method: "方法",
-        filter: "过滤器",
-        filterType: "过滤器类型",
-        data: "数据",
-        dataItem: '数据项',
-        route: '路由',
-        routeView: '路由容器',
-        plugin: '插件',
-        resource: '资源',
-        root: '根',
-        element: '元素'
+    nodom.TipMsg = {
+        TipWords: {},
+        ErrorMsgs: {},
+        FormMsgs: {}
     };
-    nodom.ErrorMsgs = {
-        unknown: "未知错误",
-        paramException: "{0}'{1}'方法参数错误，请参考api",
-        invoke: "{0}方法调用参数{1}必须为{2}",
-        invoke1: "{0}方法调用参数{1}必须为{2}或{3}",
-        invoke2: "{0}方法调用参数{1}或{2}必须为{3}",
-        invoke3: "{0}方法调用参数{1}不能为空",
-        exist: "{0}已存在",
-        exist1: "{0}'{1}'已存在",
-        notexist: "{0}不存在",
-        notexist1: "{0}'{1}'不存在",
-        notupd: "{0}不可修改",
-        notremove: "{0}不可删除",
-        notremove1: "{0}{1}不可删除",
-        namedinvalid: "{0}{1}命名错误，请参考用户手册对应命名规范",
-        initial: "{0}初始化参数错误",
-        jsonparse: "JSON解析错误",
-        timeout: "请求超时",
-        config: "{0}配置参数错误",
-        config1: "{0}配置参数'{1}'错误"
+})(nodom || (nodom = {}));
+var nodom;
+(function (nodom) {
+    nodom.TipMsg_zh = {
+        TipWords: {
+            application: "应用",
+            system: "系统",
+            module: "模块",
+            moduleClass: '模块类',
+            model: "模型",
+            directive: "指令",
+            directiveType: "指令类型",
+            expression: "表达式",
+            event: "事件",
+            method: "方法",
+            filter: "过滤器",
+            filterType: "过滤器类型",
+            data: "数据",
+            dataItem: '数据项',
+            route: '路由',
+            routeView: '路由容器',
+            plugin: '插件',
+            resource: '资源',
+            root: '根',
+            element: '元素'
+        },
+        ErrorMsgs: {
+            unknown: "未知错误",
+            paramException: "{0}'{1}'方法参数错误，请参考api",
+            invoke: "{0}方法调用参数{1}必须为{2}",
+            invoke1: "{0}方法调用参数{1}必须为{2}或{3}",
+            invoke2: "{0}方法调用参数{1}或{2}必须为{3}",
+            invoke3: "{0}方法调用参数{1}不能为空",
+            exist: "{0}已存在",
+            exist1: "{0}'{1}'已存在",
+            notexist: "{0}不存在",
+            notexist1: "{0}'{1}'不存在",
+            notupd: "{0}不可修改",
+            notremove: "{0}不可删除",
+            notremove1: "{0}{1}不可删除",
+            namedinvalid: "{0}{1}命名错误，请参考用户手册对应命名规范",
+            initial: "{0}初始化参数错误",
+            jsonparse: "JSON解析错误",
+            timeout: "请求超时",
+            config: "{0}配置参数错误",
+            config1: "{0}配置参数'{1}'错误"
+        },
+        FormMsgs: {
+            type: "请输入有效的{0}",
+            unknown: "输入错误",
+            required: "不能为空",
+            min: "最小输入值为{0}",
+            max: "最大输入值为{0}"
+        }
     };
-    nodom.FormMsgs = {
-        type: "请输入有效的{0}",
-        unknown: "输入错误",
-        required: "不能为空",
-        min: "最小输入值为{0}",
-        max: "最大输入值为{0}"
+})(nodom || (nodom = {}));
+var nodom;
+(function (nodom) {
+    nodom.TipMsg_en = {
+        TipWords: {
+            application: "Application",
+            system: "System",
+            module: "Module",
+            moduleClass: 'ModuleClass',
+            model: "Model",
+            directive: "Directive",
+            directiveType: "Directive-type",
+            expression: "Expression",
+            event: "Event",
+            method: "Method",
+            filter: "Filter",
+            filterType: "Filter-type",
+            data: "Data",
+            dataItem: 'Data-item',
+            route: 'Route',
+            routeView: 'Route-container',
+            plugin: 'Plugin',
+            resource: 'Resource',
+            root: 'Root',
+            element: 'Element'
+        },
+        ErrorMsgs: {
+            unknown: "unknown error",
+            paramException: "{0} '{1}' parameter error，see api",
+            invoke: "method {0} parameter {1} must be {2}",
+            invoke1: "method {0} parameter {1} must be {2} or {3}",
+            invoke2: "method {0} parameter {1} or {2} must be {3}",
+            invoke3: "method {0} parameter {1} not allowed empty",
+            exist: "{0} is already exist",
+            exist1: "{0} '{1}' is already exist",
+            notexist: "{0} is not exist",
+            notexist1: "{0} '{1}' is not exist",
+            notupd: "{0} not allow to change",
+            notremove: "{0} not allow to delete",
+            notremove1: "{0} {1} not allow to delete",
+            namedinvalid: "{0} {1} name error，see name rules",
+            initial: "{0} init parameter error",
+            jsonparse: "JSON parse error",
+            timeout: "request overtime",
+            config: "{0} config parameter error",
+            config1: "{0} config parameter '{1}' error"
+        },
+        FormMsgs: {
+            type: "please input valid {0}",
+            unknown: "input error",
+            required: "is required",
+            min: "min value is {0}",
+            max: "max value is {0}"
+        }
     };
 })(nodom || (nodom = {}));
 var nodom;
@@ -4598,7 +4671,7 @@ var nodom;
         class PluginManager {
             static add(name, cfg) {
                 if (this.plugins.has(name)) {
-                    throw new nodom.NodomError('exist1', nodom.TipWords.element, name);
+                    throw new nodom.NodomError('exist1', nodom.TipMsg.TipWords['element'], name);
                 }
                 this.plugins.set(name, cfg);
             }

@@ -16,10 +16,10 @@ namespace nodom {
          */
         static addType(name, handler) {
             if (!/^[a-zA-Z]+$/.test(name)) {
-                throw new NodomError('namedinvalid', TipWords.filterType, name);
+                throw new NodomError('namedinvalid', TipMsg.TipWords['filterType'], name);
             }
             if (this.filterTypes.has(name)) {
-                throw new NodomError('exist1', TipWords.filterType, name);
+                throw new NodomError('exist1', TipMsg.TipWords['filterType'], name);
             }
             if (!Util.isFunction(handler)) {
                 throw new NodomError('invoke', 'FilterManager.addType', '1', 'Function');
@@ -33,7 +33,7 @@ namespace nodom {
          */
         static removeType(name:string) {
             if (!this.filterTypes.has(name)) {
-                throw new NodomError('notexist1', TipWords.filterType, name);
+                throw new NodomError('notexist1', TipMsg.TipWords['filterType'], name);
             }
             this.filterTypes.delete(name);
         }
@@ -60,7 +60,7 @@ namespace nodom {
                 params.push(arguments[i]);
             }
             if (!FilterManager.filterTypes.has(type)) {
-                throw new NodomError('notexist1', TipWords.filterType, type);
+                throw new NodomError('notexist1', TipMsg.TipWords['filterType'], type);
             }
             //调用
             return Util.apply(FilterManager.filterTypes.get(type), module, params);

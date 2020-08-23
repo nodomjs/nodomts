@@ -80,7 +80,7 @@ namespace nodom {
          */
         static async getInstance(className:string,moduleName?:string,data?:any){
             if(!this.classes.has(className)){
-                throw new NodomError('notexist1',TipWords.moduleClass,className);
+                throw new NodomError('notexist1',TipMsg.TipWords['moduleClass'],className);
             }
             let cfg:IMdlClassObj = this.classes.get(className);
             if(moduleName){
@@ -191,7 +191,7 @@ namespace nodom {
                     this.modules.set(instance.id,instance);
                 }
             }else{
-                throw new NodomError('notexist1',TipWords.moduleClass,cfg.class);
+                throw new NodomError('notexist1',TipMsg.TipWords['moduleClass'],cfg.class);
             }
         }
     }

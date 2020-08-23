@@ -10,7 +10,6 @@ module.exports = function (grunt) {
       },     
       dev:{
         src:[
-          // 'core/**/*.ts',
             './core/nodom.ts',
             './core/util.ts',
             './core/application.ts',
@@ -41,7 +40,9 @@ module.exports = function (grunt) {
             './core/serializer.ts',
             './core/extend/directiveinit.ts',
             './core/extend/filterinit.ts',
+            './core/locales/tipmsg.ts',
             './core/locales/msg_zh.ts',
+            './core/locales/msg_en.ts',
             './core/plugin.ts',
             './core/pluginmanager.ts'
         ],
@@ -50,8 +51,20 @@ module.exports = function (grunt) {
           module:'commonjs'
         }
       }
+    },
+    uglify: {  
+        release: {
+            options:{
+                mangle:false
+            },
+            files: [{
+              'bin/nodom.min.js':['bin/nodom.js']
+            }] 
+        } 
     }
   });  
   grunt.loadNpmTasks('grunt-ts');  
+  grunt.loadNpmTasks('grunt-contrib-uglify');  
   grunt.registerTask('default', ['ts:dev']); 
+  grunt.registerTask('min', ['uglify:release']); 
 };  

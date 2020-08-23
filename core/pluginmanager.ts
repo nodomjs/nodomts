@@ -12,7 +12,7 @@ namespace nodom{
          */
         static add(name:string,cfg:any){
             if(this.plugins.has(name)){
-                throw new NodomError('exist1',TipWords.element,name);
+                throw new NodomError('exist1',TipMsg.TipWords['element'],name);
             }
             this.plugins.set(name,cfg);
         }

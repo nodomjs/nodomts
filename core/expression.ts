@@ -296,8 +296,13 @@ namespace nodom {
             });
             //module作为第一个参数
             valueArr.unshift(module);
-            return this.execFunc.apply(null,valueArr);
-
+            
+            try{
+                return this.execFunc.apply(null,valueArr);
+            }catch(e){
+                console.log(e);
+            }
+            
             /**
              * 获取字段值
              * @param module    模块

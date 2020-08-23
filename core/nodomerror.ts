@@ -8,7 +8,7 @@ namespace nodom{
     export class NodomError extends Error{
         constructor(errorName:string,p1?:string,p2?:string,p3?:string,p4?:string){
             super(errorName);
-            let msg:string = ErrorMsgs[errorName];
+            let msg:string = TipMsg.ErrorMsgs[errorName];
             if(msg === undefined){
                 this.message = "未知错误";
                 return;

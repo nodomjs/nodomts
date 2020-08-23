@@ -40,7 +40,6 @@ namespace nodom {
             for (let i=0; i<this.waitList.length; i++) {
                 let m = ModuleFactory.get(this.waitList[i]);
                 
-                let r:boolean;
                 //渲染成功，从队列移除
                 if(!m || m.render()){
                     this.waitList.shift();

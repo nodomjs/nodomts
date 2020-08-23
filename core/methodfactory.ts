@@ -13,7 +13,7 @@ namespace nodom {
         invoke(name:string, params:Array<any>) {
             const foo = this.get(name);
             if (!Util.isFunction(foo)) {
-                throw new NodomError(ErrorMsgs.notexist1, TipWords.method, name);
+                throw new NodomError(TipMsg.ErrorMsgs['notexist1'], TipMsg.TipWords['method'], name);
             }
             return Util.apply(foo, this.module.model, params);
         }

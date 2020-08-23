@@ -13,22 +13,8 @@
     </div>
 </body>
 <script>
-let a = {
-    x:1,
-    y:{
-        c:1,
-        d:2
-    }
-}
-let b = {
-    a:a,
-    x:2
-}
+let lang = navigator.language;
+console.log(lang);
 
-a.b = b;
-
-let c = nodom.Util.clone(b);
-c.a.b.x = 2;
-console.log(a,b,c);
 </script>
 </html>

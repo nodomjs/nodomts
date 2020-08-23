@@ -576,7 +576,7 @@ namespace nodom {
                 //子节点不存在，添加一个
                 let text = ( <string> vd.children[0].textContent).trim();
                 if (text === '') { //没有提示内容，根据类型提示
-                    text = Util.compileStr(FormMsgs[vn], el.getAttribute(vn));
+                    text = Util.compileStr(TipMsg.FormMsgs[vn], el.getAttribute(vn));
                 }
                 vd.children[0].textContent = text;
             }

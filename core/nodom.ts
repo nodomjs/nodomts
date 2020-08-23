@@ -9,6 +9,11 @@ namespace nodom{
         path?:any;
 
         /**
+         * 语言，默认 zh
+         */
+        language:string;
+
+        /**
          * 调度器间隔时间(ms)，如果支持requestAnimationFrame，则不需要
          */
         scheduleCircle?:number;
@@ -38,13 +43,18 @@ namespace nodom{
      * @param config 应用配置
      */
     export async function newApp(config?:IAppCfg):Promise<Module>{
-        
         if(window['NodomConfig']){
             config = Util.merge({},window['NodomConfig'],config);
         }
+
+        let lang:string = config&&config.language;
+        if(!lang){
+            lang = navigator.language?navigator.language.substr(0,2):'zh';
+        }
+        TipMsg = eval('(nodom.TipMsg_' + lang + ')');
         
         if(!config || !config.module){
-            throw new NodomError('config',TipWords.application);
+            throw new NodomError('config',TipMsg.TipWords['application']);
         }
 
         Application.setPath(config.path);
@@ -226,7 +236,7 @@ namespace nodom{
         }).catch((re) => {
             switch (re.type) {
             case "error":
-                throw new NodomError("notexist1", TipWords.resource, re.url);
+                throw new NodomError("notexist1", TipMsg.TipWords['resource'], re.url);
             case "timeout":
                 throw new NodomError("timeout");
             case "jsonparse":
