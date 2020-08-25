@@ -1,0 +1,1 @@
+{"version":3,"file":"mdlmod3.js","sourceRoot":"","sources":["../../../../../examples/app/modules/router/mdlmod3.ts"],"names":[],"mappings":"AAAA;;GAEG;AACH,MAAM,OAAQ,SAAQ,KAAK,CAAC,MAAM;IAC9B,YAAY,GAAU;QAClB,IAAI,MAAM,GAAG,KAAK,CAAC,IAAI,CAAC,KAAK,CAAC,GAAG,EAAC;YAC9B,IAAI,EAAE,QAAQ;YACd,QAAQ,EAAE,qCAAqC;SAClD,CAAC,CAAC;QACH,KAAK,CAAC,MAAM,CAAC,CAAC;IAClB,CAAC;CACJ"}
