@@ -890,16 +890,16 @@ var nodom;
             let type = params.type;
             let parent = params.parent;
             this.dontRender = false;
-            if (!parent) {
-                el = module.container;
-            }
-            else {
-                if (type === 'fresh' || type === 'add' || type === 'text') {
+            if (type === 'fresh' || type === 'add' || type === 'text') {
+                if (parent) {
                     el = module.container.querySelector("[key='" + parent.key + "']");
                 }
-                else if (this.tagName !== undefined) {
-                    el = module.container.querySelector("[key='" + this.key + "']");
+                else {
+                    el = module.container;
                 }
+            }
+            else if (this.tagName !== undefined) {
+                el = module.container.querySelector("[key='" + this.key + "']");
             }
             if (!el) {
                 return;

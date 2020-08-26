@@ -380,9 +380,9 @@ namespace nodom {
                         item.node.renderToHtml(this, item);
                     });
                 }
-                //执行每次渲染后事件，延迟执行
+                //执行每次渲染后事件
                 this.doModuleEvent('onRender');
-
+                //执行渲染后操作
                 this.doRenderOp(this.renderOps);
             }
 
