@@ -231,12 +231,13 @@ namespace nodom {
                 }
             } else if (this.tagName !== undefined) { //element节点才可以查找
                 el = module.container.querySelector("[key='" + this.key + "']");
+                this.handleAssets(el);
             }
         
             if (!el) {
                 return;
             }
-            this.handleAssets(el);
+            
             switch (type) {
             case 'fresh': //首次渲染
                 if (this.tagName) {
