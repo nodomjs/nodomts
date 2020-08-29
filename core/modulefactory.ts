@@ -148,7 +148,7 @@ namespace nodom {
                 }
                 //lazy默认true
                 if(cfg.lazy === undefined){
-                    cfg.lazy = false;
+                    cfg.lazy = true;
                 }
                 //singleton默认true
                 if(cfg.singleton === undefined){

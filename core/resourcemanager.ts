@@ -194,10 +194,7 @@ namespace nodom {
          * @returns     [promises(请求对象数组),urls(url数组),types(类型数组)]
          */
         static preHandle(reqs:any[]):any[]{
-            let types = [];
-            let urls = [];
             let head = document.querySelector('head');
-            
             //预处理请求资源
             for(let i=0;i<reqs.length;i++){
                 //url串，需要构造成object
@@ -217,8 +214,8 @@ namespace nodom {
                     head.appendChild(css);
                     reqs[i].needLoad = false;
                 }
-                return reqs;
             }
+            return reqs;
         }
     }
 }

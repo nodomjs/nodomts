@@ -147,6 +147,7 @@ namespace nodom{
      *					params 				参数，json格式
      *					async 				异步，默认true
      *  				timeout 			超时时间
+     *                  type                json,text 默认text
      *					withCredentials 	同源策略，跨域时cookie保存，默认false
      *                  header              request header 对象
      *                  user                需要认证的情况需要用户名和密码
@@ -216,12 +217,16 @@ namespace nodom{
                 
                 break;
             case 'POST':
-                let fd:FormData = new FormData();
-                for (let o in config.params) {
-                    fd.append(o, config.params[o]);
+                if(config.params instanceof FormData){
+                    data = config.params;
+                }else{ 
+                    let fd:FormData = new FormData();
+                    for (let o in config.params) {
+                        fd.append(o, config.params[o]);
+                    }
+                    req.open(method, url, async, config.user, config.pwd);
+                    data = fd;
                 }
-                req.open(method, url, async, config.user, config.pwd);
-                data = fd;
                 break;
             }
 

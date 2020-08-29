@@ -129,12 +129,17 @@ var nodom;
                     }
                     break;
                 case 'POST':
-                    let fd = new FormData();
-                    for (let o in config.params) {
-                        fd.append(o, config.params[o]);
+                    if (config.params instanceof FormData) {
+                        data = config.params;
                     }
-                    req.open(method, url, async, config.user, config.pwd);
-                    data = fd;
+                    else {
+                        let fd = new FormData();
+                        for (let o in config.params) {
+                            fd.append(o, config.params[o]);
+                        }
+                        req.open(method, url, async, config.user, config.pwd);
+                        data = fd;
+                    }
                     break;
             }
             req.open(method, url, async, config.user, config.pwd);
@@ -900,11 +905,11 @@ var nodom;
             }
             else if (this.tagName !== undefined) {
                 el = module.container.querySelector("[key='" + this.key + "']");
+                this.handleAssets(el);
             }
             if (!el) {
                 return;
             }
-            this.handleAssets(el);
             switch (type) {
                 case 'fresh':
                     if (this.tagName) {
@@ -2391,6 +2396,7 @@ var nodom;
                 else {
                     this.model = new nodom.Model({}, this);
                 }
+                console.log(config);
                 if (urlArr.length > 0) {
                     let rets = yield nodom.ResourceManager.getResources(urlArr);
                     for (let r of rets) {
@@ -2746,7 +2752,7 @@ var nodom;
                             throw new nodom.NodomError("paramException", 'modules', 'class');
                         }
                         if (cfg.lazy === undefined) {
-                            cfg.lazy = false;
+                            cfg.lazy = true;
                         }
                         if (cfg.singleton === undefined) {
                             cfg.singleton = true;

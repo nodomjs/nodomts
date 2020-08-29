@@ -97,7 +97,7 @@
             </ul>
             {prop:v}用法，这里的参数必须为正确的json串，比如yang是字符串，需在两边添加引号
             <ul>
-                <li x-repeat="rows|select:{addr:'yang'}">{{name}}'s address is {{addr}}</li>
+                <li x-repeat="rows|select:{name:'yang'}">{{name}}'s address is {{addr}}</li>
             </ul>
             func用法
             <ul>
@@ -126,14 +126,7 @@
             },
             methods: {
                 selectArr: function (arr) {
-                    var a = [];
-                    // 过滤出name为yang的数组元素
-                    arr.forEach(item => {
-                        if (item.name === 'yang') {
-                            a.push(item)
-                        }
-                    });
-                    return a;
+                    return arr.filter(item=>item.name === 'yang');
                 }
             }
         }

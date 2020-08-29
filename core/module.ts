@@ -291,14 +291,16 @@ namespace nodom {
             }else{ //空数据
                 this.model = new Model({},this);
             }
-
+            console.log(config);
             //批量请求文件
             if (urlArr.length > 0) {
                 let rets:IResourceObj[] = await ResourceManager.getResources(urlArr);
                 for(let r of rets){
+                    
                     if(r.type === 'template' || r.type === 'nd'){
                         this.virtualDom = <Element>r.content;
                     }else if(r.type === 'data'){
+                    
                         this.model = new Model(r.content,this);
                     }
                 }
