@@ -585,7 +585,12 @@ namespace nodom {
          */
         setLinkActive() {
             if(this.parent){
-                let pm:Module = ModuleFactory.get(<number>this.parent.module);
+                let pm:Module;
+                if(!this.parent.module){
+                    pm = ModuleFactory.getMain();
+                }else{
+                    pm = ModuleFactory.get(<number>this.parent.module);
+                }    
                 if (pm) {
                     Router.changeActive(pm, this.fullPath);
                 }
@@ -623,7 +628,7 @@ namespace nodom {
             let node:Route = parent || this.root;
             let param:Array<string> = [];
             let paramIndex:number = -1; //最后一个参数开始
-            let prePath:string = ''; //前置路径
+            let prePath:string = '';    //前置路径
             for (let i = 0; i < pathArr.length; i++) {
                 let v = pathArr[i].trim();
                 if (v === '') {

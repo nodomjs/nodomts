@@ -1840,66 +1840,58 @@ var nodom;
                     let me = this;
                     this.preHandle(reqs);
                     let taskId = nodom.Util.genId();
-                    let res = {};
+                    let resArr = [];
                     for (let item of reqs) {
-                        res[item.url] = false;
+                        resArr.push(item.url);
                     }
-                    this.loadingTasks.set(taskId, res);
-                    for (let item of reqs) {
-                        if (!item.needLoad) {
-                            continue;
-                        }
-                        let url = item.url;
-                        if (this.resources.has(url)) {
-                            res[url].c = item.content;
-                        }
-                        else if (this.waitList.has(url)) {
-                            let arr = this.waitList.get(url);
-                            arr.push(taskId);
-                        }
-                        else {
-                            this.waitList.set(url, [taskId]);
-                            nodom.request({ url: url }).then((content) => {
+                    this.loadingTasks.set(taskId, resArr);
+                    return new Promise((res, rej) => __awaiter(this, void 0, void 0, function* () {
+                        for (let item of reqs) {
+                            if (!item.needLoad) {
+                                continue;
+                            }
+                            let url = item.url;
+                            if (this.resources.has(url)) {
+                                let r = me.awake(taskId);
+                                if (r) {
+                                    res(r);
+                                }
+                            }
+                            else if (this.waitList.has(url)) {
+                                this.waitList.get(url).push(taskId);
+                            }
+                            else {
+                                this.waitList.set(url, [taskId]);
+                                let content = yield nodom.request({ url: url });
                                 let rObj = { type: item.type, content: content };
                                 this.handleOne(url, rObj);
                                 this.resources.set(url, rObj);
                                 let arr = this.waitList.get(url);
+                                this.waitList.delete(url);
                                 for (let tid of arr) {
-                                    let tobj = this.loadingTasks.get(tid);
-                                    if (url) {
-                                        tobj[url] = true;
+                                    let r = me.awake(tid);
+                                    if (r) {
+                                        res(r);
                                     }
                                 }
-                                this.waitList.delete(item.url);
-                            });
-                        }
-                    }
-                    return new Promise((resolve, reject) => {
-                        check();
-                        function check() {
-                            let r = me.awake(taskId);
-                            if (r) {
-                                resolve(r);
-                                return;
                             }
-                            setTimeout(check, 0);
                         }
-                    });
+                    }));
                 });
             }
             static awake(taskId) {
                 if (!this.loadingTasks.has(taskId)) {
                     return;
                 }
-                let tobj = this.loadingTasks.get(taskId);
+                let resArr = this.loadingTasks.get(taskId);
                 let finish = true;
                 let contents = [];
-                for (let o in tobj) {
-                    if (tobj[o] === false) {
+                for (let url of resArr) {
+                    if (!this.resources.has(url)) {
                         finish = false;
                         break;
                     }
-                    contents.push(this.resources.get(o));
+                    contents.push(this.resources.get(url));
                 }
                 if (finish) {
                     this.loadingTasks.delete(taskId);
@@ -1944,8 +1936,6 @@ var nodom;
                 this.resources.set(url, rObj);
             }
             static preHandle(reqs) {
-                let types = [];
-                let urls = [];
                 let head = document.querySelector('head');
                 for (let i = 0; i < reqs.length; i++) {
                     if (typeof reqs[i] === 'string') {
@@ -1963,8 +1953,8 @@ var nodom;
                         head.appendChild(css);
                         reqs[i].needLoad = false;
                     }
-                    return reqs;
                 }
+                return reqs;
             }
         }
         ResourceManager.resources = new Map();
@@ -3551,7 +3541,13 @@ var nodom;
         }
         setLinkActive() {
             if (this.parent) {
-                let pm = nodom.ModuleFactory.get(this.parent.module);
+                let pm;
+                if (!this.parent.module) {
+                    pm = nodom.ModuleFactory.getMain();
+                }
+                else {
+                    pm = nodom.ModuleFactory.get(this.parent.module);
+                }
                 if (pm) {
                     Router.changeActive(pm, this.fullPath);
                 }
@@ -4272,7 +4268,7 @@ var nodom;
         else {
             dom.setProp('path', value);
         }
-        dom.addEvent(new nodom.NodomEvent('click', '', (dom, model, module, e) => {
+        dom.addEvent(new nodom.NodomEvent('click', (dom, model, module, e) => {
             let path = dom.getProp('path');
             if (nodom.Util.isEmpty(path)) {
                 return;

@@ -33,7 +33,7 @@ namespace nodom {
         /**
          * 加载任务  任务id:资源对象，{id1:{url1:false,url2:false},id2:...}
          */
-        private static loadingTasks:Map<number,object> = new Map();
+        private static loadingTasks:Map<number,string[]> = new Map();
 
         /**
          * 资源等待列表  {资源url:[taskId1,taskId2,...]}
@@ -50,59 +50,49 @@ namespace nodom {
             this.preHandle(reqs);
             
             let taskId:number = Util.genId();
-            let res = {};
             
-            //设置资源对象
+            //设置任务资源数组
+            let resArr = [];
             for(let item of reqs){
-                res[item.url] = false;
+                resArr.push(item.url);
             }
-            this.loadingTasks.set(taskId,res);
+            this.loadingTasks.set(taskId,resArr);
+            return new Promise(async(res,rej)=>{
+                //保存资源id状态
+                for(let item of reqs){
+                    //不需要加载
+                    if(!item.needLoad){
+                        continue;
+                    }
 
-            //保存资源id状态
-            for(let item of reqs){
-                //不需要加载
-                if(!item.needLoad){
-                    continue;
-                }
-
-                let url:string = item.url;
-                if(this.resources.has(url)){//已加载
-                    res[url].c = item.content;
-                }else if(this.waitList.has(url)){//加载中
-                    let arr = this.waitList.get(url);
-                    arr.push(taskId);
-                }else{  //新加载
-                    //将自己的任务加入等待队列
-                    this.waitList.set(url,[taskId]);
-                    request({url:url}).then((content)=>{
+                    let url:string = item.url;
+                    if(this.resources.has(url)){        //已加载，直接获取资源内容
+                        let r = me.awake(taskId);
+                        if(r){
+                            res(r);
+                        }
+                    }else if(this.waitList.has(url)){   //加载中，放入资源等待队列
+                        this.waitList.get(url).push(taskId);
+                    }else{  //新加载
+                        //将自己的任务加入等待队列
+                        this.waitList.set(url,[taskId]);
+                        //请求资源
+                        let content = await request({url:url})
                         let rObj = {type:item.type,content:content};
                         this.handleOne(url,rObj);
                         this.resources.set(url,rObj);
-                        let arr = this.waitList.get(url);
                         
-                        //设置等待队列加载状态
+                        let arr = this.waitList.get(url);
+                        //从等待列表移除
+                        this.waitList.delete(url);
+                        //唤醒任务
                         for(let tid of arr){
-                            let tobj = this.loadingTasks.get(tid);
-                            if(url){
-                                tobj[url] = true;
+                            let r = me.awake(tid);
+                            if(r){
+                                res(r);
                             }
                         }
-                        //从等待列表移除
-                        this.waitList.delete(item.url);
-                    });
-                }
-            }
-
-            return new Promise((resolve,reject)=>{
-                check();
-                function check(){
-                    let r:IResourceObj[] = me.awake(taskId);
-                    if(r){
-                        resolve(r);
-                        return;
                     }
-                    //循环监听
-                    setTimeout(check,0);
                 }
             });
         }
@@ -110,27 +100,25 @@ namespace nodom {
         /**
          * 唤醒任务
          * @param taskId    任务id
-         * @param url       资源url
-         * @param content   资源内容
          * @returns         加载内容数组或undefined
          */
         static awake(taskId:number):IResourceObj[]{
             if(!this.loadingTasks.has(taskId)){
                 return;
             }
-            let tobj = this.loadingTasks.get(taskId);
+            let resArr = this.loadingTasks.get(taskId);
             let finish:boolean = true;
             //资源内容数组
             let contents = [];
             //检查是否全部加载完成
-            for(let o in tobj){
+            for(let url of resArr){
                 //一个未加载完，则需要继续等待
-                if(tobj[o] === false){
+                if(!this.resources.has(url)){
                     finish = false;
                     break;
                 }
                 //放入返回对象
-                contents.push(this.resources.get(o));
+                contents.push(this.resources.get(url));
             }
             //加载完成
             if(finish){

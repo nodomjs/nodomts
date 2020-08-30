@@ -637,7 +637,7 @@ namespace nodom {
             }
             
             //添加click事件
-            dom.addEvent(new NodomEvent('click', '', 
+            dom.addEvent(new NodomEvent('click',
                 (dom,model,module,e) => {
                     let path:string = dom.getProp('path');
                     if (Util.isEmpty(path)) {
