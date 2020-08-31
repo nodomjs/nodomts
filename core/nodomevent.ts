@@ -359,8 +359,9 @@ namespace nodom {
         }
     }
 
-    /****************扩展事件*********************/
-
+    /**
+     * 扩展事件
+     */
     export class ExternalEvent {
         /**
          * 触屏事件
