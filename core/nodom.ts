@@ -35,6 +35,12 @@ namespace nodom{
 
         /**
          * 路由配置
+         * class:模块类名,
+         * moduleName:模块名
+         * data:数据url
+         * routes:子路由
+         * onEnter:路由进入事件
+         * onLeave:路由离开事件
          */
         routes:IRouteCfg[];
     }
@@ -123,17 +129,19 @@ namespace nodom{
      * @param config    object 或 string
      *                  如果为string，则直接以get方式获取资源
      *                  object 项如下:
-     *                  url 				请求地址
-     *					method 			    请求类型 GET(默认) POST
-     *					params 				参数，json格式
-     *					async 				异步，默认true
-     *  				timeout 			超时时间
-     *                  type                json,text 默认text
-     *					withCredentials 	同源策略，跨域时cookie保存，默认false
-     *                  header              request header 对象
-     *                  user                需要认证的情况需要用户名和密码
-     *                  pwd                 密码
-     *                  rand                bool随机数，请求动态资源时可能需要
+     *                  参数名|类型|默认值|必填|可选值|描述
+     *                  -|-|-|-|-|-
+     *                  url|string|无|是|无|请求url
+     *					method|string|GET|否|GET,POST,HEAD|请求类型
+     *					params|object/FormData|{}|否|无|参数，json格式
+     *					async|bool|false|否|true,false|是否异步
+     *  				timeout|number|0|否|无|请求超时时间
+     *                  type|string|text|否|json,text|
+     *					withCredentials|bool|false|否|true,false|同源策略，跨域时cookie保存
+     *                  header|object|无|否|无|request header 对象
+     *                  user|string|无|否|无|需要认证的请求对应的用户名
+     *                  pwd|string|无|否|无|需要认证的请求对应的密码
+     *                  rand|bool|无|否|无|请求随机数，设置则浏览器缓存失效
      */
     export function request(config):Promise<any>{
         return new Promise((resolve, reject) => {

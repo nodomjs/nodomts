@@ -27,7 +27,7 @@ namespace nodom {
         /**
          * 模块路径(相对于app module路径)
          */
-        path:string;
+        path?:string;
 
         /**
          * 模版字符串，如果以“<”开头，则表示模版字符串，否则表示模版url
@@ -153,7 +153,7 @@ namespace nodom {
         /**
          * 数据模型工厂
          */
-        modelFactory: ModelFactory;
+        modelFactory: ModelFactory = new ModelFactory();
         
         /**
          * 待渲染的虚拟dom数组
@@ -291,16 +291,13 @@ namespace nodom {
             }else{ //空数据
                 this.model = new Model({},this);
             }
-            console.log(config);
             //批量请求文件
             if (urlArr.length > 0) {
                 let rets:IResourceObj[] = await ResourceManager.getResources(urlArr);
                 for(let r of rets){
-                    
                     if(r.type === 'template' || r.type === 'nd'){
                         this.virtualDom = <Element>r.content;
                     }else if(r.type === 'data'){
-                    
                         this.model = new Model(r.content,this);
                     }
                 }
@@ -428,21 +425,16 @@ namespace nodom {
          */
         clone(moduleName:string):any{
             let me = this;
-            let m:any = {};
-            let excludes = ['id','name','model','virtualDom','container','containerKey'];
+            // let m:any = {};
+            let m:Module = new Module({name:moduleName});
+            let excludes = ['id','name','model','virtualDom','container','containerKey','modelFactory','plugins'];
             Object.getOwnPropertyNames(this).forEach((item)=>{
                 if(excludes.includes(item)){
                     return;
                 }
                 m[item] = me[item];
             });
-            //重置name和id，绑定原型
-            m.id = Util.genId();
-            m.name = moduleName || 'Module' + m.id;
-            //绑定原型
-            m.__proto__ = (<any>this).__proto__;
-            //加入module factory
-            ModuleFactory.add(m);
+
             //构建model
             if(this.model){
                 let d = this.model.getData();
@@ -450,8 +442,6 @@ namespace nodom {
             }
             //克隆虚拟dom树
             m.virtualDom = this.virtualDom.clone(true);
-            //插件清空
-            m.plugins.clear();
             return m;
         }
         

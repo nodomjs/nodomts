@@ -1,4 +1,4 @@
-// / <reference path="nodom.ts" />
+/// <reference path="nodom.ts" />
 namespace nodom {
     
     /**
@@ -35,6 +35,16 @@ namespace nodom {
          * 懒加载
          */
         lazy?:boolean;
+
+        /**
+         * 是否正在初始化
+         */
+        initing:boolean;
+
+        /**
+         * 等待模块初始化的id列表
+         */
+        waitList:number[];
     }
 
 	/**
@@ -78,7 +88,7 @@ namespace nodom {
          * @param moduleName    模块名
          * @param data          数据或数据url
          */
-        static async getInstance(className:string,moduleName?:string,data?:any){
+        static async getInstance(className:string,moduleName?:string,data?:any):Promise<Module>{
             if(!this.classes.has(className)){
                 throw new NodomError('notexist1',TipMsg.TipWords['moduleClass'],className);
             }
@@ -86,15 +96,33 @@ namespace nodom {
             if(moduleName){
                 cfg.name = moduleName;
             }
+            
             if(!cfg.instance){
-                await this.initModule(cfg);
+                let id = Util.genId();
+                if(!cfg.initing){
+                    cfg.initing = true;
+                    this.initModule(cfg);
+                }
+
+                return new Promise((res,rej)=>{
+                    check();
+                    function check(){
+                        if(!cfg.initing){
+                            res(get(cfg));
+                        }else{
+                            setTimeout(check,0);
+                        }
+                    }
+                });
+            }else{
+                return get(cfg);
             }
-            if(cfg.instance){
+            
+            function get(cfg:IMdlClassObj): Module{
                 if(cfg.singleton){
                     return cfg.instance;
                 }else{
                     let mdl:Module = cfg.instance.clone(moduleName);
-                    
                     //处理数据
                     if(data){
                         //如果为url，则设置dataurl和loadnewdata标志
@@ -108,7 +136,7 @@ namespace nodom {
                     return mdl;
                 }
             }
-            return null;
+            
         }
         /**
          * 从工厂移除模块
@@ -190,9 +218,15 @@ namespace nodom {
                 if(cfg.singleton){
                     this.modules.set(instance.id,instance);
                 }
+                //初始化完成
+                cfg.initing = false;
             }else{
                 throw new NodomError('notexist1',TipMsg.TipWords['moduleClass'],cfg.class);
             }
+        }
+
+        static awake(){
+
         }
     }
 }

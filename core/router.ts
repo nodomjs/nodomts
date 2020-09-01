@@ -18,6 +18,11 @@ namespace nodom {
          * 模块名
          */
         moduleName?:string;
+
+        /**
+         * 数据url
+         */
+        dataUrl?:string;
 		/**
 		 * 子路由数组
 		 */
@@ -46,14 +51,8 @@ namespace nodom {
 	}
 	
 	/**
-     * 路由，主要用于模块间跳转，一个应用中存在一个router，多个route
-     * 采用修改页面hash方式进行路由历史控制，每个route 可设置onEnter事件(钩子) 和 onLeave事件(钩子)
-     * 回调调用的几个问题
-     * onLeave事件在路由切换时响应，如果存在多级路由切换，则从底一直到相同祖先路由，都会进行onLeave事件响应
-     *  如：从/r1/r2/r3  到 /r1/r4/r5，则onLeave响应顺序为r3、r2
-     *  onEnter事件则从上往下执行
-	 * @author 		yanglei
-     * @since 		1.0
+     * 路由类
+	 * @since 		1.0
      */
     export class Router {
 		/**
@@ -103,11 +102,12 @@ namespace nodom {
          * 绑定到module的router指令对应的key，即router容器对应的key，格式为 {moduleId:routerKey,...}
          */
         static routerKeyMap:Map<number,string> = new Map();
+        
         /**
-         * 往路由管理器中添加路径
+         * 把路径加入跳转列表(准备跳往该路由)
          * @param path 	路径 
          */
-        static async addPath(path:string) {
+        static async go(path:string) {
             for (let i = 0; i < this.waitList.length; i++) {
                 let li:string = this.waitList[i];
                 //相等，则不加入队列
@@ -126,7 +126,7 @@ namespace nodom {
         /**
          * 启动加载
          */
-        static async load() {
+        private static async load() {
             //在加载，或无等待列表，则返回
             if (this.loading || this.waitList.length === 0) {
                 return;
@@ -142,7 +142,7 @@ namespace nodom {
          * 切换路由
          * @param path 	路径
          */
-        static async start(path:string) {
+        private static async start(path:string) {
             let diff = this.compare(this.currentPath, path);
             //获得当前模块，用于寻找router view
             let parentModule:Module;
@@ -150,7 +150,7 @@ namespace nodom {
                 parentModule = findParentModule();
             }else{
                 if(typeof diff[0].module === 'string'){
-                    parentModule = await ModuleFactory.getInstance(diff[0].module,diff[0].moduleName);
+                    parentModule = await ModuleFactory.getInstance(diff[0].module,diff[0].moduleName,diff[0].dataUrl);
                 }else{
                     parentModule = ModuleFactory.get(diff[0].module);
                 }
@@ -187,11 +187,11 @@ namespace nodom {
                     showPath = route.useParentPath && proute?proute.fullPath:route.fullPath;
                     //给模块设置路由参数
                     let module:Module = ModuleFactory.get(<number>route.module);
-                    setRouteParamToModel(route,module);
                     route.setLinkActive();
                     //设置首次渲染
                     module.firstRender = true;
-                    module.active();
+                    await module.active();
+                    setRouteParamToModel(route,module);
                 }
             } else { //路由不同
                 //加载模块
@@ -208,7 +208,7 @@ namespace nodom {
                     let module:Module;
                     //尚未获取module，进行初始化
                     if(typeof route.module === 'string'){
-                        module = await ModuleFactory.getInstance(route.module,route.moduleName);
+                        module = await ModuleFactory.getInstance(route.module,route.moduleName,route.dataUrl);
                         if(!module){
                             throw new NodomError('notexist1',TipMsg.TipWords['module'],route.module);
                         }
@@ -326,7 +326,7 @@ namespace nodom {
          * @param path 	路径
          */
         static redirect(path:string) {
-            this.addPath(path);
+            this.go(path);
         }
 
         /**
@@ -372,7 +372,7 @@ namespace nodom {
          * @param path2 	第二个路径
          * @returns 		[不同路由的父路由，第一个需要销毁的路由数组，第二个需要增加的路由数组，上2级路由]
          */
-        static compare(path1:string, path2:string):Array<any> {
+        private static compare(path1:string, path2:string):Array<any> {
             
             // 获取路由id数组
             let arr1:Array<Route> = null;
@@ -548,6 +548,12 @@ namespace nodom {
          * 模块名
          */
         moduleName:string;
+
+        /**
+         * 模块绑定数据url
+         */
+        dataUrl:string;
+
 		/**
 		 * 父路由
 		 */
@@ -742,7 +748,6 @@ namespace nodom {
         }
     }
 
-
     //处理popstate事件
     window.addEventListener('popstate', function (e) {
         //根据state切换module
@@ -751,6 +756,6 @@ namespace nodom {
             return;
         }
         Router.startStyle = 2;
-        Router.addPath(state);
+        Router.go(state);
     });
 }

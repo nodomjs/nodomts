@@ -643,7 +643,7 @@ namespace nodom {
                     if (Util.isEmpty(path)) {
                         return;
                     }
-                    Router.addPath(path);
+                    Router.go(path);
                 }
             ));
         },
@@ -662,14 +662,14 @@ namespace nodom {
             }
 
             let path:string = dom.getProp('path');
-            if (path === Router.currentPath) {
+            if (!path || path === Router.currentPath) {
                 return;
             }
             
             //active需要跳转路由（当前路由为该路径对应的父路由）
             if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
                 //可能router尚未渲染出来
-                setTimeout(()=>{Router.addPath(path)},0);
+                setTimeout(()=>{Router.go(path)},0);
             }
         }
     );

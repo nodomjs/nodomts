@@ -46,17 +46,6 @@ var nodom;
         });
     }
     nodom.newApp = newApp;
-    function createModule(config, main) {
-        if (nodom.Util.isArray(config)) {
-            for (let item of config) {
-                new nodom.Module(item);
-            }
-        }
-        else {
-            return new nodom.Module(config);
-        }
-    }
-    nodom.createModule = createModule;
     function createRoute(config) {
         if (nodom.Util.isArray(config)) {
             for (let item of config) {
@@ -2302,6 +2291,7 @@ var nodom;
             this.beforeRenderOps = [];
             this.state = 0;
             this.loadNewData = false;
+            this.modelFactory = new nodom.ModelFactory();
             this.renderDoms = [];
             this.container = null;
             this.moduleMap = new Map();
@@ -2386,7 +2376,6 @@ var nodom;
                 else {
                     this.model = new nodom.Model({}, this);
                 }
-                console.log(config);
                 if (urlArr.length > 0) {
                     let rets = yield nodom.ResourceManager.getResources(urlArr);
                     for (let r of rets) {
@@ -2478,24 +2467,19 @@ var nodom;
         }
         clone(moduleName) {
             let me = this;
-            let m = {};
-            let excludes = ['id', 'name', 'model', 'virtualDom', 'container', 'containerKey'];
+            let m = new Module({ name: moduleName });
+            let excludes = ['id', 'name', 'model', 'virtualDom', 'container', 'containerKey', 'modelFactory', 'plugins'];
             Object.getOwnPropertyNames(this).forEach((item) => {
                 if (excludes.includes(item)) {
                     return;
                 }
                 m[item] = me[item];
             });
-            m.id = nodom.Util.genId();
-            m.name = moduleName || 'Module' + m.id;
-            m.__proto__ = this.__proto__;
-            nodom.ModuleFactory.add(m);
             if (this.model) {
                 let d = this.model.getData();
                 m.model = new nodom.Model(nodom.Util.clone(d), m);
             }
             m.virtualDom = this.virtualDom.clone(true);
-            m.plugins.clear();
             return m;
         }
         hasContainer() {
@@ -2699,9 +2683,27 @@ var nodom;
                         cfg.name = moduleName;
                     }
                     if (!cfg.instance) {
-                        yield this.initModule(cfg);
+                        let id = nodom.Util.genId();
+                        if (!cfg.initing) {
+                            cfg.initing = true;
+                            this.initModule(cfg);
+                        }
+                        return new Promise((res, rej) => {
+                            check();
+                            function check() {
+                                if (!cfg.initing) {
+                                    res(get(cfg));
+                                }
+                                else {
+                                    setTimeout(check, 0);
+                                }
+                            }
+                        });
                     }
-                    if (cfg.instance) {
+                    else {
+                        return get(cfg);
+                    }
+                    function get(cfg) {
                         if (cfg.singleton) {
                             return cfg.instance;
                         }
@@ -2719,7 +2721,6 @@ var nodom;
                             return mdl;
                         }
                     }
-                    return null;
                 });
             }
             static remove(id) {
@@ -2774,11 +2775,14 @@ var nodom;
                         if (cfg.singleton) {
                             this.modules.set(instance.id, instance);
                         }
+                        cfg.initing = false;
                     }
                     else {
                         throw new nodom.NodomError('notexist1', nodom.TipMsg.TipWords['moduleClass'], cfg.class);
                     }
                 });
+            }
+            static awake() {
             }
         }
         ModuleFactory.modules = new Map();
@@ -3205,7 +3209,7 @@ var nodom;
 (function (nodom) {
     let Router = (() => {
         class Router {
-            static addPath(path) {
+            static go(path) {
                 return __awaiter(this, void 0, void 0, function* () {
                     for (let i = 0; i < this.waitList.length; i++) {
                         let li = this.waitList[i];
@@ -3241,7 +3245,7 @@ var nodom;
                     }
                     else {
                         if (typeof diff[0].module === 'string') {
-                            parentModule = yield nodom.ModuleFactory.getInstance(diff[0].module, diff[0].moduleName);
+                            parentModule = yield nodom.ModuleFactory.getInstance(diff[0].module, diff[0].moduleName, diff[0].dataUrl);
                         }
                         else {
                             parentModule = nodom.ModuleFactory.get(diff[0].module);
@@ -3271,10 +3275,10 @@ var nodom;
                         if (route !== null) {
                             showPath = route.useParentPath && proute ? proute.fullPath : route.fullPath;
                             let module = nodom.ModuleFactory.get(route.module);
-                            setRouteParamToModel(route, module);
                             route.setLinkActive();
                             module.firstRender = true;
-                            module.active();
+                            yield module.active();
+                            setRouteParamToModel(route, module);
                         }
                     }
                     else {
@@ -3288,7 +3292,7 @@ var nodom;
                             }
                             let module;
                             if (typeof route.module === 'string') {
-                                module = yield nodom.ModuleFactory.getInstance(route.module, route.moduleName);
+                                module = yield nodom.ModuleFactory.getInstance(route.module, route.moduleName, route.dataUrl);
                                 if (!module) {
                                     throw new nodom.NodomError('notexist1', nodom.TipMsg.TipWords['module'], route.module);
                                 }
@@ -3379,7 +3383,7 @@ var nodom;
                 });
             }
             static redirect(path) {
-                this.addPath(path);
+                this.go(path);
             }
             static addRoute(route, parent) {
                 if (RouterTree.add(route, parent) === false) {
@@ -3666,7 +3670,7 @@ var nodom;
             return;
         }
         Router.startStyle = 2;
-        Router.addPath(state);
+        Router.go(state);
     });
 })(nodom || (nodom = {}));
 var nodom;
@@ -4273,7 +4277,7 @@ var nodom;
             if (nodom.Util.isEmpty(path)) {
                 return;
             }
-            nodom.Router.addPath(path);
+            nodom.Router.go(path);
         }));
     }, (directive, dom, module, parent) => {
         if (dom.hasProp('active')) {
@@ -4288,11 +4292,11 @@ var nodom;
             }
         }
         let path = dom.getProp('path');
-        if (path === nodom.Router.currentPath) {
+        if (!path || path === nodom.Router.currentPath) {
             return;
         }
         if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!nodom.Router.currentPath || path.indexOf(nodom.Router.currentPath) === 0)) {
-            setTimeout(() => { nodom.Router.addPath(path); }, 0);
+            setTimeout(() => { nodom.Router.go(path); }, 0);
         }
     });
     nodom.DirectiveManager.addType('router', 10, (directive, dom) => {
@@ -4637,7 +4641,7 @@ var nodom;
         beforeRender(module, uidom) {
             this.element = uidom;
             this.moduleId = module.id;
-            if (uidom.key !== this.key) {
+            if (!this.modelId || uidom.key !== this.key) {
                 this.key = uidom.key;
                 this.modelId = uidom.modelId;
                 if (uidom.hasProp('name')) {
@@ -4652,7 +4656,7 @@ var nodom;
         afterRender(module, uidom) { }
         clone(dst) {
             let plugin = Reflect.construct(this.constructor, []);
-            let excludeProps = ['key', 'element'];
+            let excludeProps = ['key', 'element', 'modelId', 'moduleId'];
             nodom.Util.getOwnProps(this).forEach((prop) => {
                 if (excludeProps.includes(prop)) {
                     return;

@@ -19,11 +19,6 @@ namespace nodom {
          */
         execFunc:Function;
 
-        /**
-		 * 一个expression可能被多次使用，以modelid进行区分，针对不同的模型id构建对象{modelId:{fieldValue:,value:}
-		 */
-		// modelMap:object={};
-
         //替代串
         static REP_STR:string='$$NODOM_TMPSTR';
         

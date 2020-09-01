@@ -18,6 +18,7 @@ namespace nodom{
          * module id
          */
         moduleId:number;
+
         /**
          * model id
          */
@@ -37,6 +38,11 @@ namespace nodom{
          * 是否需要前置渲染
          */
         needPreRender:boolean;
+
+        /**
+         * 附加数据项名
+         */
+        extraDataName:string;
         
         constructor(params:HTMLElement|object){}
         
@@ -48,7 +54,7 @@ namespace nodom{
         beforeRender(module:nodom.Module,uidom:nodom.Element){
             this.element = uidom;
             this.moduleId = module.id;
-            if(uidom.key !== this.key){
+            if(!this.modelId || uidom.key !== this.key){
                 this.key = uidom.key;
                 this.modelId = uidom.modelId;
                 //添加到模块
@@ -73,7 +79,7 @@ namespace nodom{
         clone(dst?:Element){
             let plugin = Reflect.construct(this.constructor,[]);
             //不拷贝属性
-            let excludeProps:string[] = ['key','element'];
+            let excludeProps:string[] = ['key','element','modelId','moduleId'];
             Util.getOwnProps(this).forEach((prop)=>{
                 if(excludeProps.includes(prop)){
                     return;
