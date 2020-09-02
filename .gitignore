@@ -1,2 +1,6 @@
 node_modules
 /dist
+.gitignore
+.package-lock.json
+.package.json
+笔记
