@@ -54,7 +54,7 @@ NoDom基于模块进行应用搭建，一个应用由单个或多个模块组成
 1. npm安装typescript,grunt-ts和grunt；
 2. 运行grunt进行编译。
 
-默认编译为es6，如果需要其它js版本，请修改Gruntfile.js文件中的options->target。  
+默认编译为es6，如果需要其它js版本，请修改Gruntfile.js文件中的options->target，压缩请参考uglify。    
 
 
 
