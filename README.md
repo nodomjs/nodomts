@@ -26,7 +26,7 @@ NoDom基于模块进行应用搭建，一个应用由单个或多个模块组成
 ```
 
 ### 指令(Directive)
-为增强dom节点的使用，增加了指令功能，指令以“x-”开头，目前NoDom支持11个指令:module,model,repeat,class,if,else,show,field,validity,route,router。
+为增强dom节点的使用，增加了指令功能，指令以“x-”开头，目前NoDom支持10个指令:module,model,repeat,class,if,else,show,field,route,router。
 
 ### 过滤器(Filter)
 过滤器主要用于改变数据的显示方式、排序、数组过滤等功能，目前NoDom提供7类过滤器:date,currency,number,tolowercase,touppercase,orderby,select。
