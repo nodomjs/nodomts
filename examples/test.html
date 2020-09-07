@@ -5,19 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>filter</title>
-    <!-- <script type="text/javascript" src="../js/require.js"></script> -->
-    <script>
-        // class TreeElement extends HTMLElement{
-        //     constructor(){
-        //         super();
-        //         let shadow = this.attachShadow({mode:'open'});
-        //         // this.innerHTML = "<div style='color:red'>hello world</div>"
-        //         let root = this.shadowRoot;
-        //         root.innerHTML = "<div style='color:red'>{{hello}}</div>";
-        //     }
-        // }
-        // customElements.define('ui-tree',TreeElement);    
-    </script>
     <script type="text/javascript" src="../bin/nodom.js"></script>
 
     <style>
@@ -41,29 +28,34 @@
 </head>
 
 <body>
-    <select value='2'>
-        <option value='1'>1</option>
-        <option value='2'>2</option>
-        <option value='3'>3</option>
-        <option value='4'>4</option>
-        <option value='5'>5</option>
-    </select>
-   <button onclick='show()'>show</button>
+    <div></div>
 </body>
 <script>
     nodom.newApp({
         module:{
-            el: '.view',
-            data: 'http://localhost:3000/commodity/getinfo'/*{
+            el: 'div',
+            template:`
+            <ul>
+            <li x-repeat='rows' class='linkitem'>
+                <a x-route='{{url}}' x-class="{active:'active'}" >{{title}}</a>
+                <ul>
+                    <li x-repeat='items' class='linkitem2'>
+                        <a x-route='{{url}}' x-class="{active:'active'}" >{{title}}</a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+            `,
+            data: {
                 hello:'hello world!',
                 rows: [
-                    { name: 'yang', addr: 'chengdu' },
-                    { name: 'zhang', addr: 'mianyang' },
-                    { name: 'chen', addr: 'luoyang' },
-                    { name: 'tang', addr: 'beijing' },
-                    { name: 'li', addr: 'shanghai',url:'http://www.baidu.com' }
+                    { title: 'yang', url:'a/b'},
+                    { title: 'zhang',url:'a/b'},
+                    { title: 'chen', url:'a/b'},
+                    { title: 'tang', url:'a/b'},
+                    { title: 'li', url:'a/b'}
                 ]
-            }*/,
+            },
             methods: {
                 ascClick:function(dom,model,module,e){
                     model.data['rows'].push({name:'haha',addr:'sssss'});

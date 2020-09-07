@@ -140,6 +140,8 @@ namespace nodom {
         },
         (directive: Directive, dom: Element, module: Module, parent: Element) => {
             let model = module.modelFactory.get(dom.modelId);
+            //可能数据不存在，先设置dontrender
+            dom.dontRender = true;
             if(!model || !model.data){
                 return;
             }
@@ -150,11 +152,14 @@ namespace nodom {
                 return;
             }
             let rows = model.data;
+            
             // 无数据，不渲染
             if (!Util.isArray(rows) || rows.length === 0) {
-                dom.dontRender = true;
                 return;
             }
+            
+            dom.dontRender = false;
+            
             //有过滤器，处理数据集合
             if (directive.filters && directive.filters.length>0) {
                 for(let f of directive.filters){

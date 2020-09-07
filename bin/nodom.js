@@ -3900,6 +3900,7 @@ var nodom;
         directive.value = modelName;
     }, (directive, dom, module, parent) => {
         let model = module.modelFactory.get(dom.modelId);
+        dom.dontRender = true;
         if (!model || !model.data) {
             return;
         }
@@ -3909,9 +3910,9 @@ var nodom;
         }
         let rows = model.data;
         if (!nodom.Util.isArray(rows) || rows.length === 0) {
-            dom.dontRender = true;
             return;
         }
+        dom.dontRender = false;
         if (directive.filters && directive.filters.length > 0) {
             for (let f of directive.filters) {
                 rows = f.exec(rows, module);
