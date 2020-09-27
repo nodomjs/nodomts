@@ -87,7 +87,7 @@ namespace nodom {
      * 数组排序
      * @param arr       数组
      * @param param     
-     *     用法: orderBy:字段:desc/asc
+     *     用法: orderby:字段:desc/asc
      */
     FilterManager.addType('orderby', function () {
         let args = arguments;
