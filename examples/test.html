@@ -28,25 +28,16 @@
 </head>
 
 <body>
-    <div></div>
+    <div>
+        <label>出生日期</label><span>{{birth|date:"yyyy-MM-dd"}}</span>
+    </div>
 </body>
 <script>
     nodom.newApp({
         module:{
             el: 'div',
-            template:`
-            <ul>
-            <li x-repeat='rows' class='linkitem'>
-                <a x-route='{{url}}' x-class="{active:'active'}" >{{title}}</a>
-                <ul>
-                    <li x-repeat='items' class='linkitem2'>
-                        <a x-route='{{url}}' x-class="{active:'active'}" >{{title}}</a>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-            `,
             data: {
+                birth:new Date().getTime(),
                 hello:'hello world!',
                 rows: [
                     { title: 'yang', url:'a/b'},

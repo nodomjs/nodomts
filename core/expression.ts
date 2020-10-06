@@ -233,7 +233,7 @@ namespace nodom {
                 sa.forEach((v,i)=>{
                     v = this.recoveryString(v);
                     if(!Util.isNumberString(v)){
-                        sa[i] = '"' + v + '"';
+                        sa[i] = '"' + v.replace(/"/g,'\\"') + '"';
                     }
                 });
 

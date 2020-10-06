@@ -1624,7 +1624,7 @@ var nodom;
                     sa.forEach((v, i) => {
                         v = this.recoveryString(v);
                         if (!nodom.Util.isNumberString(v)) {
-                            sa[i] = '"' + v + '"';
+                            sa[i] = '"' + v.replace(/"/g, '\\"') + '"';
                         }
                     });
                     let paramStr = sa.length > 0 ? ',' + sa.join(',') : '';
