@@ -3345,6 +3345,7 @@ var nodom;
                         }
                         else {
                             history.pushState(path, '', p);
+                            console.log(p);
                         }
                         this.showPath = showPath;
                     }

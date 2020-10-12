@@ -14,6 +14,7 @@ namespace nodom{
          *              js:js路径(js加载基础路径 app+css),
          *              template:模版路径(模版加载基础 app+template)
          *              route:路由前置路径(路由完整路径为 route + routePath)
+         *              module:模块基础路径
          */
         static path:any;
         

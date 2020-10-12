@@ -6,7 +6,7 @@ NodomConfig = {
         app:'/examples/app',
         template:'view',
         css:'css',
-        preRoute:'route',
+        route:'/route',
         module:'dist'
     },
     /**模块配置 */
