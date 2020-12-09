@@ -43,6 +43,11 @@ namespace nodom{
          * 附加数据项名
          */
         extraDataName:string;
+
+        /**
+         * 临时参数
+         */
+        tmpParam:object;
         
         constructor(params:HTMLElement|object){}
         
@@ -90,6 +95,32 @@ namespace nodom{
                 plugin.element = dst;
             }
             return plugin;
+        }
+
+        /**
+         * 设置临时参数
+         * @param name      参数名
+         * @param value     参数值
+         */
+        setTmp(name:string,value:any){
+            this.tmpParam[name] = value;
+        }
+
+        /**
+         * 获取临时参数
+         * @param name      参数名
+         * @returns         参数值
+         */
+        getTmp(name:string,value:any){
+            this.tmpParam[name] = value;
+        }
+
+        /**
+         * 移除临时值
+         * @param name      参数名 
+         */
+        removeTmp(name:string){
+            delete this.tmpParam[name];
         }
     }
 }

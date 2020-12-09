@@ -51,6 +51,11 @@ namespace nodom {
         methods ? : object;
         
         /**
+         * 子模块配置
+         */
+        modules?: IModuleCfg[];
+        
+        /**
          * 先于模块初始化加载的文件集合
          * 如果为string，则表示资源路径，type为js
          * 如果为object，则格式为{type:'js'/'css',url:路径}
@@ -300,6 +305,15 @@ namespace nodom {
                     }else if(r.type === 'data'){
                         this.model = new Model(r.content,this);
                     }
+                }
+            }
+
+            //处理子模块
+            if(this.initConfig.modules){
+                for(let cfg of this.initConfig.modules){
+                    let mdl:Module = new Module(cfg);
+                    mdl.parentId = this.id;
+                    this.addChild(mdl.id);
                 }
             }
 
@@ -590,7 +604,7 @@ namespace nodom {
                 this.children.forEach((item) => {
                     let m:Module = ModuleFactory.get(item);
                     if(m){
-                        m.unactive();
+                        m.active();
                     }
                 });
             }

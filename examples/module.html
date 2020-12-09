@@ -21,24 +21,26 @@
 <body>
     <div>
         <h3>普通模块</h3>
-        <div x-module='ModuleA|mod0' data='data/data1.json'></div>
+        <div class='diva'></div>
+        <div class='divb'></div>
+        <!-- <div x-module='ModuleA|mod0' data='data/data1.json'></div> -->
 
-        <h3>支持外部repeat的模块</h3>
+        <!-- <h3>支持外部repeat的模块</h3>
         <div x-repeat='users'>
             <p>{{name}} 的订单:</p>
             <div x-module='ModuleA' moduleName = '{{"mod" + ($index+1)}}' data='{{data}}'></div>
-        </div>
+        </div> -->
         
-        <h3>模块消息传递</h3>
+        <!-- <h3>模块消息传递</h3>
         <p>消息只能发送给父模块、兄弟模块和子模块，定向发送消息时，必须为模块设置模块名</p>
         <p>消息发送有两种方式：</p>
         <ul>
             <li>broadcast(广播):父模块、兄弟模块和孩子节点都可以收到该消息</li>
             <li>send(发给指定模块):指定模块可以收到该消息</li>
-        </ul>
+        </ul>-->
         
         <p>模块1包含两个子模块</p>
-        <div x-module='ModuleB|modb1'></div>
+        <div x-module='ModuleB|modb1'></div> 
     </div>
 </body>
 <script>
@@ -50,7 +52,29 @@
                     {name:'Yanglei',data:'data/data1.json'},
                     {name:'YangLuhan',data:'data/data2.json'}
                 ]
-            }
+            },
+            modules:[{
+                el:'.diva',
+                name:'modb1',
+                template:'b.html',
+                data: {
+                    from: '',
+                    msg: '发送消息',
+                    msg1: ''
+                },
+                methods: {
+                    sendMsg: function (dom, model, module) {
+                        module.broadcast(model.data.msg);
+                    },
+                    sendParent:function(dom,model,module){
+                        module.send('modb1',model.data.msg);
+                    },
+                    onReceive:function(model,from,msg){
+                        console.log(msg);
+                        model.set('msg1',msg);
+                    }
+                }
+            }]
         }
     });
 

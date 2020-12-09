@@ -18,8 +18,9 @@ class ModuleB extends nodom.Module{
                     module.send('modb1',model.data.msg);
                 },
                 onReceive:function(model,from,msg){
-                    model.set('msg1',msg);
-                    model.set('from',from);
+                    console.log(msg);
+                    // model.set('msg1',msg);
+                    // model.set('from',from);
                 }
             }
         });

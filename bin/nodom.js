@@ -2387,6 +2387,13 @@ var nodom;
                         }
                     }
                 }
+                if (this.initConfig.modules) {
+                    for (let cfg of this.initConfig.modules) {
+                        let mdl = new Module(cfg);
+                        mdl.parentId = this.id;
+                        this.addChild(mdl.id);
+                    }
+                }
                 changeState(this);
                 delete this.initConfig;
                 function changeState(mod) {
@@ -2570,7 +2577,7 @@ var nodom;
                     this.children.forEach((item) => {
                         let m = nodom.ModuleFactory.get(item);
                         if (m) {
-                            m.unactive();
+                            m.active();
                         }
                     });
                 }
@@ -3345,7 +3352,6 @@ var nodom;
                         }
                         else {
                             history.pushState(path, '', p);
-                            console.log(p);
                         }
                         this.showPath = showPath;
                     }
@@ -4669,6 +4675,15 @@ var nodom;
                 plugin.element = dst;
             }
             return plugin;
+        }
+        setTmp(name, value) {
+            this.tmpParam[name] = value;
+        }
+        getTmp(name, value) {
+            this.tmpParam[name] = value;
+        }
+        removeTmp(name) {
+            delete this.tmpParam[name];
         }
     }
     nodom.Plugin = Plugin;
