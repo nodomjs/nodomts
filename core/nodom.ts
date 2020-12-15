@@ -134,7 +134,7 @@ namespace nodom{
      *                  url|string|无|是|无|请求url
      *					method|string|GET|否|GET,POST,HEAD|请求类型
      *					params|object/FormData|{}|否|无|参数，json格式
-     *					async|bool|false|否|true,false|是否异步
+     *					async|bool|true|否|true,false|是否异步
      *  				timeout|number|0|否|无|请求超时时间
      *                  type|string|text|否|json,text|
      *					withCredentials|bool|false|否|true,false|同源策略，跨域时cookie保存

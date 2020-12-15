@@ -34,7 +34,7 @@ namespace nodom{
              */
             function clone(src,expKey,extra?){
                 //非对象或函数，直接返回            
-                if(typeof src !== 'object' || Util.isFunction(src)){
+                if(!src || typeof src !== 'object' || Util.isFunction(src)){
                     return src;
                 }
                 

@@ -731,11 +731,43 @@ namespace nodom {
         }
 
         /**
+         * 获取子孙模块
+         * @param name          模块名 
+         * @param descendant    如果为false,只在子节点内查找，否则在后代节点查找（深度查询），直到找到第一个名字相同的模块
+         */
+        public getChild(name:string,descendant?:boolean):Module{
+            if(this.moduleMap.has(name)){
+                let mid = this.moduleMap.get(name);
+                return ModuleFactory.get(mid);
+            }else if(descendant){
+                for(let id of this.children){
+                    let m = ModuleFactory.get(id);
+                    if(m){
+                        let m1 = m.getChild(name,descendant);
+                        if(m1){
+                            return m1;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        /**
+         * 获取模块方法
+         * @param name  方法名
+         * @returns     方法
+         */
+        public getMethod(name:string):Function{
+            return this.methodFactory.get(name);
+        }
+
+        /**
          * 添加插件
          * @param name      插件名
          * @param plugin    插件
          */
-        addPlugin(name:string,plugin:Plugin){
+        public addPlugin(name:string,plugin:Plugin){
             if(name){
                 this.plugins.set(name,plugin);
             }
@@ -746,7 +778,7 @@ namespace nodom {
          * @param name  插件名 
          * @returns     插件实例
          */
-        getPlugin(name:string):Plugin{
+        public getPlugin(name:string):Plugin{
             return this.plugins.get(name);
         }
     }

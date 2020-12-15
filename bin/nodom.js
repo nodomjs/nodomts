@@ -163,7 +163,7 @@ var nodom;
                 let map = new WeakMap();
                 return clone(srcObj, expKey, extra);
                 function clone(src, expKey, extra) {
-                    if (typeof src !== 'object' || Util.isFunction(src)) {
+                    if (!src || typeof src !== 'object' || Util.isFunction(src)) {
                         return src;
                     }
                     let dst;
@@ -2658,6 +2658,27 @@ var nodom;
             for (; renderOps.length > 0;) {
                 nodom.Util.apply(renderOps.shift(), this, []);
             }
+        }
+        getChild(name, descendant) {
+            if (this.moduleMap.has(name)) {
+                let mid = this.moduleMap.get(name);
+                return nodom.ModuleFactory.get(mid);
+            }
+            else if (descendant) {
+                for (let id of this.children) {
+                    let m = nodom.ModuleFactory.get(id);
+                    if (m) {
+                        let m1 = m.getChild(name, descendant);
+                        if (m1) {
+                            return m1;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+        getMethod(name) {
+            return this.methodFactory.get(name);
         }
         addPlugin(name, plugin) {
             if (name) {
