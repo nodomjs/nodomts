@@ -444,7 +444,7 @@ namespace nodom {
                     },0);
                 }
             }else{
-                dom.assets.set('value',dataValue);
+                dom.assets.set('value',dataValue===undefined || dataValue===null ? '':dataValue);
             }
         }    
     );

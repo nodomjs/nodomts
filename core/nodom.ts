@@ -161,7 +161,7 @@ namespace nodom{
             //设置同源策略
             req.withCredentials = config.withCredentials;
             //类型默认为get
-            const method:string = config.method || 'GET';
+            const method:string = (config.method || 'GET').toUpperCase();
             //超时，同步时不能设置
             req.timeout = async ?config.timeout: 0;
 
@@ -213,7 +213,6 @@ namespace nodom{
                     for (let o in config.params) {
                         fd.append(o, config.params[o]);
                     }
-                    req.open(method, url, async, config.user, config.pwd);
                     data = fd;
                 }
                 break;

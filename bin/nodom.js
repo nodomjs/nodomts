@@ -76,7 +76,7 @@ var nodom;
             const async = config.async === false ? false : true;
             const req = new XMLHttpRequest();
             req.withCredentials = config.withCredentials;
-            const method = config.method || 'GET';
+            const method = (config.method || 'GET').toUpperCase();
             req.timeout = async ? config.timeout : 0;
             req.onload = () => {
                 if (req.status === 200) {
@@ -126,7 +126,6 @@ var nodom;
                         for (let o in config.params) {
                             fd.append(o, config.params[o]);
                         }
-                        req.open(method, url, async, config.user, config.pwd);
                         data = fd;
                     }
                     break;
@@ -1671,12 +1670,13 @@ var nodom;
                     valueArr.push(getFieldValue(module, fieldObj, field));
                 });
                 valueArr.unshift(module);
+                let v;
                 try {
-                    return this.execFunc.apply(null, valueArr);
+                    v = this.execFunc.apply(null, valueArr);
                 }
                 catch (e) {
-                    console.log(e);
                 }
+                return v === undefined || v === null ? '' : v;
                 function getFieldValue(module, dataObj, field) {
                     if (dataObj.hasOwnProperty(field)) {
                         return dataObj[field];
@@ -4153,7 +4153,7 @@ var nodom;
             }
         }
         else {
-            dom.assets.set('value', dataValue);
+            dom.assets.set('value', dataValue === undefined || dataValue === null ? '' : dataValue);
         }
     });
     nodom.DirectiveManager.addType('validity', 10, (directive, dom) => {

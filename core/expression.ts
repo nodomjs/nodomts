@@ -291,13 +291,13 @@ namespace nodom {
             });
             //module作为第一个参数
             valueArr.unshift(module);
-            
+            let v;
             try{
-                return this.execFunc.apply(null,valueArr);
+                v = this.execFunc.apply(null,valueArr); 
             }catch(e){
-                console.log(e);
+                
             }
-            
+            return v === undefined || v === null?'':v; 
             /**
              * 获取字段值
              * @param module    模块
@@ -309,7 +309,7 @@ namespace nodom {
                 if(dataObj.hasOwnProperty(field)){
                     return dataObj[field];
                 }
-                //$开头，则从根开始找
+                //$$开头，则从根开始找
                 if(field.startsWith('$$')){
                     return module.model.query(field.substr(2));
                 }
