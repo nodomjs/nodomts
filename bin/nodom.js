@@ -2691,6 +2691,12 @@ var nodom;
         getMethod(name) {
             return this.methodFactory.get(name);
         }
+        addMethod(name, foo) {
+            this.methodFactory.add(name, foo);
+        }
+        removeMethod(name) {
+            this.methodFactory.remove(name);
+        }
         addPlugin(name, plugin) {
             if (name) {
                 this.plugins.set(name, plugin);

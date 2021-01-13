@@ -1,6 +1,6 @@
 {
   "name": "nodomjs",
-  "version": "0.0.4-beta2",
+  "version": "0.0.4-beta3",
   "description": "一个前端mvvm框架",
   "main": "dist/index.js",
   "types": "dist/types/index.d.ts",

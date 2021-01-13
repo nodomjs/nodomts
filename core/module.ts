@@ -704,6 +704,23 @@ namespace nodom {
         }
 
         /**
+         * 添加方法
+         * @param name  方法名
+         * @param foo   方法函数
+         */
+        public addMethod(name:string,foo:Function){
+            this.methodFactory.add(name,foo);
+        }
+
+        /**
+         * 移除方法
+         * @param name  方法名
+         */
+        public removeMethod(name:string){
+            this.methodFactory.remove(name);
+        }
+
+        /**
          * 添加插件
          * @param name      插件名
          * @param plugin    插件
