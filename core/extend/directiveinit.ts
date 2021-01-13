@@ -52,7 +52,7 @@ namespace nodom {
                                 //保存绑定moduleid
                                 m.setContainerKey(dom.key);
                                 //修改virtualdom的module指令附加参数moduleId
-                                let dom1:Element = module.virtualDom.query(dom.key);
+                                let dom1:Element = module.getElement(dom.key,true);
                                 if(dom1){
                                     let dir:Directive = dom1.getDirective('module');
                                     dir.extra.moduleId = m.id;
@@ -96,7 +96,7 @@ namespace nodom {
                 model = module.model;
                 startIndex = 1;
             }else if(dom.modelId){
-                model = module.modelFactory.get(dom.modelId);
+                model = module.getModel(dom.modelId);
             }
 
             if(!model || !model.data){
@@ -139,7 +139,7 @@ namespace nodom {
             directive.value = modelName;
         },
         (directive: Directive, dom: Element, module: Module, parent: Element) => {
-            let model = module.modelFactory.get(dom.modelId);
+            let model = module.getModel(dom.modelId);
             //可能数据不存在，先设置dontrender
             dom.dontRender = true;
             if(!model || !model.data){
@@ -221,7 +221,7 @@ namespace nodom {
         },
         (directive: Directive, dom: Element, module: Module, parent: Element) => {
             //设置forceRender
-            let model = module.modelFactory.get(dom.modelId);
+            let model = module.getModel(dom.modelId);
             let v = directive.value.val(model);
             //找到并存储if和else在父对象中的位置
             let indif = -1,
@@ -291,7 +291,7 @@ namespace nodom {
             }
         },
         (directive: Directive, dom: Element, module: Module, parent: Element) => {
-            let model = module.modelFactory.get(dom.modelId);
+            let model = module.getModel(dom.modelId);
             let v = directive.value.val(model);
             //渲染
             if (v && v !== 'false') {
@@ -331,7 +331,7 @@ namespace nodom {
             let obj = directive.value;
             let clsArr:Array<string> = [];
             let cls:string = dom.getProp('class');
-            let model = module.modelFactory.get(dom.modelId);
+            let model = module.getModel(dom.modelId);
 
             if (Util.isString(cls) && !Util.isEmpty(cls)) {
                 clsArr = cls.trim().split(/\s+/);
@@ -409,7 +409,7 @@ namespace nodom {
         (directive: Directive, dom: Element, module: Module, parent: Element) => {
             const type:string = dom.getProp('type');
             const tgname = dom.tagName.toLowerCase();
-            const model = module.modelFactory.get(dom.modelId);
+            const model = module.getModel(dom.modelId);
             if(!model.data){
                 return;
             }
@@ -492,9 +492,8 @@ namespace nodom {
         },
 
         (directive: Directive, dom: Element, module: Module, parent: Element) => {
-            
             setTimeout(()=>{
-                const el:HTMLInputElement = module.container.querySelector("[name='" + directive.value + "']");
+                const el:HTMLInputElement = <HTMLInputElement>module.getNode({name:directive.value});
                 if(!directive.extra.initEvent){
                     directive.extra.initEvent = true;
                     //添加focus和blur事件
@@ -513,7 +512,7 @@ namespace nodom {
                 return;
             }
 
-            const el:HTMLInputElement = module.container.querySelector("[name='" + directive.value + "']");
+            const el:HTMLInputElement = <HTMLInputElement>module.getNode({name:directive.value});
             if(!el){
                 return;
             }
@@ -530,7 +529,7 @@ namespace nodom {
 
             //自定义方法校验
             if (directive.params.method) {
-                const foo = module.methodFactory.get(directive.params.method);
+                const foo = module.getMethod(directive.params.method);
                 if (Util.isFunction(foo)) {
                     let r = foo.call(module.model, el.value);
                     if (!r) {

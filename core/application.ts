@@ -16,23 +16,23 @@ namespace nodom{
          *              route:路由前置路径(路由完整路径为 route + routePath)
          *              module:模块基础路径
          */
-        static path:any;
+        private static path:any;
         
         /**
          * 调度器执行间隔，如果支持requestAnimationFrame，则不需要
          */
-        static renderTick:number;
+        private static renderTick:number;
         /**
          * 根容器
          */
-        static rootContainer:HTMLElement|string;
+        private static rootContainer:HTMLElement|string;
 
         /**
          * 获取路径
          * @param type  路径类型 app,template,css,js,module,route 
          * @returns     type对应的基础路径
          */
-        static getPath(type:string):string{
+        public static getPath(type:string):string{
             if(!this.path){
                 return '';
             }
@@ -59,7 +59,7 @@ namespace nodom{
          * 设置path 对象
          * @param pathObj   路径对象
          */
-        static setPath(pathObj:object){
+        public static setPath(pathObj:object){
             this.path = pathObj;
         }
     }

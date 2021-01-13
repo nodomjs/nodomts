@@ -1,4 +1,3 @@
-///<reference path='./core/types.ts' />
 ///<reference path='./core/nodom.ts' />
 ///<reference path='./core/util.ts' />
 ///<reference path='./core/application.ts' />
@@ -33,3 +32,4 @@
 ///<reference path='./core/locales/msg_en.ts' />
 ///<reference path='core/application.ts'/>
 ///<reference path='core/application.ts'/>
+//# sourceMappingURL=index.js.map

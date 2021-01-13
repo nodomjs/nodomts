@@ -8,7 +8,7 @@ var NodomConfig = {
         js:'js',
         css:'css',
         preRoute:'route',
-        module:'dist'
+        module:'modules/dist'
     },
     /**模块配置 */
     modules:[

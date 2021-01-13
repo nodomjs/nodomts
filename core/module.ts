@@ -1,67 +1,7 @@
 // / <reference path="nodom.ts" />
 namespace nodom {
 
-    /**
-     * 模块配置对象
-     */
-    export interface IModuleCfg {
-        /**
-         * 模块名(模块内(父模块的子模块之间)唯一)，如果不设置，则系统会自动生成Module+id
-         */
-        name?: string;
-        
-        /**
-         * 容器选择器
-         */
-        el?:string;
-        /**
-         * 是否单例，如果为true，则整个应用中共享一个模块实例，默认false
-         */
-        singleton?:boolean;
-
-        /**
-         * 模块类名
-         */
-        class?:string;
-
-        /**
-         * 模块路径(相对于app module路径)
-         */
-        path?:string;
-
-        /**
-         * 模版字符串，如果以“<”开头，则表示模版字符串，否则表示模版url
-         */
-        template?: string;
-        /**
-         * 数据，如果为json object，直接作为模型数据，如果为字符串，则表示数据url，需要请求得到数据
-         */
-        data?: object | string;
-        /**
-         * 模块方法集合
-         * 不要用箭头"=>" 操作符定义
-         * ```
-         * 	{
-         * 		method1:function1(){},
-         * 		method2:function2(){},
-         * 		...
-         * 	}
-         * ```
-         */
-        methods ? : object;
-        
-        /**
-         * 子模块配置
-         */
-        modules?: IModuleCfg[];
-        
-        /**
-         * 先于模块初始化加载的文件集合
-         * 如果为string，则表示资源路径，type为js
-         * 如果为object，则格式为{type:'js'/'css',url:路径}
-         */
-        requires?:Array<string|object>;
-    }
+    
     /**
      * 模块类
      */
@@ -69,131 +9,131 @@ namespace nodom {
         /**
          * 模块id(全局唯一)
          */
-        id:number;
+        public id:number;
         /**
          * 模块名(模块内(父模块的子模块之间)唯一)，如果不设置，则系统会自动生成Module+id
          */
-        name: string;
+        private name: string;
         
         /**
          * 模型
          */
-        model: Model;
+        public model: Model;
 
         /**
          * 是否主模块，一个app只有一个根模块
          */
-        isMain: boolean;
+        private isMain: boolean;
 
         /**
          * 是否是首次渲染
          */
-        firstRender: boolean=true;
+        private firstRender: boolean=true;
         
         /**
          * 根虚拟dom
          */
-        virtualDom: Element;
+        public virtualDom: Element;
         
         /**
          * 渲染树
          */
-        renderTree: Element;
+        private renderTree: Element;
         
         /**
          * 父模块名
          */
-        parentId: number;
+        private parentId: number;
         
         /**
          * 子模块id数组
          */
-        children: Array < number > = [];
+        public children: Array < number > = [];
         
         /**
-         * container 选择器
+         * 模块对应容器选择器
          */
-        selector: string;
+        private selector: string;
         
         /**
          * 首次渲染后执行操作数组
          */
-        firstRenderOps: Array < Function > = [];
+        private firstRenderOps: Array < Function > = [];
         
         /**
          * 首次渲染前执行操作数组
          */
-        beforeFirstRenderOps: Array < Function > = [];
+        private beforeFirstRenderOps: Array < Function > = [];
         
         /**
          * 每次渲染后执行操作数组
          */
-        renderOps:Array<Function> = [];
+        private renderOps:Array<Function> = [];
 
         /**
          * 每次渲染前执行操作数组
          */
-        beforeRenderOps:Array<Function> = [];
+        private beforeRenderOps:Array<Function> = [];
 
         /**
          * 状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)
          */
-        state: number = 0;
+        public state: number = 0;
         
         /**
          * 数据url
          */
-        dataUrl: string;
+        private dataUrl: string;
         
         /**
          * 需要加载新数据
          */
-        loadNewData: boolean = false;
+        private loadNewData: boolean = false;
         
         /**
          * 方法工厂
          */
-        methodFactory: MethodFactory;
+        private methodFactory: MethodFactory;
         
         /**
          * 数据模型工厂
          */
-        modelFactory: ModelFactory = new ModelFactory();
+        private modelFactory: ModelFactory = new ModelFactory();
         
         /**
          * 待渲染的虚拟dom数组
          */
-        renderDoms: Array < ChangedDom >= [];
+        private renderDoms: Array < ChangedDom >= [];
         
         /**
          * 初始配置
          */
-        initConfig: IModuleCfg;
+        private initConfig: IModuleCfg;
         
         /**
          * 放置模块的容器
          */
-        container: HTMLElement = null;
+        private container: HTMLElement = null;
 
         /**
          * 模版串
          */
-        template:string;
+        private template:string;
 
         /**
          * 容器key
          */
-        containerKey:string;
+        private containerKey:string;
         
         /**
          * 子模块名id映射，如 {modulea:1}
          */
-        moduleMap:Map<string,number> = new Map();
+        private moduleMap:Map<string,number> = new Map();
 
         /**
          * 插件集合
          */
-        plugins:Map<string,Plugin> = new Map();
+        private plugins:Map<string,Plugin> = new Map();
 
         /**
          * 构造器
@@ -228,7 +168,7 @@ namespace nodom {
             }
             
             //清除container的内部内容
-            if (this.hasContainer()) {
+            if (this.getContainer()) {
                 this.template = this.container.innerHTML.trim();
                 this.container.innerHTML = '';
             }
@@ -237,7 +177,7 @@ namespace nodom {
         /**
          * 初始化模块（加载和编译）
          */
-        async init():Promise<any> {
+        public async init():Promise<any> {
             let config = this.initConfig;
             let urlArr:Array<object> = []; //请求url数组
             let cssPath:string = Application.getPath('css');
@@ -341,9 +281,9 @@ namespace nodom {
          * 模型渲染
          * @return false 渲染失败 true 渲染成功
          */
-        render():boolean{
+        public render():boolean{
             //容器没就位或state不为active则不渲染，返回渲染失败
-            if (this.state !== 3 || !this.virtualDom || !this.hasContainer()) {
+            if (this.state !== 3 || !this.virtualDom || !this.getContainer()) {
                 return false;
             }
             
@@ -439,7 +379,6 @@ namespace nodom {
          */
         clone(moduleName:string):any{
             let me = this;
-            // let m:any = {};
             let m:Module = new Module({name:moduleName});
             let excludes = ['id','name','model','virtualDom','container','containerKey','modelFactory','plugins'];
             Object.getOwnPropertyNames(this).forEach((item)=>{
@@ -462,21 +401,21 @@ namespace nodom {
         /**
          * 检查容器是否存在，如果不存在，则尝试找到
          */ 
-        hasContainer() {
+        public getContainer() {
             //根模块，直接使用el
             if(this.selector){
                 this.container = document.querySelector(this.selector);
             }else{  //非根模块，根据容器key获得
                 this.container = document.querySelector("[key='"+ this.containerKey +"']");
             }
-            return this.container !== null;
+            return this.container;
         }
 
         /**
          * 设置模块容器 key
          * @param key   模块容器key
          */
-        setContainerKey(key:string){
+        public setContainerKey(key:string){
             this.containerKey = key;
         }
 
@@ -484,14 +423,16 @@ namespace nodom {
          * 获取模块容器 key
          * @param key   模块容器key
          */
-        getContainerKey(){
+        public getContainerKey(){
             return(this.containerKey);
         }
+
+        
         /**
          * 数据改变
          * @param model 	改变的model
          */
-        dataChange() {
+        public dataChange() {
             Renderer.add(this);
         }
 
@@ -500,7 +441,7 @@ namespace nodom {
          * @param moduleId      模块id 
          * @param className     类名     
          */
-        addChild(moduleId:number){
+        public addChild(moduleId:number){
             if(!this.children.includes(moduleId)){
                 this.children.push(moduleId);
                 let m:nodom.Module = ModuleFactory.get(moduleId);
@@ -517,7 +458,7 @@ namespace nodom {
          * @param toName 		接收模块名或模块id，如果为模块id，则直接发送，不需要转换
          * @param data 			消息内容
          */
-        send(toName:string|number, data:any) {
+        public send(toName:string|number, data:any) {
             if(typeof toName === 'number'){
                 MessageQueue.add(this.id, toName, data);
                 return;
@@ -546,7 +487,7 @@ namespace nodom {
         /**
          * 广播给父、兄弟和孩子（第一级）节点
          */
-        broadcast(data:any) {
+        public broadcast(data:any) {
             //兄弟节点
             if (this.parentId) {
                 let pmod:Module = ModuleFactory.get(this.parentId);
@@ -580,14 +521,14 @@ namespace nodom {
          * @param fromName 		来源模块名
          * @param data 			消息内容
          */
-        receive(fromName, data) {
+        public receive(fromName, data) {
             this.doModuleEvent('onReceive', [fromName, data]);
         }
         
         /**
          * 激活模块(添加到渲染器)
          */
-        async active() {
+        public async active() {
             //激活状态不用激活，创建状态不能激活
             if (this.state === 3) {
                 return;
@@ -613,7 +554,7 @@ namespace nodom {
         /**
          * 取消激活
          */
-        unactive() {
+        public unactive() {
             //主模块不允许取消
             if (this.isMain || this.state === 2) {
                 return;
@@ -634,7 +575,7 @@ namespace nodom {
         /**
          * 模块终结
          */
-        destroy() {
+        public destroy() {
             if (Util.isArray(this.children)) {
                 this.children.forEach((item) => {
                     let m:Module = ModuleFactory.get(item);
@@ -672,7 +613,7 @@ namespace nodom {
          * 添加首次渲染后执行操作
          * @param foo  	操作方法
          */
-        addFirstRenderOperation(foo:Function) {
+        public addFirstRenderOperation(foo:Function) {
             if (!Util.isFunction(foo)) {
                 return;
             }
@@ -685,7 +626,7 @@ namespace nodom {
          * 添加首次渲染前执行操作
          * @param foo  	操作方法
          */
-        addBeforeFirstRenderOperation(foo:Function) {
+        public addBeforeFirstRenderOperation(foo:Function) {
             if (!Util.isFunction(foo)) {
                 return;
             }
@@ -698,7 +639,7 @@ namespace nodom {
          * 添加渲染后执行操作
          * @param foo  	操作方法
          */
-        addRenderOperation(foo:Function) {
+        public addRenderOperation(foo:Function) {
             if (!Util.isFunction(foo)) {
                 return;
             }
@@ -711,7 +652,7 @@ namespace nodom {
          * 添加渲染前执行操作
          * @param foo  	操作方法
          */
-        addBeforeRenderOperation(foo:Function) {
+        public addBeforeRenderOperation(foo:Function) {
             if (!Util.isFunction(foo)) {
                 return;
             }
@@ -780,6 +721,101 @@ namespace nodom {
          */
         public getPlugin(name:string):Plugin{
             return this.plugins.get(name);
+        }
+
+        /**
+         * 获取model
+         * @param modelId   model id，如果为空，则返货模块的根model
+         * @returns         model
+         */
+        public getModel(modelId?:number):Model{
+            return modelId?this.modelFactory.get(modelId):this.model;
+        }
+
+        /**
+         * 添加model到model工厂
+         * @param modelId   模型id
+         * @param model     模型
+         */
+        public setModel(modelId:number,model:Model){
+            this.modelFactory.add(modelId,model);
+        }
+
+        /**
+         * 设置数据url
+         * @param url   数据url
+         */
+        public setDataUrl(url:string){
+            this.dataUrl = url;
+            //设置新加载数据标志
+            this.loadNewData = true;
+        }
+
+        /**
+         * 获取模块下的html节点
+         * @param key       el key值或对象{attrName:attrValue}
+         * @param notNull   如果不存在，则返回container
+         * @returns         html element
+         */
+        public getNode(key:string|object,notNull?:boolean):HTMLElement{
+            let keyName:string;
+            let value:any;
+            if(typeof key === 'string'){  //默认为key值查找
+                keyName = 'key';
+                value = key;
+            }else{  //对象
+                keyName = Object.getOwnPropertyNames(key)[0];
+                value = key[keyName];
+            }
+            let qs:string = "[" + keyName + "='" + value + "']";
+            
+            let el:HTMLElement = this.container?this.container.querySelector(qs):null;
+            
+            if(!el && notNull){
+                return this.container;
+            }
+            return el;
+        }
+
+        /**
+         * 获取虚拟dom节点
+         * @param key               dom key
+         * @param fromVirtualDom    是否从源虚拟dom数获取，否则从渲染树获取
+         */
+        public getElement(key:string,fromVirtualDom?:boolean){
+            let tree = fromVirtualDom?this.virtualDom:this.renderTree;
+            return tree.query(key);
+        }
+
+        /**
+         * 判断是否为容器key
+         * @param key   element key
+         */
+        public isContainerKey(key:string):boolean{
+            return this.containerKey === key;
+        }
+
+        /**
+         * 设置首次渲染标志
+         * @param flag  首次渲染标志true/false
+         */
+        setFirstRender(flag:boolean){
+            this.firstRender = flag;
+        }
+
+        /**
+         * 设置为主模块
+         */
+        setMain(){
+            this.isMain = true;
+        }
+
+        /**
+         * 设置模块容器选择器
+         * @param selector 
+         */
+        setSelector(selector:string){
+            this.selector = selector;
         }
     }
 }

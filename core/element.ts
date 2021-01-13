@@ -8,30 +8,30 @@ namespace nodom {
         /**
          * 改变方式
          */
-        type: string;
+        public type: string;
         /**
          * 改变的节点
          */
-        node: Element;
+        public node: Element;
         /**
          * 父虚拟dom
          */
-        parent: Element;
+        public parent: Element;
         /**
          * 在父节点中的位置
          */
-        index:number;
+        public index:number;
 
         /**
          * 改变的属性数组
          * [{prop1:value1},...]
          */
-        changeProps:Array<object>;
+        public changeProps:Array<object>;
 
         /**
          * 移除的属性名数组
          */
-        removeProps:Array<string>;
+        public removeProps:Array<string>;
 
         /**
          * 
@@ -54,96 +54,100 @@ namespace nodom {
 		/**
 		 * key，整颗虚拟dom树唯一
 		 */
-		key:string;
+		public key:string;
         
 		/**
 		 * 绑定的模型id，如果没有，则从父继承
 		 */
-        modelId:number;
+        public modelId:number;
         
 		/**
 		 * element为textnode时有效
 		 */
-		textContent:string|HTMLElement;
+		public textContent:string|HTMLElement;
 
 		/**
 		 * 类型，包括: html fragment 或 html element 
 		 */
-		type:string;
+		public type:string;
 
 		/**
 		 * 指令集
 		 */
-        directives:Array<Directive> = [];
+        public directives:Array<Directive> = [];
         
         /**
          * 直接属性 不是来自于attribute，而是直接作用于html element，如el.checked,el.value等
          */
-        assets:Map<string,any> = new Map();
+        public assets:Map<string,any> = new Map();
 
 		/**
 		 * 静态属性(attribute)集合
          * {prop1:value1,...}
 		 */
-        props:object = {};
+        public props:object = {};
 
 		/**
 		 * 含表达式的属性集合
          * {prop1:value1,...}
 		 */
-        exprProps:object = {};
+        public exprProps:object = {};
         
 		/**
 		 * 事件集合,{eventName1:nodomEvent1,...}
          * 一个事件名，可以绑定多个事件方法对象
 		 */
-		events:Map<string,NodomEvent|NodomEvent[]> = new Map();
+		public events:Map<string,NodomEvent|NodomEvent[]> = new Map();
 
 		/**
 		 * 表达式+字符串数组，用于textnode
 		 */
-		expressions:Array<Expression|string>=[];
+		public expressions:Array<Expression|string>=[];
 		
 		/**
 		 * 子element
 		 */
-        children:Array<Element> = [];
+        public children:Array<Element> = [];
         
 		/**
 		 * 父element key
 		 */
-		parentKey:string;
+		public parentKey:string;
 
 		/**
 		 * 父虚拟dom
 		 */
-        parent:Element;
+        public parent:Element;
         
 		/**
 		 * 元素名，如div
 		 */
-        tagName:string;
+        public tagName:string;
 
 		/**
 		 * 不渲染标志，单次渲染有效
 		 */
-        dontRender:boolean = false;
-        
-        /**
-         * 临时数据
-         */
-        tmpData:any;
+        public dontRender:boolean = false;
         
         /**
          * 绑定插件
          */
-        plugin:Plugin;
+        public plugin:Plugin;
+
+        /**
+         * 是否为svg节点
+         */
+        public isSvgNode:boolean;
 
 		/**
 		 * @param tag 标签名
 		 */
         constructor(tag?:string) {
             this.tagName = tag; //标签
+            //检查是否为svg
+            if(tag && tag.toLowerCase() === 'svg'){
+                this.isSvgNode = true;
+            }
             //key
             this.key = Util.genId()+'';
         }
@@ -153,8 +157,7 @@ namespace nodom {
          * @param module 	模块
          * @param parent 	父节点
          */
-        render(module:Module, parent?:Element) {
-            let me = this;
+        public render(module:Module, parent?:Element) {
             if(this.dontRender){
                 this.doDontRender();
                 return;
@@ -215,7 +218,7 @@ namespace nodom {
          *          type 		类型
          *          parent 	父虚拟dom
          */
-        renderToHtml(module:Module, params:ChangedDom) {
+        public renderToHtml(module:Module, params:ChangedDom) {
 			let el:HTMLElement;
 			let el1:Node;
             let type = params.type;
@@ -225,12 +228,12 @@ namespace nodom {
             //构建el
             if (type === 'fresh' || type === 'add' || type === 'text') {
                 if(parent){
-                    el = module.container.querySelector("[key='" + parent.key + "']");
+                    el = module.getNode(parent.key);
                 }else{
-                    el = module.container;
+                    el = module.getContainer();
                 }
             } else if (this.tagName !== undefined) { //element节点才可以查找
-                el = module.container.querySelector("[key='" + this.key + "']");
+                el = module.getNode(this.key);
                 this.handleAssets(el);
             }
         
@@ -313,7 +316,12 @@ namespace nodom {
 			 */
             function newEl(vdom:Element, parent:Element, parentEl?:Node):HTMLElement {
                 //创建element
-                let el = document.createElement(vdom.tagName);
+                let el;
+                if(vdom.isSvgNode){  //如果为svg node，则创建svg element
+                    el = Util.newSvgEl(vdom.tagName);
+                }else{
+                    el = Util.newEl(vdom.tagName);
+                }
 				//设置属性
 				Util.getOwnProps(vdom.props).forEach((k)=>{
 					el.setAttribute(k,vdom.props[k]);
@@ -368,7 +376,7 @@ namespace nodom {
          * 克隆
          * changeKey    是否更改key，主要用于创建时克隆，渲染时克隆不允许修改key
          */
-        clone(changeKey?:boolean):Element{
+        public clone(changeKey?:boolean):Element{
             let dst:Element = new Element();
 
             //不直接拷贝的属性
@@ -454,7 +462,7 @@ namespace nodom {
          * 处理指令
          * @param module    模块
          */
-        handleDirectives(module:Module) {
+        public handleDirectives(module:Module) {
             if (this.dontRender) {
                 return;
             }
@@ -472,11 +480,11 @@ namespace nodom {
          * @param exprArr   表达式或字符串数组
          * @param module    模块
          */
-        handleExpression(exprArr:Array<Expression|string>, module:Module) {
+        public handleExpression(exprArr:Array<Expression|string>, module:Module) {
             if (this.dontRender) {
                 return;
             }
-            let model:Model = module.modelFactory.get(this.modelId);
+            let model:Model = module.getModel(this.modelId);
             
             let value = '';
             exprArr.forEach((v) => {
@@ -494,7 +502,7 @@ namespace nodom {
          * 处理属性（带表达式）
          * @param module    模块
          */
-        handleProps(module:Module) {
+        public handleProps(module:Module) {
             if (this.dontRender) {
                 return;
             }
@@ -512,7 +520,7 @@ namespace nodom {
                         this.props[k] = pv;
                     }
                 } else if (this.exprProps[k] instanceof Expression) { //单个表达式
-                    this.props[k] = this.exprProps[k].val(module.modelFactory.get(this.modelId));
+                    this.props[k] = this.exprProps[k].val(module.getModel(this.modelId));
                 }
             }
         }
@@ -521,7 +529,7 @@ namespace nodom {
          * 处理asset，在渲染到html时执行
          * @param el    dom对应的html element
          */
-        handleAssets(el:HTMLElement){
+        public handleAssets(el:HTMLElement){
             if(!this.tagName && !el){
                 return;
             }
@@ -534,7 +542,7 @@ namespace nodom {
          * 处理文本（表达式）
          * @param module    模块
          */
-        handleTextContent(module) {
+        public handleTextContent(module) {
             if (this.dontRender) {
                 return;
             }
@@ -551,35 +559,17 @@ namespace nodom {
          * @param parent    父virtual dom
          * @param parentEl  父html element
          */
-        handleEvents(module:Module,el:Node,parent:Element,parentEl?:Node) {
+        public handleEvents(module:Module,el:Node,parent:Element,parentEl?:Node) {
             if (this.events.size === 0) {
                 return;
             }
             for(let evt of this.events.values()){
                 if(Util.isArray(evt)){
                     for(let evo of <NodomEvent[]>evt){
-                        bind(evo,module,this,el,parent,parentEl);    
+                        evo.bind(module,this,<HTMLElement>el,parent,parentEl);    
                     }
                 }else{
-                    let ev:NodomEvent = <NodomEvent>evt;
-                    bind(ev,module,this,el,parent,parentEl);
-                }
-            }
-
-            /**
-             * 绑定事件
-             * @param e         event object 
-             * @param module    module
-             * @param dom       绑定的虚拟dom
-             * @param el        绑定的html element
-             * @param parent    父虚拟dom
-             * @param parentEl  父html element
-             */
-            function bind(e:NodomEvent,module:Module,dom:Element,el:Node,parent:Element,parentEl?:Node){
-                if (e.delg && parent) { //代理到父对象
-                    e.delegateTo(module, dom, <HTMLElement>el, parent, <HTMLElement>parentEl);
-                } else {
-                    e.bind(module, dom, <HTMLElement>el);
+                    (<NodomEvent>evt).bind(module,this,<HTMLElement>el,parent,parentEl);
                 }
             }
         }
@@ -588,7 +578,7 @@ namespace nodom {
          * 移除指令
          * @param directives 	待删除的指令类型数组
          */
-        removeDirectives(directives:string[]) {
+        public removeDirectives(directives:string[]) {
             for(let i=0;i<this.directives.length;i++){
                 if(directives.length === 0){
                     break;   
@@ -608,7 +598,7 @@ namespace nodom {
          * @param directive     指令对象
          * @param sort          是否排序
          */
-        addDirective(directive:Directive,sort?:boolean){
+        public addDirective(directive:Directive,sort?:boolean){
             let finded:boolean = false;
             for(let i=0;i<this.directives.length;i++){
                 //如果存在相同类型，则直接替换
@@ -637,7 +627,7 @@ namespace nodom {
          * @param directiveType 	指令类型名
          * @return true/false
          */
-        hasDirective(directiveType):boolean {
+        public hasDirective(directiveType):boolean {
             return this.directives.find(item=>item.type.name === directiveType) !== undefined;
         }
 
@@ -646,7 +636,7 @@ namespace nodom {
          * @param directiveType 	指令类型名
          * @return directive
          */
-        getDirective(directiveType):Directive {
+        public getDirective(directiveType):Directive {
             return this.directives.find(item=>item.type.name === directiveType);
         }
 
@@ -654,7 +644,7 @@ namespace nodom {
          * 添加子节点
          * @param dom 	子节点
          */
-        add(dom:Element) {
+        public add(dom:Element) {
             dom.parentKey = this.key;
             this.children.push(dom);
         }
@@ -664,7 +654,7 @@ namespace nodom {
          * @param module 	模块
          * @param delHtml 	是否删除html element
          */
-        remove(module:Module, delHtml?:boolean) {
+        public remove(module:Module, delHtml?:boolean) {
             // 从父树中移除
             let parent:Element = this.getParent(module);
             if(parent){
@@ -672,8 +662,8 @@ namespace nodom {
             }
                     
             // 删除html dom节点
-            if (delHtml && module && module.container) {
-                let el = module.container.querySelector("[key='" + this.key + "']");
+            if (delHtml && module) {
+                let el = module.getNode(this.key);
                 if (el !== null) {
                     Util.remove(el);
                 }
@@ -683,8 +673,8 @@ namespace nodom {
         /**
          * 从html删除
          */
-        removeFromHtml(module:Module) {
-            let el = module.container.querySelector("[key='" + this.key + "']");
+        public removeFromHtml(module:Module) {
+            let el = module.getNode(this.key);
             if (el !== null) {
                 Util.remove(el);
             }
@@ -694,7 +684,7 @@ namespace nodom {
          * 移除子节点
          * @param dom   子dom
          */
-        removeChild(dom:Element) {
+        public removeChild(dom:Element) {
             let ind:number;
             // 移除
             if (Util.isArray(this.children) && (ind = this.children.indexOf(dom)) !== -1) {
@@ -707,7 +697,7 @@ namespace nodom {
          * @param module 模块 
          * @returns      父element
          */
-        getParent(module:Module):Element{
+        public getParent(module:Module):Element{
             if(!module){
                 throw new NodomError('invoke','Element.getParent','0','Module');
             }
@@ -715,7 +705,7 @@ namespace nodom {
                 return this.parent;
             }
             if(this.parentKey){
-                return module.renderTree.query(this.parentKey);    
+                return module.getElement(this.parentKey);    
             }
         }
 
@@ -723,7 +713,7 @@ namespace nodom {
          * 替换目标节点
          * @param dst 	目标节点　
          */
-        replace(dst:Element) {
+        public replace(dst:Element) {
             if (!dst.parent) {
                 return false;
             }
@@ -740,7 +730,7 @@ namespace nodom {
          * 是否包含节点
          * @param dom 	包含的节点 
          */
-        contains(dom:Element) {
+        public contains(dom:Element) {
             for (; dom !== undefined && dom !== this; dom = dom.parent);
             return dom !== undefined;
         }
@@ -750,7 +740,7 @@ namespace nodom {
          * @param cls   classname
          * @return      true/false
          */
-        hasClass(cls:string):boolean{
+        public hasClass(cls:string):boolean{
             let clazz = this.props['class'];
             if(!clazz){
                 return false;
@@ -763,7 +753,7 @@ namespace nodom {
          * 添加css class
          * @param cls class名
          */
-        addClass(cls:string){
+        public addClass(cls:string){
             let clazz = this.props['class'];
             if(!clazz){
                 this.props['class'] = cls;
@@ -781,7 +771,7 @@ namespace nodom {
          * 删除css class
          * @param cls class名
          */
-        removeClass(cls:string){
+        public removeClass(cls:string){
             let clazz = this.props['class'];
             if(!clazz){
                 return;
@@ -801,7 +791,7 @@ namespace nodom {
          * @param propName  属性名
          * @param isExpr    是否是表达式属性 默认false  
          */
-        hasProp(propName:string,isExpr?:boolean){
+        public hasProp(propName:string,isExpr?:boolean){
             if(isExpr){
                 return this.exprProps.hasOwnProperty(propName);
             }else{
@@ -814,7 +804,7 @@ namespace nodom {
          * @param propName  属性名
          * @param isExpr    是否是表达式属性 默认false  
          */
-        getProp(propName:string,isExpr?:boolean){
+        public getProp(propName:string,isExpr?:boolean){
             if(isExpr){
                 return this.exprProps[propName];
             }else{
@@ -828,7 +818,7 @@ namespace nodom {
          * @param v         属性值
          * @param isExpr    是否是表达式属性 默认false  
          */
-        setProp(propName:string,v:any,isExpr?:boolean){
+        public setProp(propName:string,v:any,isExpr?:boolean){
             if(isExpr){
                 this.exprProps[propName] = v;
             }else{
@@ -841,7 +831,7 @@ namespace nodom {
          * @param props     属性名或属性名数组 
          * @param isExpr    是否是表达式属性 默认false  
          */
-        delProp(props:string|string[],isExpr?:boolean){
+        public delProp(props:string|string[],isExpr?:boolean){
             if(Util.isArray(props)){
                 if(isExpr){
                     for(let p of <string[]>props){
@@ -865,7 +855,7 @@ namespace nodom {
          * @param key 	element key
          * @returns		虚拟dom/undefined
          */
-        query(key:string) {
+        public query(key:string) {
             if (this.key === key) {
                 return this;
             }
@@ -883,7 +873,7 @@ namespace nodom {
          * @returns	{type:类型 text/rep/add/upd,node:节点,parent:父节点, 
          * 			changeProps:改变属性,[{k:prop1,v:value1},...],removeProps:删除属性,[prop1,prop2,...]}
          */
-        compare(dst:Element, retArr:Array<ChangedDom>, parentNode?:Element) {
+        public compare(dst:Element, retArr:Array<ChangedDom>, parentNode?:Element) {
             if (!dst) {
                 return;
             }
@@ -996,7 +986,7 @@ namespace nodom {
          * 添加事件
          * @param event         事件对象
          */
-        addEvent(event:NodomEvent){
+        public addEvent(event:NodomEvent){
             //如果已经存在，则改为event数组，即同名event可以多个执行方法
             if(this.events.has(event.name)){
                 let ev = this.events.get(event.name);
@@ -1018,7 +1008,7 @@ namespace nodom {
          * 关联操作，包括:
          *  1 节点(子节点)含有module指令，需要unactive
          */
-        doDontRender(){
+        public doDontRender(){
             if(this.hasDirective('module')){
                 let d:Directive = this.getDirective('module');
                 if(d.extra && d.extra.moduleId){

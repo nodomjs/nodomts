@@ -44,11 +44,6 @@ namespace nodom{
          */
         extraDataName:string;
 
-        /**
-         * 临时参数
-         */
-        tmpParam:object;
-        
         constructor(params:HTMLElement|object){}
         
         /**
@@ -56,7 +51,7 @@ namespace nodom{
          * @param module    模块
          * @param uidom     虚拟dom
          */
-        beforeRender(module:nodom.Module,uidom:nodom.Element){
+        public beforeRender(module:nodom.Module,uidom:nodom.Element){
             this.element = uidom;
             this.moduleId = module.id;
             if(!this.modelId || uidom.key !== this.key){
@@ -76,12 +71,12 @@ namespace nodom{
          * @param module    模块
          * @param uidom     虚拟dom
          */
-        afterRender(module:nodom.Module,uidom:nodom.Element){}
+        public afterRender(module:nodom.Module,uidom:nodom.Element){}
 
         /**
          * 克隆
          */
-        clone(dst?:Element){
+        public clone(dst?:Element){
             let plugin = Reflect.construct(this.constructor,[]);
             //不拷贝属性
             let excludeProps:string[] = ['key','element','modelId','moduleId'];
@@ -98,29 +93,15 @@ namespace nodom{
         }
 
         /**
-         * 设置临时参数
-         * @param name      参数名
-         * @param value     参数值
+         * 获取model
          */
-        setTmp(name:string,value:any){
-            this.tmpParam[name] = value;
-        }
-
-        /**
-         * 获取临时参数
-         * @param name      参数名
-         * @returns         参数值
-         */
-        getTmp(name:string,value:any){
-            this.tmpParam[name] = value;
-        }
-
-        /**
-         * 移除临时值
-         * @param name      参数名 
-         */
-        removeTmp(name:string){
-            delete this.tmpParam[name];
+        public getModel():nodom.Model{
+            let module:nodom.Module = nodom.ModuleFactory.get(this.moduleId);
+            if(!module){
+                return null;
+            }
+            let model:nodom.Model = module.getModel(this.modelId);
+            return model?model:null;
         }
     }
 }

@@ -1,25 +1,6 @@
 // / <reference path="nodom.ts" />
 namespace nodom {
-    /**
-     * 资源对象
-     */
-    export interface IResourceObj{
-        /**
-         * 资源内容 字符串或数据对象或element
-         */
-        content?:any;
-
-        /**
-         * 类型js、template(html,htm), nd(编译后的模版文件)，data(不保存资源)
-         */
-        type?:string;
-
-        /**
-         * 需要加载
-         */
-        needLoad?:boolean;
-    }
-
+    
     /**
      * 资源管理器
      * 用于url资源的加载及管理，主要针对js、模版等
@@ -102,7 +83,7 @@ namespace nodom {
          * @param taskId    任务id
          * @returns         加载内容数组或undefined
          */
-        static awake(taskId:number):IResourceObj[]{
+        public static awake(taskId:number):IResourceObj[]{
             if(!this.loadingTasks.has(taskId)){
                 return;
             }
@@ -133,7 +114,7 @@ namespace nodom {
          * @param url   url
          * @returns     url type
          */
-        static getType(url:string):string{
+        public static getType(url:string):string{
             let ind = -1;
             let type:string;
             if((ind=url.lastIndexOf('.')) !== -1){
@@ -150,7 +131,7 @@ namespace nodom {
          * @param url   资源url
          * @param rObj  资源对象
          */
-        static handleOne(url:string,rObj:IResourceObj){
+        private static handleOne(url:string,rObj:IResourceObj){
             switch(rObj.type){
                 case 'js':
                     let head = document.querySelector('head');
@@ -181,7 +162,7 @@ namespace nodom {
          * @param reqs  [{url:**,type:**},url,...]
          * @returns     [promises(请求对象数组),urls(url数组),types(类型数组)]
          */
-        static preHandle(reqs:any[]):any[]{
+        private static preHandle(reqs:any[]):any[]{
             let head = document.querySelector('head');
             //预处理请求资源
             for(let i=0;i<reqs.length;i++){

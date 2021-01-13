@@ -1,49 +1,5 @@
 namespace nodom{
-    /**
-     * 应用初始化配置类型
-     */
-    interface IAppCfg{
-        /**
-         * 路径参数，请参阅Application path属性
-         */
-        path?:any;
-
-        /**
-         * 语言，默认 zh
-         */
-        language:string;
-
-        /**
-         * 调度器间隔时间(ms)，如果支持requestAnimationFrame，则不需要
-         */
-        scheduleCircle?:number;
-
-        /**
-         * 主模块配置
-         */
-        module:IModuleCfg;
-
-        /**
-         * 模块配置数组，数组元素包括
-         *      class:模块类名,
-         *      path:模块路径(相对于app module路径),
-         *      data:数据路径(字符串)或数据(object),
-         *      singleton:单例(全应用公用同一个实例，默认true),
-         *      lazy:懒加载(默认false)
-         */
-        modules:IMdlClassObj[];
-
-        /**
-         * 路由配置
-         * class:模块类名,
-         * moduleName:模块名
-         * data:数据url
-         * routes:子路由
-         * onEnter:路由进入事件
-         * onLeave:路由离开事件
-         */
-        routes:IRouteCfg[];
-    }
+    
     /**
      * 新建一个App
      * @param config 应用配置
@@ -67,7 +23,7 @@ namespace nodom{
         
         //模块数组初始化
         if(config.modules){
-            await ModuleFactory.init(config.modules);
+            await ModuleFactory.addModules(config.modules);
         }
 
         //消息队列消息处理任务
@@ -81,7 +37,7 @@ namespace nodom{
         let module:Module;
         if(config.module.class){
             module = await ModuleFactory.getInstance(config.module.class,config.module.name,config.module.data);
-            module.selector = config.module.el;
+            module.setSelector(config.module.el);
         }else{
             module = new Module(config.module);
         }
@@ -122,6 +78,14 @@ namespace nodom{
             init,
             handler
         );
+    }
+
+    /**
+     * 创建模块
+     * @param modules 模块配置数组
+     */
+    export function addModules(modules:Array<IMdlClassObj>){
+        ModuleFactory.addModules(modules);
     }
 
     /**

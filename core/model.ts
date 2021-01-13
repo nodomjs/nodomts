@@ -7,32 +7,32 @@ namespace nodom {
         /**
          * 模型id（唯一）
          */
-        id: number;
+        public id: number;
         /**
          * 模型对应的模块id
          */
-        moduleId: number;
+        public moduleId: number;
 
         /**
          * 模型对应数据，初始化后，data会增加“$modelId”数据项
          */
-        data: any;
+        public data: any;
 
         /**
          * 模型字段集
          * 每个字段对象结构为{value:值[,handlers:观察器，观察器为模块方法名或函数]} 
          */
-        fields: object = {};
+        private fields: object = {};
 
         /**
          * 父model
          */
-        parent:Model;
+        public parent:Model;
 
         /**
          * 子model
          */
-        children:object|Array<Model>;
+        private children:object|Array<Model>;
 
         /**
          * @param data 		数据
@@ -46,9 +46,7 @@ namespace nodom {
             //添加到model工厂
             if (module) {
                 this.moduleId = module.id;
-                if (module.modelFactory) {
-                    module.modelFactory.add(this.id,this);
-                }
+                module.setModel(this.id,this);
             }
 
             //如果data不存在，则初始化为空object
@@ -82,7 +80,7 @@ namespace nodom {
          * @param key       键，可以带“.”，如a, a.b.c
          * @param value     对应值
          */
-        set(key:string, value:any) {
+        public set(key:string, value:any) {
             let fn;
             let index:number = key.lastIndexOf('.');
             let model:Model;
@@ -126,7 +124,7 @@ namespace nodom {
          * 获取子孙model
          * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
          */
-        get(key:string|number):Model{
+        public get(key:string|number):Model{
             if(typeof key === 'number'){
                 if(Util.isArray(this.children)){
                     let arr:Model[] = <Model[]>this.children;
@@ -152,7 +150,7 @@ namespace nodom {
          * 删除属性
          * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
          */
-        del(key:string|number) {
+        public del(key:string|number) {
             let fn;
             let mdl:Model;
             //索引号
@@ -195,6 +193,7 @@ namespace nodom {
                     fieldObj = {};  
                     this.fields[field] = fieldObj;
                 }
+
                 if(fieldObj.value !== value){
                     fieldObj.value = value;
                     //观察器执行
@@ -204,7 +203,7 @@ namespace nodom {
                             if(Util.isFunction(f)){
                                 Util.apply(f, this, [module,field,value]);
                             }else if(Util.isString(f)){
-                                let foo = module.methodFactory.get(f);
+                                let foo = module.getMethod(f);
                                 if(Util.isFunction(foo)){
                                     Util.apply(foo, this, [module,field,value]);
                                 }
@@ -224,7 +223,7 @@ namespace nodom {
          * 获取数据
          * @param key   键(对象)或index(数组)，键可以多级，如a.b.c
          */
-        query(key:string){
+        public query(key:string){
             if(typeof key === 'number'){
                 if(Util.isArray(this.data)){
                     return this.data[key];
@@ -251,7 +250,7 @@ namespace nodom {
          * 获取所有数据
          * @param dirty   是否获取脏数据（"$"开头数据项，这类数据项由nodom生成）
          */
-        getData(dirty?:boolean):any{
+        public getData(dirty?:boolean):any{
             // dirty，直接返回数据
             if(dirty){
                 return this.data;
@@ -265,7 +264,7 @@ namespace nodom {
          * @param operate   数据项变化时执行方法名(在module的methods中定义)
          * @param cancel    取消观察 
          */
-        watch(key:string,operate:string|Function,cancel?:boolean){
+        public watch(key:string,operate:string|Function,cancel?:boolean){
             let fieldObj = this.fields[key];
             if(!fieldObj){
                 fieldObj = {};

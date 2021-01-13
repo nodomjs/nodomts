@@ -10,6 +10,7 @@ module.exports = function (grunt) {
       },     
       dev:{
         src:[
+            './core/types.ts',
             './core/nodom.ts',
             './core/util.ts',
             './core/application.ts',

@@ -4,8 +4,8 @@ namespace nodom{
 	 * 调度器，用于每次空闲的待操作序列调度
 	 */
 	export class Scheduler{
-		static tasks:Array<any> = [];
-		static dispatch(){
+		private static tasks:Array<any> = [];
+		public static dispatch(){
 			Scheduler.tasks.forEach((item)=>{
 				if(Util.isFunction(item.func)){
 					if(item.thiser){
@@ -21,7 +21,7 @@ namespace nodom{
 		 * 启动调度器
 		 * @param scheduleTick 	渲染间隔
 		 */
-		static start(scheduleTick?:number){
+		public static start(scheduleTick?:number){
 			Scheduler.dispatch();
 			if(window.requestAnimationFrame){
 				window.requestAnimationFrame(Scheduler.start);
@@ -35,7 +35,7 @@ namespace nodom{
 		 * @param foo 		任务和this指向
 		 * @param thiser 	this指向
 		 */
-		static addTask(foo:Function,thiser?:any){
+		public static addTask(foo:Function,thiser?:any){
 			if(!Util.isFunction(foo)){
 				throw new NodomError("invoke","Scheduler.addTask","0","function");
 			}
@@ -47,7 +47,7 @@ namespace nodom{
 		 * 移除任务
 		 * @param foo 	任务
 		 */
-		static removeTask(foo){
+		public static removeTask(foo){
 			if(!Util.isFunction(foo)){
 				throw new NodomError("invoke","Scheduler.removeTask","0","function");
 			}

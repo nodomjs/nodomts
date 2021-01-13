@@ -42,14 +42,14 @@ namespace nodom {
          * @param toModule 		目标模块名
          * @param content 		消息内容
          */
-        static add(from: number, to: number, data: any) {
+        public static add(from: number, to: number, data: any) {
             this.messages.push(new Message(from, to, data));
         }
 
         /**
          * 处理消息队列
          */
-        static handleQueue() {
+        public static handleQueue() {
             for (let i = 0; i < this.messages.length; i++) {
                 let msg: Message = this.messages[i];
                 let module: Module = ModuleFactory.get(msg.toModule);

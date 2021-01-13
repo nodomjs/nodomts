@@ -1,12 +1,15 @@
 {
   "name": "nodomjs",
-  "version": "0.0.3",
+  "version": "0.0.4-beta2",
   "description": "一个前端mvvm框架",
   "main": "dist/index.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist/**/*.js",
-    "dist/types/**/*.d.ts"
+    "dist/core/**/*.js",
+    "dist/types/core/**/*.d.ts",
+    "dist/index.js",
+    "dist/types/index.d.ts",
+    "core/**/*.ts"
   ],
   "scripts": {
     "build": "tsc",
@@ -14,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nodomjs/nodom.git"
+    "url": "git+https://github.com/nodomjs/nodomts.git"
   },
   "keywords": [
     "nodom",
@@ -24,9 +27,9 @@
   "author": "fieldyang <fieldyang@163.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/nodomjs/nodom/issues"
+    "url": "https://github.com/nodomjs/nodomts/issues"
   },
-  "homepage": "https://github.com/nodomjs/nodom#readme",
+  "homepage": "https://github.com/nodomjs/nodomts#readme",
   "dependencies": {
     
   },
@@ -38,7 +41,7 @@
     "杨雷 <fieldyang@163.com>"
   ],
   "directories": {
-    "example": "examples",
-    "test": "test"
+    "examples": "示例代码",
+    "core":"框架源码"
   }
 }

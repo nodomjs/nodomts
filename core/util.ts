@@ -5,9 +5,9 @@ namespace nodom{
      * @since       1.0.0
      */
     export class Util{
-        static generatedId:number=1;
+        private static generatedId:number=1;
         //唯一主键
-        static genId(){
+        public static genId(){
             return this.generatedId++;
         }
         
@@ -21,7 +21,7 @@ namespace nodom{
          * @returns         复制的对象
          */
 
-        static clone(srcObj:object,expKey?:RegExp|string[],extra?:any):any{
+        public static clone(srcObj:object,expKey?:RegExp|string[],extra?:any):any{
             let me = this;
             let map:WeakMap<object,any> = new WeakMap();
             return clone(srcObj,expKey,extra);
@@ -105,7 +105,7 @@ namespace nodom{
          * @param   参数数组
          * @returns 返回对象
          */
-        static merge(o1?:object,o2?:object,o3?:object,o4?:object,o5?:object,o6?:object){
+        public static merge(o1?:object,o2?:object,o3?:object,o4?:object,o5?:object,o6?:object){
             let me = this;
             for(let i=0;i<arguments.length;i++){
                 if(!this.isObject(arguments[i])){
@@ -128,7 +128,7 @@ namespace nodom{
         /**
          * 把obj2对象所有属性赋值给obj1
          */
-        static assign(obj1,obj2){
+        public static assign(obj1,obj2){
             if(Object.assign){
                 Object.assign(obj1,obj2);
             }else{
@@ -142,7 +142,7 @@ namespace nodom{
         /**
          * 获取对象自有属性
          */
-        static getOwnProps(obj):Array<string>{
+        public static getOwnProps(obj):Array<string>{
             if(!obj){
                 return [];
             }
@@ -154,7 +154,7 @@ namespace nodom{
          * @param foo   检查的对象
          * @returns     true/false
          */
-        static isFunction(foo):boolean{
+        public static isFunction(foo):boolean{
             return foo !== undefined && foo !== null && foo.constructor === Function;
         }
 
@@ -163,7 +163,7 @@ namespace nodom{
          * @param obj   检查的对象
          * @returns     true/false
          */
-        static isArray(obj) :boolean{
+        public static isArray(obj) :boolean{
             return Array.isArray(obj);
         }
 
@@ -171,7 +171,7 @@ namespace nodom{
          * 判断是否为map
          * @param obj 
          */
-        static isMap(obj):boolean{
+        public static isMap(obj):boolean{
             return obj !== null && obj !== undefined && obj.constructor === Map;
         }
 
@@ -180,7 +180,7 @@ namespace nodom{
          * @param obj   检查的对象
          * @returns true/false
          */
-        static isObject(obj):boolean {
+        public static isObject(obj):boolean {
             return obj !== null && obj !== undefined && obj.constructor === Object;
         }
 
@@ -189,7 +189,7 @@ namespace nodom{
          * @param v 检查的值
          * @returns true/false
          */
-        static isInt(v):boolean {
+        public static isInt(v):boolean {
             return Number.isInteger(v);
         }
         /**
@@ -197,7 +197,7 @@ namespace nodom{
          * @param v 检查的值
          * @returns true/false
          */
-        static isNumber(v):boolean{
+        public static isNumber(v):boolean{
             return typeof v === 'number';
         }
 
@@ -206,7 +206,7 @@ namespace nodom{
          * @param v 检查的值
          * @returns true/false
          */
-        static isBoolean(v):boolean{
+        public static isBoolean(v):boolean{
             return typeof v === 'boolean';
         }
         /**
@@ -214,7 +214,7 @@ namespace nodom{
          * @param v 检查的值
          * @returns true/false
          */
-        static isString(v):boolean{
+        public static isString(v):boolean{
             return typeof v === 'string';
         }
 
@@ -223,7 +223,7 @@ namespace nodom{
          * @param v 检查的值
          * @returns true/false
          */
-        static isNumberString(v):boolean{
+        public static isNumberString(v):boolean{
             return /^\d+\.?\d*$/.test(v);
         }
 
@@ -232,7 +232,7 @@ namespace nodom{
          * @param obj   检查的对象
          * @returns     true/false
          */
-        static isEmpty(obj):boolean{
+        public static isEmpty(obj):boolean{
             if(obj === null || obj === undefined)
                 return true;
             let tp = typeof obj;
@@ -256,7 +256,7 @@ namespace nodom{
          * @param props     属性值对象
          * @param one       是否满足一个条件就可以，默认false
          */ 
-        static findObjByProps(obj:object,props:object,one:boolean):Array<object>|object{
+        public static findObjByProps(obj:object,props:object,one:boolean):Array<object>|object{
             if(!this.isObject(obj)){
                 throw new NodomError('invoke','this.findObjByProps','0','Object');
             }
@@ -328,7 +328,7 @@ namespace nodom{
          * @param pview     父html element
          * @returns         html element/null 或 nodelist或[]
          */
-        static get(selector:string,findAll?:boolean,pview?:HTMLElement|Document):Node|NodeList{
+        public static get(selector:string,findAll?:boolean,pview?:HTMLElement|Document):Node|NodeList{
             pview = pview || document;
             if(findAll === true){
                 return pview.querySelectorAll(selector);
@@ -341,8 +341,8 @@ namespace nodom{
          * @param el    传入的对象
          * @returns     true/false
          */
-        static isEl(el:any):boolean{
-            return el instanceof HTMLElement;
+        public static isEl(el:any):boolean{
+            return el instanceof HTMLElement || el instanceof SVGElement;
         }
 
         /**
@@ -350,7 +350,7 @@ namespace nodom{
          * @param node 传入的对象
          * @returns true/false
          */
-        static isNode(node:any):boolean{
+        public static isNode(node:any):boolean{
             return node !== undefined && node !== null && (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE);  
         }
         
@@ -361,11 +361,12 @@ namespace nodom{
          * @param text      innerText
          * @returns         新建的elelment
          */
-        static newEl(tagName:string,config?:object,text?:string):HTMLElement{
+        public static newEl(tagName:string,config?:object,text?:string):HTMLElement{
             if(!this.isString(tagName) || this.isEmpty(tagName)){
                 throw new NodomError('invoke','this.newEl','0','string');   
             }
             let el = document.createElement(tagName);
+            
             if(this.isObject(config)){
                 this.attr(el,config);
             }else if(this.isString(text)){
@@ -378,15 +379,19 @@ namespace nodom{
          * @param tagName   标签名
          * @returns         svg element
          */
-        static newSvgEl(tagName):HTMLElement{
-            return document.createElementNS("http://www.w3.org/2000/svg",tagName);
+        public static newSvgEl(tagName:string,config?:object):SVGElement{
+            let el:SVGElement = document.createElementNS("http://www.w3.org/2000/svg",tagName);
+            if(this.isObject(config)){
+                this.attr(el,config);
+            }
+            return el;
         }
         /**
          * 把srcNode替换为nodes
          * @param srcNode       源dom
          * @param nodes         替换的dom或dom数组
          */
-        static replaceNode(srcNode:Node,nodes:Node|Array<Node>){
+        public static replaceNode(srcNode:Node,nodes:Node|Array<Node>){
             if(!this.isNode(srcNode)){
                 throw new NodomError('invoke','this.replaceNode','0','Node');
             }
@@ -413,7 +418,7 @@ namespace nodom{
          * 清空子节点
          * @param el
          */
-        static empty(el:HTMLElement){
+        public static empty(el:HTMLElement){
             const me = this;
             if(!me.isEl(el)){
                 throw new NodomError('invoke','this.empty','0','Element');
@@ -427,7 +432,7 @@ namespace nodom{
          * 删除节点
          * @param node html node
          */
-        static remove(node:Node){
+        public static remove(node:Node){
             const me = this;
             if(!me.isNode(node)){
                 throw new NodomError('invoke','this.remove','0','Node');
@@ -446,7 +451,7 @@ namespace nodom{
          * @param value 属性值，获取属性时不需要设置
          * @returns     属性值
          */
-        static attr(el:HTMLElement,param:string|object,value?:any):any{
+        public static attr(el:HTMLElement|SVGElement,param:string|object,value?:any):any{
             const me = this;
             if(!me.isEl(el)){
                 throw new NodomError('invoke','this.attr','0','Element');
@@ -486,7 +491,7 @@ namespace nodom{
          * @param format    日期格式
          * @returns          日期串
          */
-        static formatDate(srcDate:string|number,format:string):string{
+        public static formatDate(srcDate:string|number,format:string):string{
             //时间戳
             let timeStamp:number;
             if(this.isString(srcDate)){
@@ -553,7 +558,7 @@ namespace nodom{
          * @param args1,args2,args3,... 待替换的参数
          * @returns 转换后的消息
          */
-        static compileStr(src:string,p1?:any,p2?:any,p3?:any,p4?:any,p5?:any):string{
+        public static compileStr(src:string,p1?:any,p2?:any,p3?:any,p4?:any,p5?:any):string{
             let reg:RegExp;
             let args = arguments;
             let index = 0;
@@ -575,7 +580,7 @@ namespace nodom{
          * @param obj   this指向
          * @param args  参数数组
          */
-        static apply(foo:Function,obj:any,args?:Array<any>):any{
+        public static apply(foo:Function,obj:any,args?:Array<any>):any{
             if(!foo){
                 return;
             }
@@ -587,7 +592,7 @@ namespace nodom{
          * @param paths 待合并路径数组
          * @returns     返回路径
          */
-        static mergePath(paths:string[]):string{
+        public static mergePath(paths:string[]):string{
             return paths.join('/').replace(/(\/{2,})|\\\//g,'\/');
         }
     }

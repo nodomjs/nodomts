@@ -8,14 +8,14 @@ namespace nodom {
         /**
          * 指令类型集合
          */
-        static directiveTypes:Map<string,DirectiveType> = new Map();
+        private static directiveTypes:Map<string,DirectiveType> = new Map();
         
         /**
          * 创建指令类型
          * @param name 		    指令类型名
          * @param config 	    配置对象{order:优先级,init:初始化函数,handler:渲染处理函数}
          */
-        static addType(name:string, prio?:number,init?:Function,handle?:Function) {
+        public static addType(name:string, prio?:number,init?:Function,handle?:Function) {
             this.directiveTypes.set(name, new DirectiveType(name,prio,init,handle));
         }
 
@@ -23,7 +23,7 @@ namespace nodom {
          * 移除过滤器类型
          * @param name  过滤器类型名
          */
-        static removeType(name:string) {
+        public static removeType(name:string) {
             this.directiveTypes.delete(name);
         }
 
@@ -32,7 +32,7 @@ namespace nodom {
          * @param name  指令类型名
          * @returns     指令或undefined
          */
-        static getType(name:string) {
+        public static getType(name:string) {
             return this.directiveTypes.get(name);
         }
 
@@ -41,7 +41,7 @@ namespace nodom {
          * @param type 		过滤器类型名
          * @returns 		true/false
          */
-        static hasType(name:string) {
+        public static hasType(name:string) {
             return this.directiveTypes.has(name);
         }
 
@@ -51,7 +51,7 @@ namespace nodom {
          * @param dom           虚拟dom
          */
          
-        static init(directive:Directive,dom:Element) {
+        public static init(directive:Directive,dom:Element) {
             let dt = directive.type;
             if (dt) {
                 return dt.init(directive,dom);
@@ -66,7 +66,7 @@ namespace nodom {
          * @param parent        父dom
          * @returns             指令执行结果
          */
-        static exec(directive:Directive, dom:Element, module:Module, parent:Element) {
+        public static exec(directive:Directive, dom:Element, module:Module, parent:Element) {
             //调用
             return Util.apply(directive.type.handle, null, [directive,dom,module,parent]);
         }

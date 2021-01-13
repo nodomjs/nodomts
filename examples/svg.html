@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>nodom-svg</title>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
+</head>
+<body>
+    <div>
+        <button e-click='change'>修改数据</button>
+        <svg width='600' height='600'>
+            <circle x-repeat='rows' cx="{{x}}" cy="{{y}}" r="{{radius}}" stroke="{{color}}"
+                stroke-width="1" fill="{{color}}"/>
+        </svg>
+    </div>
+</body>
+    <script>
+    let datas = [];
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    for(let i=0;i<1000;i++){
+        datas.push({
+            x:Math.random()*width | 0,
+            y:Math.random()*height | 0,
+            radius:Math.random()*10,
+            color:'rgb(' + (Math.random()*255|0) + ',' + (Math.random()*255|0) + ',' + (Math.random()*255|0) + ')'
+        })
+    }
+    // console.log(datas);
+    console.time('t1');
+    nodom.newApp({
+        module:{
+            el: 'div',
+            data: {
+                rows:datas
+            },
+            methods:{
+                change:function(dom,model,module){
+                    model.data.rows[1].radius=100;
+                    model.data.rows[100].radius=100;
+                    model.data.rows[800].radius=100;
+                }
+            }
+        }
+    });
+    console.timeEnd('t1');
+    </script>
+</html>

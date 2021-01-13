@@ -5,26 +5,25 @@ namespace nodom {
      * 指令类
      */
     export class DirectiveType {
-		
-        /**
+		/**
 		 * 指令类型名
 		 */
-        name:string;
+        public name:string;
         
         /**
          * 优先级，越小优先级越高
          */
-        prio:number;
+        public prio:number;
 
 		/**
 		 * 编译时执行方法
 		 */
-		init:Function;
+		public init:Function;
 
 		/**
 		 * 渲染时执行方法
 		 */
-		handle:Function;
+		public handle:Function;
         
         /**
          * 构造方法

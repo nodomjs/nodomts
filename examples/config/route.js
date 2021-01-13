@@ -7,7 +7,7 @@ NodomConfig = {
         template:'view',
         css:'css',
         route:'/route',
-        module:'dist'
+        module:'modules/dist'
     },
     /**模块配置 */
     modules:[

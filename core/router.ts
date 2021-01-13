@@ -1,54 +1,6 @@
 // / <reference path="nodom.ts" />
 
 namespace nodom {
-	/**
-	 * 路由配置
-	 */
-	export interface IRouteCfg{
-		/**
-		 * 路由路径，可以带通配符*，可以带参数 /:
-		 */
-		path:string;
-		/**
-		 * 路由模块id或模块类名，id为数字，类名为string
-		 */
-        module?:number|string;
-        
-        /**
-         * 模块名
-         */
-        moduleName?:string;
-
-        /**
-         * 数据url
-         */
-        dataUrl?:string;
-		/**
-		 * 子路由数组
-		 */
-		routes?:Array<IRouteCfg>;
-
-		/**
-		 * 进入路由事件方法
-		 */
-		onEnter?:Function;
-		/**
-		 * 离开路由方法
-		 */
-		onLeave?:Function;
-		/**
-		 * 是否使用父路由路径
-		 */
-		useParentPath?:boolean;
-		/**
-		 * 不添加到路由树
-		 */
-		notAdd?:boolean;
-		/**
-		 * 父路由
-		 */
-		parent?:Route;
-	}
 	
 	/**
      * 路由类
@@ -189,7 +141,7 @@ namespace nodom {
                     let module:Module = ModuleFactory.get(<number>route.module);
                     route.setLinkActive();
                     //设置首次渲染
-                    module.firstRender = true;
+                    module.setFirstRender(true);
                     await module.active();
                     setRouteParamToModel(route,module);
                 }
@@ -218,12 +170,12 @@ namespace nodom {
                     }
                     
                     //设置首次渲染
-                    module.firstRender = true;
+                    module.setFirstRender(true);
                     let routerKey:string = Router.routerKeyMap.get(parentModule.id);
                     //从父模块子节点中删除以此routerKey为containerKey的模块
                     for(let i=0;i<parentModule.children.length;i++){
                         let m:nodom.Module = ModuleFactory.get(parentModule.children[i]);
-                        if(m && m.containerKey === routerKey){
+                        if(m && m.isContainerKey(routerKey)){
                             parentModule.children.splice(i,1);
                             break;
                         }

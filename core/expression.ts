@@ -48,7 +48,7 @@ namespace nodom {
         /**
          * 克隆
          */
-        clone(){
+        public clone(){
             return this;
         }
 
@@ -56,7 +56,7 @@ namespace nodom {
          * 初始化，把表达式串转换成堆栈
          * @param exprStr 	表达式串
          */
-        compile(exprStr:string):string {
+        public compile(exprStr:string):string {
             //字符串正则表达式
             let stringReg:RegExp[] = [/\".*?\"/,/'.*?'/,/`.*?`/];
             let quotReg:RegExp[] = [/\\"/g,/\\'/g,/\\`/g];
@@ -278,7 +278,7 @@ namespace nodom {
          * @param model 	模型 或 fieldObj对象 
 		 * @returns 		计算结果
          */
-        val(model:Model) {
+        public val(model:Model) {
             if (!model || !model.data) { 
 				return ''; 
 			}

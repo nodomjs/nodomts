@@ -8,32 +8,32 @@ namespace nodom {
 		/**
 		 * 指令id
 		 */
-		id:number;
+		public id:number;
 
         /**
 		 * 指令类型，指令管理器中定义
 		 */
-        type:DirectiveType;
+        public type:DirectiveType;
         
         /**
 		 * 指令值
 		 */
-        value:any;
+        public value:any;
         
 		
         /**
          * 过滤器组
          */
-        filters:Filter[];
+        public filters:Filter[];
         /**
          * 附加参数
          */
-        params:any;
+        public params:any;
 
         /**
          * 附加操作
          */
-        extra:any;
+        public extra:any;
 
         /**
          * 构造方法
@@ -78,7 +78,7 @@ namespace nodom {
          * @param dom       指令执行时dom
          * @param parent    父虚拟dom
          */
-        exec(module:Module,dom:Element,parent?:Element) {
+        public exec(module:Module,dom:Element,parent?:Element) {
             return DirectiveManager.exec(this,dom,module,parent);
         }
 
@@ -87,7 +87,7 @@ namespace nodom {
          * @param dst   目标dom
          * @returns     新指令
          */
-        clone(dst:Element):Directive{
+        public clone(dst:Element):Directive{
             let dir = new Directive(this.type.name,this.value);
             if(this.filters){
                 dir.filters = [];

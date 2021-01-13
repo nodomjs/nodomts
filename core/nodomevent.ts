@@ -13,58 +13,61 @@ namespace nodom {
      * @since       1.0
      */
     export class NodomEvent {
-        id:number;
+        public id:number;
         /**
          * 事件名
          */
-        name: string;
+        public name: string;
         /**
          * 子事件数组
          */
-        events: Map<string,Array<NodomEvent>>;
+        private events: Map<string,Array<NodomEvent>>;
         /**
          * 事件处理函数名(需要在模块methods中定义)
          */
-        handler: string|Function;
+        private handler: string|Function;
         /**
          * 代理到父对象
          */
-        delg: boolean;
+        private delg: boolean;
         /**
          * 禁止冒泡
          */
-        nopopo: boolean;
+        private nopopo: boolean;
         /**
          * 只执行一次
          */
-        once: boolean;
+        private once: boolean;
+
         /**
          * 使用 capture
          */
-        capture: boolean;
+        public capture: boolean;
+
         /**
          * 模块id
          */
-        moduleId:number;
+        public moduleId:number;
 
         /**
          * 事件所属虚拟dom的key
          */
-        domKey:string;
+        private domKey:string;
 
         /**
          * 事件监听器
          */
-        handleListener:any;
+        private handleListener:any;
         /**
          * 触屏监听器
          */
-        touchListeners:Map<string,NodomEvent>;
+        public touchListeners:Map<string,NodomEvent>;
 
         /**
-         * 附加参数
+         * 附加参数map
          */
-        extParams:any;
+        private extraParamMap:Map<string,any>;
+
         /**
          * @param eventName     事件名
          * @param eventStr      事件串或事件处理函数,以“:”分割,中间不能有空格,结构为: 方法名[:delg(代理到父对象):nopopo(禁止冒泡):once(只执行一次):capture(useCapture)]
@@ -150,13 +153,13 @@ namespace nodom {
          * @param e     事件
          * @param el    html element
          */
-        fire(e:Event,el?:HTMLElement) {
+        public fire(e:Event,el?:HTMLElement) {
             const module:Module = ModuleFactory.get(this.moduleId);
-            if (!module.hasContainer()) {
+            if (!module.getContainer()) {
                 return;
             }
-            let dom:nodom.Element = module.renderTree.query(this.domKey);
-            const model = module.modelFactory.get(dom.modelId);
+            let dom:nodom.Element = module.getElement(this.domKey);
+            const model = module.getModel(dom.modelId);
             //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
             if (this.capture) {
                 handleSelf(this,e, model, module, dom, el);
@@ -172,7 +175,7 @@ namespace nodom {
                     this.events.get(this.name).length===0 && 
                     this.handler === undefined) {
                 if(!el){
-                    el = module.container.querySelector("[key='" + this.domKey + "']");
+                    el = module.getNode(this.domKey);
                 }
                 
                 if (ExternalEvent.touches[this.name]) {
@@ -237,7 +240,7 @@ namespace nodom {
              */
             function handleSelf(eObj:NodomEvent,e:Event, model:Model, module:Module, dom:Element,el?:HTMLElement) {
                 if(typeof eObj.handler === 'string'){
-                    eObj.handler = module.methodFactory.get(eObj.handler);
+                    eObj.handler = module.getMethod(eObj.handler);
                 } 
                 if(!eObj.handler){
                     return;
@@ -260,10 +263,24 @@ namespace nodom {
          * @param module    模块
          * @param dom       虚拟dom
          * @param el        html element
+         * @param parent    父dom
+         * @param parentEl  对应htmlelement的父html element
          */
-        bind(module:Module, dom:Element, el:HTMLElement) {
+        public bind(module:Module, dom:Element, el:HTMLElement,parent:Element,parentEl?:Node) {
             this.moduleId = module.id;
             this.domKey = dom.key;
+            if (this.delg && parent) { //代理到父对象
+                this.delegateTo(module, dom, <HTMLElement>el, parent, <HTMLElement>parentEl);
+            } else {
+                this.bindTo(el);
+            }
+        }
+
+        /**
+         * 绑定到el
+         * @param el    目标html element 
+         */
+        private bindTo(el:HTMLElement){
             //触屏事件
             if (ExternalEvent.touches[this.name]) {
                 ExternalEvent.regist(this, el);
@@ -272,9 +289,8 @@ namespace nodom {
                     this.fire(e,el);
                 };
                 el.addEventListener(this.name,this.handleListener , this.capture);
-            }
+            }    
         }
-
         /**
          * 
          * 事件代理到父对象
@@ -284,7 +300,7 @@ namespace nodom {
          * @param parent    父虚拟dom
          * @param parentEl  父element
          */
-        delegateTo(module:Module, vdom:Element, el:HTMLElement, parent?:Element, parentEl?:HTMLElement) {
+        private delegateTo(module:Module, vdom:Element, el:HTMLElement, parent?:Element, parentEl?:HTMLElement) {
             this.domKey = vdom.key;
             this.moduleId = module.id;
 
@@ -296,7 +312,7 @@ namespace nodom {
             //父节点如果没有这个事件，则新建，否则直接指向父节点相应事件
             if (!parent.events.has(this.name)) {
                 let ev = new NodomEvent(this.name);
-                ev.bind(module, parent, parentEl);
+                ev.bindTo(parentEl);
                 parent.events.set(this.name,ev);
             }
             
@@ -317,7 +333,7 @@ namespace nodom {
          * 添加子事件
          * @param ev    事件
          */
-        addChild(ev) {
+        private addChild(ev) {
             if (!this.events) {
                 this.events = new Map();
             }
@@ -333,7 +349,7 @@ namespace nodom {
          * 移除子事件
          * @param ev    子事件
          */
-        removeChild(ev) {
+        private removeChild(ev) {
             if (this.events === undefined || this.events[ev.name] === undefined) {
                 return;
             }
@@ -349,13 +365,41 @@ namespace nodom {
         /**
          * 克隆
          */
-        clone() {
+        public clone() {
             let evt = new NodomEvent(this.name);
             let arr = ['delg', 'once', 'nopopo', 'capture', 'handler'];
             arr.forEach((item) => {
                 evt[item] = this[item];
             });
             return evt;
+        }
+
+        /**
+         * 获取event 的domkey
+         */
+        public getDomKey(){
+            return this.domKey;
+        }
+        
+        /**
+         * 设置附加参数值
+         * @param key       参数名
+         * @param value     参数值
+         */
+        public setExtraParam(key:string,value:any){
+            if(!this.extraParamMap){
+                this.extraParamMap = new Map();    
+            }
+            this.extraParamMap.set(key,value);
+        }
+
+        /**
+         * 获取附加参数值
+         * @param key   参数名
+         * @returns     参数值
+         */
+        public getExtraParam(key:string){
+            return this.extraParamMap.get(key);
         }
     }
 
@@ -382,7 +426,7 @@ namespace nodom {
             // el不存在
             if (!el) {
                 const module = ModuleFactory.get(evtObj.moduleId);
-                el = module.container.querySelector("[key='" + evtObj.domKey + "']");
+                el = module.getNode(evtObj.getDomKey());
             }
             
             evtObj.touchListeners = new Map();
@@ -407,7 +451,7 @@ namespace nodom {
             const evt = ExternalEvent.touches[evtObj.name];
             if (!el) {
                 const module = ModuleFactory.get(evtObj.moduleId);
-                el = module.container.querySelector("[key='" + evtObj.domKey + "']");
+                el = module.getNode(evtObj.getDomKey());
             }
             if (evt) {
                 // 解绑事件
@@ -428,12 +472,10 @@ namespace nodom {
         tap: {
             touchstart: function (e:TouchEvent, evtObj:NodomEvent) {
                 let tch = e.touches[0];
-                evtObj.extParams = {
-                    pos: { sx: tch.pageX, sy: tch.pageY, t: Date.now() }
-                }
+                evtObj.setExtraParam('pos',{ sx: tch.pageX, sy: tch.pageY, t: Date.now()});
             },
             touchmove: function (e:TouchEvent, evtObj:NodomEvent) {
-                let pos = evtObj.extParams.pos;
+                let pos = evtObj.getExtraParam('pos');
                 let tch = e.touches[0];
                 let dx = tch.pageX - pos.sx;
                 let dy = tch.pageY - pos.sy;
@@ -443,7 +485,7 @@ namespace nodom {
                 }
             },
             touchend: function (e:TouchEvent, evtObj:NodomEvent) {
-                let pos = evtObj.extParams.pos;
+                let pos = evtObj.getExtraParam('pos');
                 let dt = Date.now() - pos.t;
                 //点下时间不超过200ms
                 if (pos.move === true || dt > 200) {
@@ -456,18 +498,16 @@ namespace nodom {
             touchstart: function (e:TouchEvent, evtObj:NodomEvent) {
                 let tch = e.touches[0];
                 let t = Date.now();
-                evtObj.extParams = {
-                    swipe: {
-                        oldTime: [t, t],
-                        speedLoc: [{ x: tch.pageX, y: tch.pageY }, { x: tch.pageX, y: tch.pageY }],
-                        oldLoc: { x: tch.pageX, y: tch.pageY }
-                    }
-                }
+                evtObj.setExtraParam('swipe', {
+                    oldTime: [t, t],
+                    speedLoc: [{ x: tch.pageX, y: tch.pageY }, { x: tch.pageX, y: tch.pageY }],
+                    oldLoc: { x: tch.pageX, y: tch.pageY }
+                });
             },
             touchmove: function (e:TouchEvent, evtObj:NodomEvent) {
                 let nt = Date.now();
                 let tch = e.touches[0];
-                let mv = evtObj.extParams['swipe'];
+                let mv = evtObj.getExtraParam('swipe');
                 //50ms记录一次
                 if (nt - mv.oldTime > 50) {
                     mv.speedLoc[0] = { x: mv.speedLoc[1].x, y: mv.speedLoc[1].y };
@@ -478,7 +518,7 @@ namespace nodom {
                 mv.oldLoc = { x: tch.pageX, y: tch.pageY };
             },
             touchend: function (e:any, evtObj:NodomEvent) {
-                let mv = evtObj.extParams['swipe'];
+                let mv = evtObj.getExtraParam('swipe');
                 let nt = Date.now();
 
                 //取值序号 0 或 1，默认1，如果释放时间与上次事件太短，则取0

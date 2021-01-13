@@ -2,75 +2,29 @@
 namespace nodom {
     
     /**
-     * module class obj
-     */
-    export interface IMdlClassObj{
-        /**
-         * class名或class
-         */
-        class:any;
-
-        /**
-         * 模块名
-         */
-        name?:string;
-
-        /**
-         * class文件路径
-         */
-        path:string;
-        /**
-         * 实例
-         */
-        instance?:Module;
-        /**
-         * 数据
-         */
-        data?:string|object;
-        /**
-         * 是否单例
-         */
-        singleton?:boolean;
-        /**
-         * 懒加载
-         */
-        lazy?:boolean;
-
-        /**
-         * 是否正在初始化
-         */
-        initing:boolean;
-
-        /**
-         * 等待模块初始化的id列表
-         */
-        waitList:number[];
-    }
-
-	/**
 	 * 过滤器工厂，存储模块过滤器
 	 */
     export class ModuleFactory {
         /**
          * 模块对象工厂 {moduleId:{key:容器key,className:模块类名,instance:模块实例}}
          */
-        static modules:Map<number,Module> = new Map();
+        private static modules:Map<number,Module> = new Map();
 
         /**
          * 模块类集合
          */
-        static classes:Map<string,IMdlClassObj> = new Map();
+        private static classes:Map<string,IMdlClassObj> = new Map();
         
         /**
          * 主模块
          */
-        static mainModule: Module;
+        private static mainModule: Module;
         /**
          * 添加模块到工厂
          * @param id    模块id
          * @param item  模块存储对象
          */
-        static add(item:Module) {
+        public static add(item:Module) {
             this.modules.set(item.id, item);
         }
 
@@ -78,7 +32,7 @@ namespace nodom {
          * 获得模块
 		 * @param id    模块id
          */
-        static get(id:number):Module {
+        public static get(id:number):Module {
             return this.modules.get(id);
         }
         
@@ -88,7 +42,7 @@ namespace nodom {
          * @param moduleName    模块名
          * @param data          数据或数据url
          */
-        static async getInstance(className:string,moduleName?:string,data?:any):Promise<Module>{
+        public static async getInstance(className:string,moduleName?:string,data?:any):Promise<Module>{
             if(!this.classes.has(className)){
                 throw new NodomError('notexist1',TipMsg.TipWords['moduleClass'],className);
             }
@@ -127,8 +81,7 @@ namespace nodom {
                     if(data){
                         //如果为url，则设置dataurl和loadnewdata标志
                         if(typeof data === 'string'){
-                            mdl.dataUrl = data;
-                            mdl.loadNewData = true;
+                            mdl.setDataUrl(data);
                         }else{ //数据模型化
                             mdl.model = new Model(data,mdl);
                         }
@@ -151,7 +104,7 @@ namespace nodom {
 		 */
         static setMain(m:Module) {
             this.mainModule = m;
-            m.isMain = true;
+            m.setMain();
         }
 
 		/**
@@ -163,10 +116,10 @@ namespace nodom {
         }
 
         /**
-         * 初始化模块类
+         * 添加模块类
          * @param modules 
          */
-        static async init(modules:Array<IMdlClassObj>){
+        public static async addModules(modules:Array<IMdlClassObj>){
             for(let cfg of modules){
                 if(!cfg.path){
                     throw new nodom.NodomError("paramException",'modules','path');
@@ -194,7 +147,7 @@ namespace nodom {
          * 出事化模块
          * @param cfg 模块类对象
          */
-        static async initModule(cfg:IMdlClassObj){
+        private static async initModule(cfg:IMdlClassObj){
             //增加 .js后缀
             let path:string = cfg.path;
             if(!path.endsWith('.js')){
@@ -223,10 +176,6 @@ namespace nodom {
             }else{
                 throw new NodomError('notexist1',TipMsg.TipWords['moduleClass'],cfg.class);
             }
-        }
-
-        static awake(){
-
         }
     }
 }

@@ -8,12 +8,7 @@ class MdlRouteMain extends nodom.Module {
             data: {
                 page1: true,
                 page2: false,
-                date1: (new Date()).getTime(),
-                x: {
-                    y: {
-                        z: 1
-                    }
-                }
+                date1: (new Date()).getTime()
             }
         });
         super(config);

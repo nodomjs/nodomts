@@ -11,7 +11,7 @@ namespace nodom{
 		 * @param module 	模块
 		 * @return   		jsonstring
 		 */
-		static serialize(module:Module){
+		public static serialize(module:Module){
 			let dom = module.virtualDom;
 			addClsName(dom);
 			return JSON.stringify(dom);
@@ -55,7 +55,7 @@ namespace nodom{
 		 * @param module 	模块
 		 * @returns 		 virtualDom	
 		 */
-		static deserialize(jsonStr:string):Element{
+		public static deserialize(jsonStr:string):Element{
 			let jObj = JSON.parse(jsonStr);
 			return handleCls(jObj);
 

@@ -19,8 +19,8 @@ class ModuleB extends nodom.Module{
                 },
                 onReceive:function(model,from,msg){
                     console.log(msg);
-                    // model.set('msg1',msg);
-                    // model.set('from',from);
+                    model.set('msg1',msg);
+                    model.set('from',from);
                 }
             }
         });

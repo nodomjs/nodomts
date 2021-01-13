@@ -12,9 +12,12 @@ namespace nodom {
          * @param elementStr    待编译html串
          * @returns             虚拟dom
          */
-        static compile(elementStr:string):Element {
+        public static compile(elementStr:string):Element {
             const div:HTMLElement = Util.newEl('div');
-            div.innerHTML = elementStr;
+            try{
+                div.innerHTML = elementStr;
+            }catch(e){}
+            
             let oe = new Element('div');
             this.handleChildren(oe,div);
             
@@ -30,8 +33,7 @@ namespace nodom {
          * @param ele           待编译html element
          * @param parent        父节点（virtualdom）   
          */
-
-        static compileDom(ele:Node) {
+        public static compileDom(ele:Node) {
             let oe:Element;
             //注视标志
             let isComment = false;
@@ -68,7 +70,7 @@ namespace nodom {
          * @param oe    新建的虚拟dom
          * @returns     虚拟dom
          */
-        static handleEl(el:HTMLElement):Element{
+        public static handleEl(el:HTMLElement):Element{
             let oe:Element = new Element(el.tagName);
             this.handleAttributes(oe,el);
             this.handleChildren(oe,el);
@@ -93,7 +95,7 @@ namespace nodom {
          * @param oe 新建的虚拟dom
          * @param el 待处理的html element
          */
-        static handleAttributes(oe:Element,el:HTMLElement){
+        public static handleAttributes(oe:Element,el:HTMLElement){
             //遍历attributes
             for (let i = 0; i < el.attributes.length; i++) {
                 let attr = el.attributes[i];
@@ -125,11 +127,14 @@ namespace nodom {
          * @param oe 新建的虚拟dom
          * @param el 待处理的html element
          */
-        static handleChildren(oe:Element,el:HTMLElement){
+        public static handleChildren(oe:Element,el:HTMLElement){
             //子节点编译
             el.childNodes.forEach((nd:Node)=> {
                 let o = this.compileDom(nd);
                 if(o){
+                    if(o.tagName && oe.isSvgNode){ //设置svg对象
+                        o.isSvgNode = true;
+                    }
                     oe.children.push(o);
                 }
             });
@@ -139,7 +144,7 @@ namespace nodom {
          * @param exprStr   含表达式的串
          * @return          处理后的字符串和表达式数组
          */
-        static compileExpression(exprStr:string) {
+        private static compileExpression(exprStr:string) {
             if (/\{\{.+?\}\}/.test(exprStr) === false) {
                 return exprStr;
             }

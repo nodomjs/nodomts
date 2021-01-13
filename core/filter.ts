@@ -33,7 +33,7 @@ namespace nodom {
          * @param module 	模块
          * @returns 		过滤结果
          */
-        exec(value:string, module:Module):string{
+        public exec(value:string, module:Module):string{
             let args = [module, this.type, value].concat(this.params);
             return Util.apply(FilterManager.exec, module, args);
         }
@@ -41,7 +41,7 @@ namespace nodom {
         /**
          * 克隆
          */
-        clone():Filter{
+        public clone():Filter{
             let filter = new Filter();
             filter.type = this.type;
             if(this.params){
