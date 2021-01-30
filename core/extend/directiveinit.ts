@@ -179,7 +179,7 @@ namespace nodom {
                 rows[i].$index = i;
                 chds.push(node);
             }
-
+            
             //找到并追加到dom后
             if (chds.length > 0) {
                 for (let i = 0, len = parent.children.length; i < len; i++) {
@@ -394,7 +394,6 @@ namespace nodom {
                             v = undefined;
                         }
                     }
-
                     //修改字段值
                     model.set(field,v);
                     //修改value值，该节点不重新渲染
@@ -414,6 +413,7 @@ namespace nodom {
                 return;
             }
             const dataValue = model.data[directive.value];
+            
             let value = dom.getProp('value');
             if (type === 'radio') {
                 if (dataValue+'' === value) {
@@ -691,4 +691,18 @@ namespace nodom {
             Router.routerKeyMap.set(module.id,dom.key);
         }
     );
+
+    /**
+     * 增加ignore指令
+     * 只渲染子节点到dom树
+     */
+    DirectiveManager.addType('ignoreself',
+        10,
+        (directive, dom) => {
+            dom.dontRenderSelf = true;
+        },
+        (directive, dom, module, parent) => {
+
+        }
+    )
 }

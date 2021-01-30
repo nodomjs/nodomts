@@ -20,6 +20,7 @@
 
 <body>
     <div class="view">
+        <button  e-click='show'>show</button>
         <div class="tip">基本使用</div>
         <div class="code">
             菜单：
@@ -27,8 +28,8 @@
                 菜名：{{name}}，价格：{{price}}
             </div>
         </div>
-        <div class="tip">索引号的使用（编号从0开始）</div>
-        <div class="code">
+        <div class="tip">索引号的使用（编号从0开始）</div> 
+         <div class="code">
             菜单：
             <div x-repeat="foods">
                 编号：{{$index}}，菜名：{{name}}，价格：{{price}}
@@ -40,8 +41,8 @@
             <div x-repeat="foods|select:odd">
                 菜名：{{name}}，价格：{{price}}
             </div>
-        </div>
-        <div class="tip">过滤器使用-价格升序排序（编号从1开始）</div>
+        </div> -->
+         <div class="tip">过滤器使用-价格升序排序（编号从1开始）</div>
         <div class="code">
             菜单：
             <div x-repeat="foods|orderby:price">
@@ -61,7 +62,8 @@
             <div x-repeat="foods">
                 菜名：{{name}}，价格：{{price}}，会员价：{{price*$$discount.data}}
             </div>
-        </div>
+        </div> 
+
     </div>
 </body>
 <script>
@@ -70,6 +72,7 @@
         module:{
             el:'div',
             data: {
+                show:0,
                 discount:{data:0.9},
                 foods: [{
                     name: '夫妻肺片',
@@ -99,6 +102,10 @@
                     }
                     
                     return a;
+                },
+                show:function(dom,model){
+                    console.log(model);
+                    model.set('show',1);
                 }
             }
         }

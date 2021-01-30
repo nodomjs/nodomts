@@ -81,7 +81,8 @@ namespace nodom {
             if (eventStr) {
                 let tp = typeof eventStr;
                 if(tp === 'string'){
-                    (<string>eventStr).split(':').forEach((item, i) => {
+                    let eStr:string  = (<string>eventStr).trim();
+                    eStr.split(':').forEach((item, i) => {
                         item = item.trim();
                         if (i === 0) { //事件方法
                             this.handler = item;
@@ -102,6 +103,7 @@ namespace nodom {
                             }
                         }
                     });
+                    
                 }else if(tp === 'function'){
                     handler = <Function>eventStr;
                 }

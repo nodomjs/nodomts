@@ -69,6 +69,7 @@ namespace nodom {
             }
             if (type !== undefined && dom) {
                 DirectiveManager.init(this,dom);
+                dom.addDirective(this);
             }
         }
 

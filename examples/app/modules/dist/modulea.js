@@ -17,7 +17,7 @@ class ModuleA extends nodom.Module {
                     model.data.foods.push({ id: 4, name: '烤羊蹄', price: '58' });
                 },
                 sendMsg: function (dom, model, module) {
-                    module.send('modb1', 'hello');
+                    module.send('modb1', 'hello',1);
                 }
             }
         });

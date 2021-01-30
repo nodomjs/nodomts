@@ -17,9 +17,10 @@
 </head>
 <body>
 	<div>
+		<button e-click='show'>show</button>
 		<button e-click='change'>change</button>
 		<button e-click='change1'>change1</button>
-		<ul e-click='clickP:capture:once'>
+		<ul x-show='show' e-click='clickP:capture:once'>
 			<li x-repeat='edus' e-click='clickItem:delg'>{{eduName}}</li>
 		</ul>
 	</div>
@@ -28,7 +29,9 @@
 		nodom.newApp({
 			module:{
 				el:'div',
+				
 				data:{
+					show:0,
 					edus:[
 						{eduId:1,eduName:'高中'},
 						{eduId:2,eduName:'本科'},
@@ -37,12 +40,16 @@
 					]
 				},
 				methods:{
-					clickP:function(d,e,m,module){
+					clickP:function(d,m,module){
 						console.log('parent');
 					},
-					clickItem:function(d,e,m,module){
+					clickItem:function(d,m,module){
 						console.log('item');
-						console.log(d,e,m,module);
+					},
+					show:function(dom,model){
+
+						model.set('show',!model.data['show']);
+						
 					}
 				}
 			}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>repeat</title>
+    <script type="text/javascript" src="../bin/nodom.js"></script>
+
+    <style>
+        .code {
+            margin: 20px;
+        }
+
+        .tip {
+            color: darkorange;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <button e-click='show'>show</button>
+        <div>
+            <div x-repeat="foods" x-ignoreself>
+                <div x-ignoreself>
+                    <span>菜名：{{name}}</span> 
+                    <span>价格：{{price}}</span>
+                    <span>会员价：{{price*$$discount.data}}</span>
+                </div>
+                <div style='color:red' x-show='show'>
+                    <span>菜名：{{name}}</span> 
+                    <span>价格：{{price}}</span>
+                    <span>会员价：{{price*$$discount.data}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    nodom.newApp({
+        options:{},
+        module:{
+            el:'div',
+            data: {
+                show:0,
+                discount:{data:0.9},
+                foods: [{
+                    name: '夫妻肺片',
+                    price: 25,
+                    show:false
+                }, {
+                    name: '京酱肉丝',
+                    price: 22,
+                    show:false
+                }, {
+                    name: '糖醋里脊',
+                    price: 20,
+                    show:false
+                }, {
+                    name: '红烧茄子',
+                    price: 12,
+                    show:false
+                }, {
+                    name: '口水鸡',
+                    price: 18,
+                    show:false
+                }, {
+                    name: '水煮肉片',
+                    price: 24,
+                    show:false
+                }]
+            },
+            methods:{
+                top:function(arr){
+                    var a = [];
+                    for(let i=0;i<3;i++){
+                        a.push(arr[i]);
+                    }
+                    
+                    return a;
+                },
+                show:function(dom,model){
+                    model.data.foods[0].show = true;
+                }
+            }
+        }
+    });
+
+</script>
+
+</html>

@@ -21,10 +21,10 @@ namespace nodom {
             let oe = new Element('div');
             this.handleChildren(oe,div);
             
-            //保证模块只有一个根节点
-            if(oe.children.length===1){
-                return oe.children[0];
-            }
+            // //保证模块只有一个根节点
+            // if(oe.children.length===1){
+            //     return oe.children[0];
+            // }
             return oe;
         }
 

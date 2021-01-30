@@ -56,6 +56,11 @@ namespace nodom {
         private selector: string;
         
         /**
+         * 模块创建时执行操作
+         */
+        private createOps: Array<Function> = [];
+
+        /**
          * 首次渲染后执行操作数组
          */
         private firstRenderOps: Array < Function > = [];
@@ -150,7 +155,12 @@ namespace nodom {
             ModuleFactory.add(this);
             this.methodFactory = new MethodFactory(this);
             this.modelFactory = new ModelFactory(this);
-
+            //执行创建后操作
+            for(let foo of this.createOps){
+                foo.call(this);
+            }
+            //执行创建事件
+            this.doModuleEvent('onCreate');
             //无配置对象，不需要处理
             if(!config){
                 return;
@@ -316,6 +326,7 @@ namespace nodom {
                     this.renderTree = root;
                     //渲染
                     root.render(this, null);
+                    this.clearDontRender(root);
                     this.doModuleEvent('onBeforeRenderToHtml');
                     // 比较节点
                     root.compare(oldTree, this.renderDoms);
@@ -352,13 +363,13 @@ namespace nodom {
             //执行首次渲染前事件
             this.doRenderOp(this.beforeFirstRenderOps);
             this.doModuleEvent('onBeforeFirstRender');
-            
             //渲染树
             this.renderTree = root;
             if (this.model) {
                 root.modelId = this.model.id;
             }
             root.render(this, null);
+            this.clearDontRender(root);
             this.doModuleEvent('onBeforeFirstRenderToHTML');
             //清空子元素
             Util.empty(this.container);
@@ -450,6 +461,9 @@ namespace nodom {
                 }
                 //保存name和id映射
                 this.moduleMap.set(m.name,moduleId);
+
+                //执行无主消息检测
+                MessageQueue.move(m.name,moduleId,this.id);
             }
         }
 
@@ -457,8 +471,9 @@ namespace nodom {
          * 发送
          * @param toName 		接收模块名或模块id，如果为模块id，则直接发送，不需要转换
          * @param data 			消息内容
+         * @param type          0兄弟  1孩子 2父亲
          */
-        public send(toName:string|number, data:any) {
+        public send(toName:string|number, data:any, type?:number) {
             if(typeof toName === 'number'){
                 MessageQueue.add(this.id, toName, data);
                 return;
@@ -466,20 +481,35 @@ namespace nodom {
 
             //目标模块id
             let toId:number;
-            let m:Module = this;
-            
-            //一共需要找3级(孩子、兄弟、父模块)
-            for(let i=0;i<3 && m;i++){
-                toId = m.moduleMap.get(toName);
-                if(!toId && m.parentId){
-                    m = ModuleFactory.get(m.parentId);
-                }else{
+            //父模块id
+            let parentId;
+            let m:Module;
+            switch(type){
+                case 1:  //发送孩子
+                    m = this.getChild(toName);
+                    if(m){
+                        toId = m.id;
+                    }
+                    parentId = this.id;
                     break;
-                }
+                case 2:  //发送给父亲
+                    toId = this.parentId || 0;
+                default: //发送给兄弟
+                    parentId = this.parentId || 0
+                    //得到父模块
+                    m = ModuleFactory.get(parentId);
+                    if(m){
+                        m = m.getChild(toName);
+                        if(m){
+                            toId = m.id;
+                        }
+                    }
             }
-            
+
             if(toId){
-                MessageQueue.add(this.id, toId, data);
+                MessageQueue.add(this.id, toId, data);        
+            }else{
+                MessageQueue.add(this.id, toName, data,parentId);
             }
         }
 
@@ -493,7 +523,7 @@ namespace nodom {
                 let pmod:Module = ModuleFactory.get(this.parentId);
                 if (pmod) {
                     //父模块
-                    this.send(pmod.name, data);
+                    this.send(this.parentId, data);
                     if(pmod.children){
                         pmod.children.forEach((item) => {
                             //自己不发
@@ -502,7 +532,7 @@ namespace nodom {
                             }
                             let m:nodom.Module = ModuleFactory.get(item);
                             //兄弟模块
-                            this.send(m.name, data);
+                            this.send(m.id, data);
                         });
                     }
                 }
@@ -511,7 +541,7 @@ namespace nodom {
             if (this.children !== undefined) {
                 this.children.forEach((item) => {
                     let m:nodom.Module = ModuleFactory.get(item);
-                    this.send(m.name, data);
+                    this.send(m.id, data);
                 });
             }
         }
@@ -636,6 +666,19 @@ namespace nodom {
         }
 
         /**
+         * 添加实例化后操作
+         * @param foo  	操作方法
+         */
+        public addCreateOperation(foo:Function) {
+            if (!Util.isFunction(foo)) {
+                return;
+            }
+            if (!this.createOps.includes(foo)) {
+                this.createOps.push(foo);
+            }
+        }
+
+        /**
          * 添加渲染后执行操作
          * @param foo  	操作方法
          */
@@ -671,6 +714,31 @@ namespace nodom {
             }
         }
 
+        /**
+         * 清理不渲染节点
+         * @param dom   节点
+         */
+        clearDontRender(dom:Element){
+            for(let i=0;i<dom.children.length;i++){
+                let item = dom.children[i];
+                if(item.dontRender){
+                    dom.children.splice(i,1);
+                    return;
+                }
+                //不渲染自己，子节点前进一级
+                if(item.dontRenderSelf){
+                    let arr = [];
+                    for(let d of item.children){
+                        d.parent = dom.parent;
+                        d.parentKey = dom.parentKey;
+                        arr.push(d);
+                    }
+                    dom.children.splice.apply(dom.children,[i,1].concat(arr));
+                    continue;
+                }
+                this.clearDontRender(item);
+            }
+        }
         /**
          * 获取子孙模块
          * @param name          模块名 

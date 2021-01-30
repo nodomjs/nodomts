@@ -37,7 +37,7 @@ namespace nodom {
             if (exprStr) {
                 execStr = this.compile(exprStr);
             }
-            
+            console.log(execStr);
             if(execStr){
                 let v:string = this.fields.length>0?','+this.fields.join(','):'';
                 execStr = 'function($module' + v + '){return ' + execStr + '}';

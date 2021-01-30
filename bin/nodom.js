@@ -615,9 +615,6 @@ var nodom;
             catch (e) { }
             let oe = new nodom.Element('div');
             this.handleChildren(oe, div);
-            if (oe.children.length === 1) {
-                return oe.children[0];
-            }
             return oe;
         }
         static compileDom(ele) {
@@ -757,6 +754,7 @@ var nodom;
             }
             if (type !== undefined && dom) {
                 nodom.DirectiveManager.init(this, dom);
+                dom.addDirective(this);
             }
         }
         exec(module, dom, parent) {
@@ -846,6 +844,7 @@ var nodom;
             this.expressions = [];
             this.children = [];
             this.dontRender = false;
+            this.dontRenderSelf = false;
             this.tagName = tag;
             if (tag && tag.toLowerCase() === 'svg') {
                 this.isSvgNode = true;
@@ -858,11 +857,11 @@ var nodom;
                 return;
             }
             if (parent) {
-                this.parent = parent;
-                this.parentKey = parent.key;
                 if (!this.modelId) {
                     this.modelId = parent.modelId;
                 }
+                this.parent = parent;
+                this.parentKey = parent.key;
             }
             if (this.plugin) {
                 this.plugin.beforeRender(module, this);
@@ -1027,12 +1026,17 @@ var nodom;
         }
         clone(changeKey) {
             let dst = new Element();
-            let notCopyProps = ['parent', 'directives', 'props', 'exprProps', 'events', 'children'];
+            let notCopyProps = ['parent', 'directives', 'children'];
             nodom.Util.getOwnProps(this).forEach((p) => {
                 if (notCopyProps.includes(p)) {
                     return;
                 }
-                dst[p] = this[p];
+                if (typeof this[p] === 'object') {
+                    dst[p] = nodom.Util.clone(this[p]);
+                }
+                else {
+                    dst[p] = this[p];
+                }
             });
             if (changeKey) {
                 dst.key = nodom.Util.genId() + '';
@@ -1050,43 +1054,6 @@ var nodom;
                     d = d.clone(dst);
                 }
                 dst.directives.push(d);
-            }
-            nodom.Util.getOwnProps(this.props).forEach((k) => {
-                dst.props[k] = this.props[k];
-            });
-            nodom.Util.getOwnProps(this.exprProps).forEach((k) => {
-                if (changeKey) {
-                    let item = this.exprProps[k];
-                    if (Array.isArray(item)) {
-                        let arr = [];
-                        for (let o of item) {
-                            arr.push(o instanceof nodom.Expression ? o.clone() : o);
-                        }
-                        dst.exprProps[k] = arr;
-                    }
-                    else if (item instanceof nodom.Expression) {
-                        dst.exprProps[k] = item.clone();
-                    }
-                    else {
-                        dst.exprProps[k] = item;
-                    }
-                }
-                else {
-                    dst.exprProps[k] = this.exprProps[k];
-                }
-            });
-            for (let key of this.events.keys()) {
-                let evt = this.events.get(key);
-                if (nodom.Util.isArray(evt)) {
-                    let a = [];
-                    for (let e of evt) {
-                        a.push(e.clone());
-                    }
-                    dst.events.set(key, a);
-                }
-                else {
-                    dst.events.set(key, evt.clone());
-                }
             }
             for (let c of this.children) {
                 dst.add(c.clone(changeKey));
@@ -1147,8 +1114,8 @@ var nodom;
             if (!this.tagName && !el) {
                 return;
             }
-            for (let key of this.assets.keys()) {
-                el[key] = this.assets.get(key);
+            for (let key of this.assets) {
+                el[key[0]] = key[1];
             }
         }
         handleTextContent(module) {
@@ -1210,7 +1177,7 @@ var nodom;
             }
         }
         hasDirective(directiveType) {
-            return this.directives.find(item => item.type.name === directiveType) !== undefined;
+            return this.directives.findIndex(item => item.type.name === directiveType) !== -1;
         }
         getDirective(directiveType) {
             return this.directives.find(item => item.type.name === directiveType);
@@ -1505,6 +1472,7 @@ var nodom;
                 if (exprStr) {
                     execStr = this.compile(exprStr);
                 }
+                console.log(execStr);
                 if (execStr) {
                     let v = this.fields.length > 0 ? ',' + this.fields.join(',') : '';
                     execStr = 'function($module' + v + '){return ' + execStr + '}';
@@ -1969,17 +1937,34 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Message {
-        constructor(fromModule, toModule, content) {
+        constructor(fromModule, toModule, content, parentId) {
             this.fromModule = fromModule;
             this.toModule = toModule;
             this.content = content;
+            this.parentId = parentId;
         }
     }
     nodom.Message = Message;
     let MessageQueue = (() => {
         class MessageQueue {
-            static add(from, to, data) {
-                this.messages.push(new Message(from, to, data));
+            static add(from, to, data, parentId) {
+                if (parentId) {
+                    this.noOwnerMessages.push(new Message(from, to, data, parentId));
+                }
+                else {
+                    this.messages.push(new Message(from, to, data));
+                }
+            }
+            static move(moduleName, moduleId, parentId) {
+                let index = this.noOwnerMessages.findIndex(item => item.parentId === parentId && moduleName === item.toModule);
+                if (index === -1) {
+                    return;
+                }
+                let msg = this.noOwnerMessages[index];
+                this.noOwnerMessages.splice(index, 1);
+                msg.toModule = moduleId;
+                delete msg.parentId;
+                this.messages.push(msg);
             }
             static handleQueue() {
                 for (let i = 0; i < this.messages.length; i++) {
@@ -1993,6 +1978,7 @@ var nodom;
             }
         }
         MessageQueue.messages = [];
+        MessageQueue.noOwnerMessages = [];
         return MessageQueue;
     })();
     nodom.MessageQueue = MessageQueue;
@@ -2296,6 +2282,7 @@ var nodom;
         constructor(config) {
             this.firstRender = true;
             this.children = [];
+            this.createOps = [];
             this.firstRenderOps = [];
             this.beforeFirstRenderOps = [];
             this.renderOps = [];
@@ -2317,6 +2304,10 @@ var nodom;
             nodom.ModuleFactory.add(this);
             this.methodFactory = new nodom.MethodFactory(this);
             this.modelFactory = new nodom.ModelFactory(this);
+            for (let foo of this.createOps) {
+                foo.call(this);
+            }
+            this.doModuleEvent('onCreate');
             if (!config) {
                 return;
             }
@@ -2449,6 +2440,7 @@ var nodom;
                     let oldTree = this.renderTree;
                     this.renderTree = root;
                     root.render(this, null);
+                    this.clearDontRender(root);
                     this.doModuleEvent('onBeforeRenderToHtml');
                     root.compare(oldTree, this.renderDoms);
                     for (let i = this.renderDoms.length - 1; i >= 0; i--) {
@@ -2476,6 +2468,7 @@ var nodom;
                 root.modelId = this.model.id;
             }
             root.render(this, null);
+            this.clearDontRender(root);
             this.doModuleEvent('onBeforeFirstRenderToHTML');
             nodom.Util.empty(this.container);
             root.renderToHtml(this, { type: 'fresh' });
@@ -2526,40 +2519,56 @@ var nodom;
                     m.parentId = this.id;
                 }
                 this.moduleMap.set(m.name, moduleId);
+                nodom.MessageQueue.move(m.name, moduleId, this.id);
             }
         }
-        send(toName, data) {
+        send(toName, data, type) {
             if (typeof toName === 'number') {
                 nodom.MessageQueue.add(this.id, toName, data);
                 return;
             }
             let toId;
-            let m = this;
-            for (let i = 0; i < 3 && m; i++) {
-                toId = m.moduleMap.get(toName);
-                if (!toId && m.parentId) {
-                    m = nodom.ModuleFactory.get(m.parentId);
-                }
-                else {
+            let parentId;
+            let m;
+            switch (type) {
+                case 1:
+                    m = this.getChild(toName);
+                    if (m) {
+                        toId = m.id;
+                    }
+                    parentId = this.id;
                     break;
-                }
+                case 2:
+                    toId = this.parentId || 0;
+                default:
+                    parentId = this.parentId || 0;
+                    m = nodom.ModuleFactory.get(parentId);
+                    if (m) {
+                        m = m.getChild(toName);
+                        if (m) {
+                            toId = m.id;
+                        }
+                    }
             }
             if (toId) {
                 nodom.MessageQueue.add(this.id, toId, data);
+            }
+            else {
+                nodom.MessageQueue.add(this.id, toName, data, parentId);
             }
         }
         broadcast(data) {
             if (this.parentId) {
                 let pmod = nodom.ModuleFactory.get(this.parentId);
                 if (pmod) {
-                    this.send(pmod.name, data);
+                    this.send(this.parentId, data);
                     if (pmod.children) {
                         pmod.children.forEach((item) => {
                             if (item === this.id) {
                                 return;
                             }
                             let m = nodom.ModuleFactory.get(item);
-                            this.send(m.name, data);
+                            this.send(m.id, data);
                         });
                     }
                 }
@@ -2567,7 +2576,7 @@ var nodom;
             if (this.children !== undefined) {
                 this.children.forEach((item) => {
                     let m = nodom.ModuleFactory.get(item);
-                    this.send(m.name, data);
+                    this.send(m.id, data);
                 });
             }
         }
@@ -2649,6 +2658,14 @@ var nodom;
                 this.beforeFirstRenderOps.push(foo);
             }
         }
+        addCreateOperation(foo) {
+            if (!nodom.Util.isFunction(foo)) {
+                return;
+            }
+            if (!this.createOps.includes(foo)) {
+                this.createOps.push(foo);
+            }
+        }
         addRenderOperation(foo) {
             if (!nodom.Util.isFunction(foo)) {
                 return;
@@ -2668,6 +2685,26 @@ var nodom;
         doRenderOp(renderOps) {
             for (; renderOps.length > 0;) {
                 nodom.Util.apply(renderOps.shift(), this, []);
+            }
+        }
+        clearDontRender(dom) {
+            for (let i = 0; i < dom.children.length; i++) {
+                let item = dom.children[i];
+                if (item.dontRender) {
+                    dom.children.splice(i, 1);
+                    return;
+                }
+                if (item.dontRenderSelf) {
+                    let arr = [];
+                    for (let d of item.children) {
+                        d.parent = dom.parent;
+                        d.parentKey = dom.parentKey;
+                        arr.push(d);
+                    }
+                    dom.children.splice.apply(dom.children, [i, 1].concat(arr));
+                    continue;
+                }
+                this.clearDontRender(item);
             }
         }
         getChild(name, descendant) {
@@ -2915,7 +2952,8 @@ var nodom;
             if (eventStr) {
                 let tp = typeof eventStr;
                 if (tp === 'string') {
-                    eventStr.split(':').forEach((item, i) => {
+                    let eStr = eventStr.trim();
+                    eStr.split(':').forEach((item, i) => {
                         item = item.trim();
                         if (i === 0) {
                             this.handler = item;
@@ -4406,6 +4444,10 @@ var nodom;
         dom.setProp('role', 'module');
     }, (directive, dom, module, parent) => {
         nodom.Router.routerKeyMap.set(module.id, dom.key);
+    });
+    nodom.DirectiveManager.addType('ignoreself', 10, (directive, dom) => {
+        dom.dontRenderSelf = true;
+    }, (directive, dom, module, parent) => {
     });
 })(nodom || (nodom = {}));
 var nodom;
