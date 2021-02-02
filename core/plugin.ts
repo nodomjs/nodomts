@@ -44,7 +44,9 @@ namespace nodom{
          */
         extraDataName:string;
 
-        constructor(params:HTMLElement|object){}
+        constructor(params:HTMLElement|object){
+            
+        }
         
         /**
          * 前置渲染方法(dom render方法中获取modelId和parentKey后执行)

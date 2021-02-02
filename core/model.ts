@@ -77,10 +77,22 @@ namespace nodom {
 
         /**
          * 设置属性，可能属性之前不存在，用于在初始化不存在的属性增强model能力
+         * 如果只有一个参数且为对象，则更新多个数据项
          * @param key       键，可以带“.”，如a, a.b.c
          * @param value     对应值
          */
         public set(key:string, value:any) {
+            if(value === undefined){ 
+                if(typeof key === 'object'){ //修改所有值
+                    //增加set get方法
+                    this.addSetterGetter(key);
+                    //替换model.data中的值
+                    for(let o in <object>key){
+                        this.data[o] = key[o];
+                    }
+                }
+                return;
+            }
             let fn;
             let index:number = key.lastIndexOf('.');
             let model:Model;

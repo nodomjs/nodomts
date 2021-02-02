@@ -153,7 +153,12 @@ var nodom;
         });
     }
     nodom.request = request;
+    function a(params) {
+        return newApp(params);
+    }
+    nodom.a = a;
 })(nodom || (nodom = {}));
+var $ = nodom;
 var nodom;
 (function (nodom) {
     let Util = (() => {
@@ -1472,7 +1477,6 @@ var nodom;
                 if (exprStr) {
                     execStr = this.compile(exprStr);
                 }
-                console.log(execStr);
                 if (execStr) {
                     let v = this.fields.length > 0 ? ',' + this.fields.join(',') : '';
                     execStr = 'function($module' + v + '){return ' + execStr + '}';
@@ -2030,6 +2034,15 @@ var nodom;
             }
         }
         set(key, value) {
+            if (value === undefined) {
+                if (typeof key === 'object') {
+                    this.addSetterGetter(key);
+                    for (let o in key) {
+                        this.data[o] = key[o];
+                    }
+                }
+                return;
+            }
             let fn;
             let index = key.lastIndexOf('.');
             let model;
@@ -3768,7 +3781,6 @@ var nodom;
             let paramIndex = 0;
             let retArr = [];
             let fullPath = '';
-            let showPath = '';
             let preNode = this.root;
             for (let i = 0; i < pathArr.length; i++) {
                 let v = pathArr[i].trim();
@@ -3787,6 +3799,7 @@ var nodom;
                         node.data = {};
                         preNode = node;
                         find = true;
+                        paramIndex = 0;
                         break;
                     }
                 }
@@ -3804,6 +3817,7 @@ var nodom;
             return retArr;
         }
     }
+    nodom.RouterTree = RouterTree;
     window.addEventListener('popstate', function (e) {
         const state = history.state;
         if (!state) {
@@ -4782,7 +4796,8 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Plugin {
-        constructor(params) { }
+        constructor(params) {
+        }
         beforeRender(module, uidom) {
             this.element = uidom;
             this.moduleId = module.id;

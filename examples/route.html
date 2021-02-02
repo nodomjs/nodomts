@@ -8,24 +8,28 @@
     <script type="text/javascript" src="../bin/nodom.js"></script>
     <script src='config/route.js'></script>
     <style>
-        .cls1,.colorimp {
-            color: red;
-        }
-
-        .cls2 {
-            font-size: 20pt;
-        }
+        
     </style>
 </head>
 
 <body>
-    <div></div>
+    <div>
+        hello
+    </div>
 </body>
 <script>
+    
     nodom.newApp({
         module:{
             el: 'div',
-            class:'MdlRouteMain'
+            // class:'MdlRouteMain',
+            methods:{
+                onBeforeFirstRender:function(){
+                    console.log('ddd')
+                    console.log($.RouterTree.get('/router/a/b/route1/aa/bb'));
+    
+                }
+            }
         }
     });
 </script>

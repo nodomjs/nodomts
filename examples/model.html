@@ -20,6 +20,9 @@
 
 <body>
     <div class="view">
+        <button e-click='changename'>change</button>
+        <div>{{name}}</div>
+        <div x-repeat='rows'>{{name}}</div>
         <div >{{x.y.z}}</div>
         <div class="tip">多层model</div>
         <div class="code">
@@ -65,6 +68,15 @@
                             food4: { name: '番茄蛋汤', price: 8 }
                         }
                     }
+                }
+            },
+            methods:{
+                changename(dom,model){
+                    model.set({
+                        name:'yang',
+                        rows:[{name:'lei'},{name:'haha'}]
+                    });
+                    console.log(model.data);
                 }
             }
         }

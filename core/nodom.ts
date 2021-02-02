@@ -201,4 +201,11 @@ namespace nodom{
             }
         });
     }
+
+    export function a(params){
+        return newApp(params);
+    }
 }
+//用别名代替nodom
+var $ = nodom;
+

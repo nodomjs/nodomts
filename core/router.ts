@@ -568,7 +568,7 @@ namespace nodom {
     /**
      * 路由树类
      */
-    class RouterTree {
+    export class RouterTree {
 		static root:Route;
         /**
          * 添加route到路由树
@@ -636,7 +636,6 @@ namespace nodom {
                 route.path = prePath;
                 node.addChild(route);
             }
-
             return true;
         }
 
@@ -654,7 +653,6 @@ namespace nodom {
             let paramIndex:number = 0;      //参数索引
             let retArr:Array<Route> = [];
             let fullPath:string = '';       //完整路径
-            let showPath:string = '';       //显示路径
             let preNode:Route = this.root;  //前一个节点
 
             for (let i = 0; i < pathArr.length; i++) {
@@ -678,9 +676,12 @@ namespace nodom {
                         node.data = {};
                         preNode = node;
                         find = true;
+                        //参数索引置0
+                        paramIndex = 0;
                         break;
                     }
                 }
+                
                 //路径叠加
                 fullPath += '/' + v;
                 //不是孩子节点,作为参数
