@@ -41,8 +41,9 @@ namespace nodom {
          * @param value 	指令值
          * @param dom       指令对应的dom
          * @param filters   过滤器字符串或过滤器对象,如果为过滤器串，则以｜分割
+         * @param notSort   不排序
          */
-        constructor(type:string, value:string,dom?:Element, filters?:string|Filter[]) {
+        constructor(type:string, value:string,dom?:Element, filters?:string|Filter[],notSort?:boolean) {
             this.id = Util.genId();
             this.type = DirectiveManager.getType(type);
             if (Util.isString(value)) {
@@ -69,7 +70,7 @@ namespace nodom {
             }
             if (type !== undefined && dom) {
                 DirectiveManager.init(this,dom);
-                dom.addDirective(this);
+                dom.addDirective(this,!notSort);
             }
         }
 

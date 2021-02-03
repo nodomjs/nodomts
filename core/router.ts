@@ -130,7 +130,7 @@ namespace nodom {
             }
             
             let showPath:string; 				//实际要显示的路径
-
+            
             if (diff[2].length === 0) { //路由相同，参数不同
                 let route:Route = diff[0];
                 let proute:Route = diff[3];
@@ -149,6 +149,7 @@ namespace nodom {
                 //加载模块
                 for (let ii = 0,index=0,len=diff[2].length; ii < len; ii++) {
                     let route = diff[2][ii];
+
                     //路由不存在或路由没有模块（空路由）
                     if (!route || !route.module) {
                         continue;
@@ -200,7 +201,6 @@ namespace nodom {
                             route.setLinkActive();
                         });
                     }
-                    
                     //设置路由参数
                     setRouteParamToModel(route);
                     //默认全局路由enter事件
@@ -415,23 +415,19 @@ namespace nodom {
             }
             //遍历router active view，设置或取消active class
             domArr.forEach((item) => {
-                let dom = module.renderTree.query(item);
+                let dom = module.getElement(item);
                 if (!dom) {
                     return;
                 }
                 // dom route 路径
                 let domPath:string = dom.getProp('path');
-                if (dom.hasProp('active',true)) { // active属性为表达式，修改字段值
+                if (dom.hasProp('activename')) { // active属性为表达式，修改字段值
+                    
                     let model = module.modelFactory.get(dom.modelId);
                     if (!model) {
                         return;
                     }
-                    let expr = dom.getProp('active',true)[0];
-                    
-                    if (!expr) {
-                        return;
-                    }
-                    let field = expr.fields[0];
+                    let field = dom.getProp('activename');
                         
                     //路径相同或参数路由路径前部分相同则设置active 为true，否则为false
                     if (path === domPath || path.indexOf(domPath + '/') === 0) {
@@ -439,14 +435,15 @@ namespace nodom {
                     } else {
                         model.data[field] = false;
                     }
-                } else if (dom.hasProp('active')) { //active值属性
-                    //路径相同或参数路由路径前部分相同则设置active 为true，否则为false
-                    if (path === domPath || path.indexOf(domPath + '/') === 0) {
-                        dom.setProp('active',true);
-                    } else {
-                        dom.set('active',false);
-                    }
                 }
+                // } else if (dom.hasProp('active')) { //active值属性
+                //     //路径相同或参数路由路径前部分相同则设置active 为true，否则为false
+                //     if (path === domPath || path.indexOf(domPath + '/') === 0) {
+                //         dom.setProp('active',true);
+                //     } else {
+                //         dom.set('active',false);
+                //     }
+                // }
             });
         }
     }
@@ -568,7 +565,7 @@ namespace nodom {
     /**
      * 路由树类
      */
-    export class RouterTree {
+    class RouterTree {
 		static root:Route;
         /**
          * 添加route到路由树

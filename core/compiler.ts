@@ -97,17 +97,19 @@ namespace nodom {
          */
         public static handleAttributes(oe:Element,el:HTMLElement){
             //遍历attributes
+            //先处理普通属性，再处理指令
+            let directives = [];
             for (let i = 0; i < el.attributes.length; i++) {
                 let attr = el.attributes[i];
-                let v = attr.value.trim();
-                if (attr.name.startsWith('x-')) { //指令
-                    //添加到dom指令集
-                    oe.addDirective(new Directive(attr.name.substr(2), v,oe),true);
+                
+                if (attr.name.startsWith('x-')) { //指令，先存，最后处理
+                    directives.push(attr);
                 } else if (attr.name.startsWith('e-')) { //事件
                     let en = attr.name.substr(2);
                     oe.addEvent(new NodomEvent(en, attr.value.trim()));
                 } else {
                     let isExpr:boolean = false;
+                    let v = attr.value.trim();
                     if (v !== '') {
                         let ra = this.compileExpression(v);
                         if (Util.isArray(ra)) {
@@ -119,6 +121,17 @@ namespace nodom {
                         oe.setProp(attr.name, v);
                     }
                 }
+            }
+            
+            //处理属性
+            for(let attr of directives){
+                new Directive(attr.name.substr(2), attr.value.trim(),oe,null,true);
+            }
+            if(directives.length>1){
+                //指令排序
+                oe.directives.sort((a, b) => {
+                    return a.type.prio - b.type.prio;
+                });    
             }
         }
 

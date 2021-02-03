@@ -8,7 +8,9 @@
     <script type="text/javascript" src="../bin/nodom.js"></script>
     <script src='config/route.js'></script>
     <style>
-        
+        .colorimp{
+            color:red;
+        }
     </style>
 </head>
 
@@ -22,14 +24,14 @@
     nodom.newApp({
         module:{
             el: 'div',
-            // class:'MdlRouteMain',
-            methods:{
-                onBeforeFirstRender:function(){
-                    console.log('ddd')
-                    console.log($.RouterTree.get('/router/a/b/route1/aa/bb'));
+            class:'MdlRouteMain',
+            // methods:{
+            //     onBeforeFirstRender:function(){
+            //         console.log('ddd')
+            //         console.log($.RouterTree.get('/router/a/b/route1/aa/bb'));
     
-                }
-            }
+            //     }
+            // }
         }
     });
 </script>

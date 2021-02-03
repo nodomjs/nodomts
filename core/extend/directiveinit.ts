@@ -629,15 +629,25 @@ namespace nodom {
                 dom.setProp('href','javascript:void(0)');
             }
             // 表达式处理
-            if (typeof value === 'string' && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
+            if (typeof value === 'string' && /^\{\{.+\}\}$/.test(value)) {
                 value = new Expression(value.substring(2, value.length - 2));
-            } 
+            }
+            
             //表达式，则需要设置为exprProp
             if(value instanceof Expression){
                 dom.setProp('path',value,true);
                 directive.value = value;
             }else{
                 dom.setProp('path',value);
+            }
+
+            //处理active 属性
+            if(dom.hasProp('activename')){
+                let an = dom.getProp('activename');
+                dom.setProp('active',new Expression(an),true);
+                if(dom.hasProp('activeclass')){
+                    new Directive('class',"{" + dom.getProp('activeclass') + ":'"+ an + "'}",dom);
+                }
             }
             
             //添加click事件
@@ -653,7 +663,7 @@ namespace nodom {
         },
 
         (directive:Directive, dom:Element, module:Module, parent:Element) => {
-            if (dom.hasProp('active')) {
+            if (dom.hasProp('activename')) {
                 //添加到router的activeDomMap
                 let domArr:string[] = Router.activeDomMap.get(module.id);
                 if(!domArr){
@@ -669,9 +679,8 @@ namespace nodom {
             if (!path || path === Router.currentPath) {
                 return;
             }
-            
             //active需要跳转路由（当前路由为该路径对应的父路由）
-            if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
+            if (dom.hasProp('active') && dom.getProp('active') && (!Router.currentPath || path.indexOf(Router.currentPath) === 0)) {
                 //可能router尚未渲染出来
                 setTimeout(()=>{Router.go(path)},0);
             }

@@ -666,11 +666,11 @@ var nodom;
             return Reflect.construct(de, [el]).element;
         }
         static handleAttributes(oe, el) {
+            let directives = [];
             for (let i = 0; i < el.attributes.length; i++) {
                 let attr = el.attributes[i];
-                let v = attr.value.trim();
                 if (attr.name.startsWith('x-')) {
-                    oe.addDirective(new nodom.Directive(attr.name.substr(2), v, oe), true);
+                    directives.push(attr);
                 }
                 else if (attr.name.startsWith('e-')) {
                     let en = attr.name.substr(2);
@@ -678,6 +678,7 @@ var nodom;
                 }
                 else {
                     let isExpr = false;
+                    let v = attr.value.trim();
                     if (v !== '') {
                         let ra = this.compileExpression(v);
                         if (nodom.Util.isArray(ra)) {
@@ -689,6 +690,14 @@ var nodom;
                         oe.setProp(attr.name, v);
                     }
                 }
+            }
+            for (let attr of directives) {
+                new nodom.Directive(attr.name.substr(2), attr.value.trim(), oe, null, true);
+            }
+            if (directives.length > 1) {
+                oe.directives.sort((a, b) => {
+                    return a.type.prio - b.type.prio;
+                });
             }
         }
         static handleChildren(oe, el) {
@@ -731,7 +740,7 @@ var nodom;
 var nodom;
 (function (nodom) {
     class Directive {
-        constructor(type, value, dom, filters) {
+        constructor(type, value, dom, filters, notSort) {
             this.id = nodom.Util.genId();
             this.type = nodom.DirectiveManager.getType(type);
             if (nodom.Util.isString(value)) {
@@ -759,7 +768,7 @@ var nodom;
             }
             if (type !== undefined && dom) {
                 nodom.DirectiveManager.init(this, dom);
-                dom.addDirective(this);
+                dom.addDirective(this, !notSort);
             }
         }
         exec(module, dom, parent) {
@@ -2696,6 +2705,7 @@ var nodom;
             }
         }
         doRenderOp(renderOps) {
+            console.log(renderOps);
             for (; renderOps.length > 0;) {
                 nodom.Util.apply(renderOps.shift(), this, []);
             }
@@ -3629,34 +3639,22 @@ var nodom;
                     return;
                 }
                 domArr.forEach((item) => {
-                    let dom = module.renderTree.query(item);
+                    let dom = module.getElement(item);
                     if (!dom) {
                         return;
                     }
                     let domPath = dom.getProp('path');
-                    if (dom.hasProp('active', true)) {
+                    if (dom.hasProp('activename')) {
                         let model = module.modelFactory.get(dom.modelId);
                         if (!model) {
                             return;
                         }
-                        let expr = dom.getProp('active', true)[0];
-                        if (!expr) {
-                            return;
-                        }
-                        let field = expr.fields[0];
+                        let field = dom.getProp('activename');
                         if (path === domPath || path.indexOf(domPath + '/') === 0) {
                             model.data[field] = true;
                         }
                         else {
                             model.data[field] = false;
-                        }
-                    }
-                    else if (dom.hasProp('active')) {
-                        if (path === domPath || path.indexOf(domPath + '/') === 0) {
-                            dom.setProp('active', true);
-                        }
-                        else {
-                            dom.set('active', false);
                         }
                     }
                 });
@@ -3817,7 +3815,6 @@ var nodom;
             return retArr;
         }
     }
-    nodom.RouterTree = RouterTree;
     window.addEventListener('popstate', function (e) {
         const state = history.state;
         if (!state) {
@@ -4417,7 +4414,7 @@ var nodom;
         if (dom.tagName === 'A') {
             dom.setProp('href', 'javascript:void(0)');
         }
-        if (typeof value === 'string' && value.substr(0, 2) === '{{' && value.substr(value.length - 2, 2) === '}}') {
+        if (typeof value === 'string' && /^\{\{.+\}\}$/.test(value)) {
             value = new nodom.Expression(value.substring(2, value.length - 2));
         }
         if (value instanceof nodom.Expression) {
@@ -4427,6 +4424,13 @@ var nodom;
         else {
             dom.setProp('path', value);
         }
+        if (dom.hasProp('activename')) {
+            let an = dom.getProp('activename');
+            dom.setProp('active', new nodom.Expression(an), true);
+            if (dom.hasProp('activeclass')) {
+                new nodom.Directive('class', "{" + dom.getProp('activeclass') + ":'" + an + "'}", dom);
+            }
+        }
         dom.addEvent(new nodom.NodomEvent('click', (dom, model, module, e) => {
             let path = dom.getProp('path');
             if (nodom.Util.isEmpty(path)) {
@@ -4435,7 +4439,7 @@ var nodom;
             nodom.Router.go(path);
         }));
     }, (directive, dom, module, parent) => {
-        if (dom.hasProp('active')) {
+        if (dom.hasProp('activename')) {
             let domArr = nodom.Router.activeDomMap.get(module.id);
             if (!domArr) {
                 nodom.Router.activeDomMap.set(module.id, [dom.key]);
@@ -4450,7 +4454,7 @@ var nodom;
         if (!path || path === nodom.Router.currentPath) {
             return;
         }
-        if (dom.hasProp('active') && dom.getProp('active') !== 'false' && (!nodom.Router.currentPath || path.indexOf(nodom.Router.currentPath) === 0)) {
+        if (dom.hasProp('active') && dom.getProp('active') && (!nodom.Router.currentPath || path.indexOf(nodom.Router.currentPath) === 0)) {
             setTimeout(() => { nodom.Router.go(path); }, 0);
         }
     });
