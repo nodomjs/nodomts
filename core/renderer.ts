@@ -35,7 +35,7 @@ namespace nodom {
         /**
          * 队列渲染
          */
-        public static async render() {
+        public static render() {
             //调用队列渲染
             for (let i=0; i<this.waitList.length; i++) {
                 let m = ModuleFactory.get(this.waitList[i]);

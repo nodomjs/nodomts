@@ -61,26 +61,6 @@ namespace nodom {
         private createOps: Array<Function> = [];
 
         /**
-         * 首次渲染后执行操作数组
-         */
-        private firstRenderOps: Array < Function > = [];
-        
-        /**
-         * 首次渲染前执行操作数组
-         */
-        private beforeFirstRenderOps: Array < Function > = [];
-        
-        /**
-         * 每次渲染后执行操作数组
-         */
-        private renderOps:Array<Function> = [];
-
-        /**
-         * 每次渲染前执行操作数组
-         */
-        private beforeRenderOps:Array<Function> = [];
-
-        /**
          * 状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)
          */
         public state: number = 0;
@@ -187,7 +167,7 @@ namespace nodom {
         /**
          * 初始化模块（加载和编译）
          */
-        public async init():Promise<any> {
+        private async init():Promise<any> {
             let config = this.initConfig;
             let urlArr:Array<object> = []; //请求url数组
             let cssPath:string = Application.getPath('css');
@@ -317,7 +297,6 @@ namespace nodom {
                     this.doFirstRender(root);
                 }
             } else { //增量渲染
-                this.doRenderOp(this.beforeRenderOps);
                 //执行每次渲染前事件
                 this.doModuleEvent('onBeforeRender');
                 if (this.model) {
@@ -346,10 +325,7 @@ namespace nodom {
                 }
                 //执行每次渲染后事件
                 this.doModuleEvent('onRender');
-                //执行渲染后操作
-                this.doRenderOp(this.renderOps);
             }
-
             //数组还原
             this.renderDoms = [];
             return true;
@@ -360,8 +336,6 @@ namespace nodom {
          * @param root 	根虚拟dom
          */
         private doFirstRender(root:Element) {
-            //执行首次渲染前事件
-            this.doRenderOp(this.beforeFirstRenderOps);
             this.doModuleEvent('onBeforeFirstRender');
             //渲染树
             this.renderTree = root;
@@ -379,8 +353,6 @@ namespace nodom {
             delete this.firstRender;
             //执行首次渲染后事件
             this.doModuleEvent('onFirstRender');
-            //执行首次渲染后操作队列
-            this.doRenderOp(this.firstRenderOps);
         }
 
         /**
@@ -572,10 +544,10 @@ namespace nodom {
             Renderer.add(this);
             //孩子节点激活
             if (Util.isArray(this.children)) {
-                this.children.forEach((item) => {
+                this.children.forEach(async (item) => {
                     let m:Module = ModuleFactory.get(item);
                     if(m){
-                        m.active();
+                        await m.active();
                     }
                 });
             }
@@ -640,32 +612,6 @@ namespace nodom {
         }
 
         /**
-         * 添加首次渲染后执行操作
-         * @param foo  	操作方法
-         */
-        public addFirstRenderOperation(foo:Function) {
-            if (!Util.isFunction(foo)) {
-                return;
-            }
-            if (this.firstRenderOps.indexOf(foo) === -1) {
-                this.firstRenderOps.push(foo);
-            }
-        }
-
-        /**
-         * 添加首次渲染前执行操作
-         * @param foo  	操作方法
-         */
-        public addBeforeFirstRenderOperation(foo:Function) {
-            if (!Util.isFunction(foo)) {
-                return;
-            }
-            if (!this.beforeFirstRenderOps.includes(foo)) {
-                this.beforeFirstRenderOps.push(foo);
-            }
-        }
-
-        /**
          * 添加实例化后操作
          * @param foo  	操作方法
          */
@@ -675,42 +621,6 @@ namespace nodom {
             }
             if (!this.createOps.includes(foo)) {
                 this.createOps.push(foo);
-            }
-        }
-
-        /**
-         * 添加渲染后执行操作
-         * @param foo  	操作方法
-         */
-        public addRenderOperation(foo:Function) {
-            if (!Util.isFunction(foo)) {
-                return;
-            }
-            if (!this.renderOps.includes(foo)) {
-                this.renderOps.push(foo);
-            }
-        }
-
-        /**
-         * 添加渲染前执行操作
-         * @param foo  	操作方法
-         */
-        public addBeforeRenderOperation(foo:Function) {
-            if (!Util.isFunction(foo)) {
-                return;
-            }
-            if (!this.beforeRenderOps.includes(foo)) {
-                this.beforeRenderOps.push(foo);
-            }
-        }
-
-        /**
-         * 执行渲染相关附加操作
-         * @param renderOps 
-         */
-        private doRenderOp(renderOps:Function[]){
-            for(;renderOps.length>0;){
-                Util.apply(renderOps.shift(), this, []);
             }
         }
 

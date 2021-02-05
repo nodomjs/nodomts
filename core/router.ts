@@ -148,7 +148,7 @@ namespace nodom {
             } else { //路由不同
                 //加载模块
                 for (let ii = 0,index=0,len=diff[2].length; ii < len; ii++) {
-                    let route = diff[2][ii];
+                    let route:Route = diff[2][ii];
 
                     //路由不存在或路由没有模块（空路由）
                     if (!route || !route.module) {
@@ -183,24 +183,12 @@ namespace nodom {
                     }
                     //把此模块添加到父模块
                     parentModule.addChild(module.id);
+                    module.setContainerKey(routerKey);
+                    //激活模块
+                    await module.active();
+                    //设置active项激活
+                    route.setLinkActive();
                     
-                    if(index++ === 0){ //第一个的父模块为已渲染或根模块
-                        module.setContainerKey(routerKey);
-                        //激活模块
-                        await module.active();
-                        route.setLinkActive();
-                    }else{   //非第一个需要等待父模块渲染结束
-                        //添加父模块渲染后操作
-                        parentModule.addFirstRenderOperation(async function(){
-                            //this指向parentModule
-                            let routerKey = Router.routerKeyMap.get(this.id);
-                            if(routerKey){
-                                module.setContainerKey(routerKey);
-                                await module.active();
-                            }
-                            route.setLinkActive();
-                        });
-                    }
                     //设置路由参数
                     setRouteParamToModel(route);
                     //默认全局路由enter事件
@@ -422,28 +410,18 @@ namespace nodom {
                 // dom route 路径
                 let domPath:string = dom.getProp('path');
                 if (dom.hasProp('activename')) { // active属性为表达式，修改字段值
-                    
                     let model = module.modelFactory.get(dom.modelId);
                     if (!model) {
                         return;
                     }
                     let field = dom.getProp('activename');
-                        
                     //路径相同或参数路由路径前部分相同则设置active 为true，否则为false
                     if (path === domPath || path.indexOf(domPath + '/') === 0) {
-                        model.data[field] = true;
+                        model.set(field,true);
                     } else {
-                        model.data[field] = false;
+                        model.set(field,false);
                     }
                 }
-                // } else if (dom.hasProp('active')) { //active值属性
-                //     //路径相同或参数路由路径前部分相同则设置active 为true，否则为false
-                //     if (path === domPath || path.indexOf(domPath + '/') === 0) {
-                //         dom.setProp('active',true);
-                //     } else {
-                //         dom.set('active',false);
-                //     }
-                // }
             });
         }
     }

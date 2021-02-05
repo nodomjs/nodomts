@@ -34,7 +34,7 @@ namespace nodom {
             directive.extra = {};
         },
 
-        (directive: Directive, dom: Element, module: Module, parent: Element) => {
+        async (directive: Directive, dom: Element, module: Module, parent: Element) => {
             const ext = directive.extra;
             let needNew:boolean = ext.moduleId === undefined;
             let subMdl:Module;
@@ -45,25 +45,21 @@ namespace nodom {
             }
             
             if(needNew){
-                ModuleFactory.getInstance(directive.value,dom.getProp('modulename'),dom.getProp('data'))
-                    .then(
-                        (m:Module)=>{
-                            if(m){
-                                //保存绑定moduleid
-                                m.setContainerKey(dom.key);
-                                //修改virtualdom的module指令附加参数moduleId
-                                let dom1:Element = module.getElement(dom.key,true);
-                                if(dom1){
-                                    let dir:Directive = dom1.getDirective('module');
-                                    dir.extra.moduleId = m.id;
-                                }
-                                module.addChild(m.id);
-                                m.active();
-                            }
-                        }
-                    );
+                let m:Module = await ModuleFactory.getInstance(directive.value,dom.getProp('modulename'),dom.getProp('data'));
+                if(m){
+                    //保存绑定moduleid
+                    m.setContainerKey(dom.key);
+                    //修改virtualdom的module指令附加参数moduleId
+                    let dom1:Element = module.getElement(dom.key,true);
+                    if(dom1){
+                        let dir:Directive = dom1.getDirective('module');
+                        dir.extra.moduleId = m.id;
+                    }
+                    module.addChild(m.id);
+                    await m.active();
+                }
             }else if(subMdl && subMdl.state !== 3){
-                subMdl.active();
+                await subMdl.active();
             }
         }
     );
@@ -640,7 +636,6 @@ namespace nodom {
             }else{
                 dom.setProp('path',value);
             }
-
             //处理active 属性
             if(dom.hasProp('activename')){
                 let an = dom.getProp('activename');
@@ -663,19 +658,16 @@ namespace nodom {
         },
 
         (directive:Directive, dom:Element, module:Module, parent:Element) => {
-            if (dom.hasProp('activename')) {
-                //添加到router的activeDomMap
-                let domArr:string[] = Router.activeDomMap.get(module.id);
-                if(!domArr){
-                    Router.activeDomMap.set(module.id,[dom.key]);
-                }else{
-                    if(!domArr.includes(dom.key)){
-                        domArr.push(dom.key);
-                    }
+            let path:string = dom.getProp('path');
+            //添加到router的activeDomMap
+            let domArr:string[] = Router.activeDomMap.get(module.id);
+            if(!domArr){
+                Router.activeDomMap.set(module.id,[dom.key]);
+            }else{
+                if(!domArr.includes(dom.key)){
+                    domArr.push(dom.key);
                 }
             }
-
-            let path:string = dom.getProp('path');
             if (!path || path === Router.currentPath) {
                 return;
             }

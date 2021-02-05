@@ -80,7 +80,7 @@ namespace nodom {
          * @param dom       指令执行时dom
          * @param parent    父虚拟dom
          */
-        public exec(module:Module,dom:Element,parent?:Element) {
+        public async exec(module:Module,dom:Element,parent?:Element) {
             return DirectiveManager.exec(this,dom,module,parent);
         }
 

@@ -20,7 +20,7 @@ class MdlMod4 extends nodom.Module{
             },
             template: `<div test='1'>这是{{$route.data.page}}页,编号是{{$route.data.id}}
                 <div>
-                <a x-repeat='routes' x-route='{{path}}'  x-class="{colorimp:'active'}" active='{{active}}'  style='margin:10px'>{{title}}</a>&nbsp;
+                <a x-repeat='routes' x-route='{{path}}'  activeClass='colorimp' activeName='active'  style='margin:10px'>{{title}}</a>&nbsp;
                 <div x-router></div>
                 </div>
                 </div>`
