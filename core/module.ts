@@ -192,7 +192,7 @@ namespace nodom {
             }
 
             //模版串
-            let templateStr:string=this.template;
+            let templateStr:string = this.template;
             //模版信息
             if(config.template){
                 config.template = config.template.trim();
@@ -248,7 +248,6 @@ namespace nodom {
             }
 
             changeState(this);
-            
             delete this.initConfig;
             /**
              * 修改状态

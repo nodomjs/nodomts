@@ -29,7 +29,10 @@ namespace nodom {
         public static async getResources(reqs:any[]):Promise<IResourceObj[]>{
             let me = this;
             this.preHandle(reqs);
-            
+            //无请求
+            if(reqs.length === 0){
+                return [];
+            }
             let taskId:number = Util.genId();
             
             //设置任务资源数组
@@ -41,11 +44,6 @@ namespace nodom {
             return new Promise(async(res,rej)=>{
                 //保存资源id状态
                 for(let item of reqs){
-                    //不需要加载
-                    if(!item.needLoad){
-                        continue;
-                    }
-
                     let url:string = item.url;
                     if(this.resources.has(url)){        //已加载，直接获取资源内容
                         let r = me.awake(taskId);
@@ -62,7 +60,6 @@ namespace nodom {
                         let rObj = {type:item.type,content:content};
                         this.handleOne(url,rObj);
                         this.resources.set(url,rObj);
-                        
                         let arr = this.waitList.get(url);
                         //从等待列表移除
                         this.waitList.delete(url);
@@ -173,7 +170,6 @@ namespace nodom {
                     }
                 }
                 reqs[i].type = reqs[i].type || this.getType(reqs[i].url);
-                reqs[i].needLoad = true;
                 //css 不需要加载
                 if(reqs[i].type === 'css'){
                     let css = <HTMLLinkElement>Util.newEl('link');
@@ -181,7 +177,8 @@ namespace nodom {
                     css.rel = 'stylesheet'; // 保留script标签的path属性
                     css.href = reqs[i].url;
                     head.appendChild(css);
-                    reqs[i].needLoad = false;
+                    //移除
+                    reqs.splice(i--,1);
                 }
             }
             return reqs;

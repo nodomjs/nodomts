@@ -1824,6 +1824,9 @@ var nodom;
                 return __awaiter(this, void 0, void 0, function* () {
                     let me = this;
                     this.preHandle(reqs);
+                    if (reqs.length === 0) {
+                        return [];
+                    }
                     let taskId = nodom.Util.genId();
                     let resArr = [];
                     for (let item of reqs) {
@@ -1832,9 +1835,6 @@ var nodom;
                     this.loadingTasks.set(taskId, resArr);
                     return new Promise((res, rej) => __awaiter(this, void 0, void 0, function* () {
                         for (let item of reqs) {
-                            if (!item.needLoad) {
-                                continue;
-                            }
                             let url = item.url;
                             if (this.resources.has(url)) {
                                 let r = me.awake(taskId);
@@ -1929,14 +1929,13 @@ var nodom;
                         };
                     }
                     reqs[i].type = reqs[i].type || this.getType(reqs[i].url);
-                    reqs[i].needLoad = true;
                     if (reqs[i].type === 'css') {
                         let css = nodom.Util.newEl('link');
                         css.type = 'text/css';
                         css.rel = 'stylesheet';
                         css.href = reqs[i].url;
                         head.appendChild(css);
-                        reqs[i].needLoad = false;
+                        reqs.splice(i--, 1);
                     }
                 }
                 return reqs;
