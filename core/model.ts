@@ -82,7 +82,7 @@ namespace nodom {
          * @param value     对应值
          */
         public set(key:string, value:any) {
-            if(value === undefined){ 
+            if(value === undefined){
                 if(typeof key === 'object'){ //修改所有值
                     //增加set get方法
                     this.addSetterGetter(key);
@@ -90,8 +90,8 @@ namespace nodom {
                     for(let o in <object>key){
                         this.data[o] = key[o];
                     }
+                    return;
                 }
-                return;
             }
             let fn;
             let index:number = key.lastIndexOf('.');
@@ -118,8 +118,7 @@ namespace nodom {
                 // object或array需要创建新model
                 if (Util.isObject(value) || Util.isArray(value)) {
                     retMdl = new Model(value, module,model,fn);
-                }    
-                
+                }
                 //如果未定义setter和getter，则需要定义
                 let ds = Object.getOwnPropertyDescriptor(data,fn);
                 if (ds === undefined || ds['writable']) {

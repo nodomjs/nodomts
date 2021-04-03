@@ -548,6 +548,7 @@ namespace nodom{
             if(/(E+)/.test(format)){
                 format=format.replace(RegExp.$1, ((RegExp.$1.length>1) ? (RegExp.$1.length>2 ? "/u661f/u671f" : "/u5468") : "") + week[date.getDay() + ""]);
             }
+            // console.log('d');
             return format;
         }
 

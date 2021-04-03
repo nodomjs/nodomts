@@ -686,4 +686,16 @@ namespace nodom {
         Router.startStyle = 2;
         Router.go(state);
     });
+
+    // //处理popstate事件
+    // window.addEventListener('beforeunload', function (e) {
+    //     //根据state切换module
+    //     // const state = history.state;
+    //     // if (!state) {
+    //     //     return;
+    //     // }
+    //     // Router.startStyle = 2;
+    //     // Router.go(state);
+    //     console.log(location.href);
+    // });
 }

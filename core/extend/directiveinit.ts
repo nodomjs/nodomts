@@ -365,6 +365,12 @@ namespace nodom {
             //默认text
             let type = dom.getProp('type') || 'text';
             let eventName = dom.tagName === 'input' && ['text', 'checkbox', 'radio'].includes(type) ? 'input' : 'change';
+            //增加value表达式
+            if(!dom.hasProp('value') && ['text','number','date','datetime','datetime-local','month','week','time','email','password','search','tel','url','color','radio'].includes(type) 
+                || dom.tagName === 'TEXTAREA'){
+                dom.setProp('value',new Expression(directive.value),true);
+            }
+            
             dom.addEvent(new NodomEvent(eventName,
                 function (dom,model,module,e,el) {
                     if(!el){
@@ -373,11 +379,6 @@ namespace nodom {
                     let type = dom.getProp('type');
                     let field = dom.getDirective('field').value;
                     let v = el.value;
-                    //增加value表达式
-                    if(['text','number','date','datetime','datetime-local','month','week','time','email','password','search','tel','url','color','radio'].includes(type) 
-                        || dom.tagName === 'TEXTAREA'){
-                        dom.setProp('value',new Expression(field),true);
-                    }
                     //根据选中状态设置checkbox的value
                     if (type === 'checkbox') {
                         if (dom.getProp('yes-value') == v) {
@@ -408,9 +409,14 @@ namespace nodom {
             if(!model.data){
                 return;
             }
-            const dataValue = model.data[directive.value];
-            
+            let dataValue = model.data[directive.value];
+            //变为字符串
+            if(dataValue !== undefined && dataValue !== null){
+                dataValue += '';
+            }
+
             let value = dom.getProp('value');
+            
             if (type === 'radio') {
                 if (dataValue+'' === value) {
                     dom.assets.set('checked',true);
@@ -431,25 +437,30 @@ namespace nodom {
                     dom.assets.set('checked',false);
                 }
             } else if (tgname === 'select') { //下拉框
-                if(dataValue !== dom.getProp('value')){
-                    //存在option使用repeat指令，此时尚未渲染出来
+                if(!directive.extra || !directive.extra.inited){
                     setTimeout(()=>{
+                        directive.extra = {inited:true};
                         dom.setProp('value', dataValue);
-                        dom.assets.set('value',dataValue);
+                        dom.setAsset('value',dataValue);
                         Renderer.add(module);
                     },0);
+                }else{
+                    if(dataValue !== value){
+                        dom.setProp('value', dataValue);
+                        dom.setAsset('value',dataValue);
+                    }
                 }
             }else{
                 dom.assets.set('value',dataValue===undefined || dataValue===null ? '':dataValue);
             }
-        }    
+        }
     );
 
     /**
      * 指令名 validity
      * 描述：字段指令
      */
-    DirectiveManager.addType('validity', 
+    DirectiveManager.addType('validity',
         10,
         (directive:Directive,dom:Element) => {
             let ind, fn, method;

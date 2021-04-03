@@ -22,15 +22,19 @@
 		<button e-click='watch'>watch</button>
 		<div>
 			<div> 姓名:{{name}}</div>
+			<div> 出生日期:{{birth|date:'yyyy-MM-dd HH:mm:ss.S'}}</div>
 			<div> 性别:{{sexy}}</div>
 			<div> 已婚:{{married}}</div>
 			<div> 学历:{{edu}}</div>
 		</div>
 		<div>
 			<div>姓名：<input type='text' x-field='name'></div>
+			 <div>出生日期：<input type='text'  x-field='birth' value="{{birth|date:'yyyy-MM-dd HH:mm:ss.S'}}" ></div>
 			<div>性别：<input type='radio' x-field='sexy' value='M'/>男 <input x-field='sexy' type='radio' value='F'/>女</div>
 			<div>已婚：<input type='checkbox' x-field='married' yes-value='1' no-value='0'>是</div>
+			<!-- value='{{eduId}}' -->
 			<div>学历：<select x-field='edu'><option x-repeat='edus' value='{{eduId}}'>{{eduName}}</option></select></div>
+			
 		</div>
 	</div>
 </body>
@@ -46,7 +50,8 @@
 					name:undefined,
 					sexy:undefined,
 					married:undefined,
-					edu:undefined,
+					edu:2,
+					birth:1616472327000,
 					edus:[
 						{eduId:1,eduName:'高中'},
 						{eduId:2,eduName:'本科'},
@@ -65,9 +70,17 @@
 						model.data.married = 0;
 						model.data.sexy = 'F';
 						model.data.edu=3;
+						model.data.name='aaaa';
 					},
 					change1:function(dom,model,module,e){
 						model.data.name='yanglei123';
+					},
+					onFirstRender:function(){
+						console.log('dddd');
+						// console.log($.FilterManager.exec(this,'date','1616472327001',':yyyy-MM-dd HH:mm:ss'));
+					},
+					onRender:function(){
+						console.log('d1');
 					}
 				}
 			}

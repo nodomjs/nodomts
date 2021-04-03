@@ -122,7 +122,6 @@ namespace nodom {
                     }
                 }
             }
-            
             //处理属性
             for(let attr of directives){
                 new Directive(attr.name.substr(2), attr.value.trim(),oe,null,true);

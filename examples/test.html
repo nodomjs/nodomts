@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>filter</title>
-    <script type="text/javascript" src="../bin/nodom.js"></script>
+    <!-- <script type="text/javascript" src="../bin/nodom.js"></script> -->
 
     <style>
         .code {
@@ -35,32 +35,49 @@
 <script>
     // let expr = new nodom.Expression('min-width:100px;transform:translateX({{scrollloc}}px)');
     // console.log(expr);
-    nodom.newApp({
-        module:{
-            el: 'div',
-            data: {
-                birth:new Date().getTime(),
-                hello:'hello world!',
-                rows: [
-                    { title: 'yang', url:'a/b'},
-                    { title: 'zhang',url:'a/b'},
-                    { title: 'chen', url:'a/b'},
-                    { title: 'tang', url:'a/b'},
-                    { title: 'li', url:'a/b'}
-                ]
-            },
-            methods: {
-                ascClick:function(dom,model,module,e){
-                    model.data['rows'].push({name:'haha',addr:'sssss'});
-                },
-                descClick:function(dom,model,module,e){
-                    // model.data['rows'].splice(1,2);
-                    model.data['rows'].pop();
-                }
-            }
-        }
+    // nodom.newApp({
+    //     module:{
+    //         el: 'div',
+    //         data: {
+    //             birth:new Date().getTime(),
+    //             hello:'hello world!',
+    //             rows: [
+    //                 { title: 'yang', url:'a/b'},
+    //                 { title: 'zhang',url:'a/b'},
+    //                 { title: 'chen', url:'a/b'},
+    //                 { title: 'tang', url:'a/b'},
+    //                 { title: 'li', url:'a/b'}
+    //             ]
+    //         },
+    //         methods: {
+    //             ascClick:function(dom,model,module,e){
+    //                 model.data['rows'].push({name:'haha',addr:'sssss'});
+    //             },
+    //             descClick:function(dom,model,module,e){
+    //                 // model.data['rows'].splice(1,2);
+    //                 model.data['rows'].pop();
+    //             }
+    //         }
+    //     }
+    // });
+    //处理popstate事件
+    window.addEventListener('beforeunload', (event) => {
+        setTimeout(()=>{
+            console.log('111');
+            location.href = 'http://127.0.0.1:5500/examples/route.html'
+        },100);
+        // Cancel the event as stated by the standard.
+        event.preventDefault();
+        // console.log(location.href);
+        // Chrome requires returnValue to be set.
+        event.returnValue = '';
+        
     });
-    
+
+
+    window.addEventListener('load',(e)=>{
+        console.log('dddd');
+    })
 </script>
 
 </html>

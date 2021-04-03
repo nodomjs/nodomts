@@ -883,8 +883,8 @@ var nodom;
                 this.plugin.beforeRender(module, this);
             }
             if (this.tagName !== undefined) {
-                this.handleProps(module);
                 this.handleDirectives(module);
+                this.handleProps(module);
             }
             else {
                 this.handleTextContent(module);
@@ -971,6 +971,11 @@ var nodom;
                     if (params.changeProps) {
                         params.changeProps.forEach((p) => {
                             el.setAttribute(p['k'], p['v']);
+                        });
+                    }
+                    if (params.changeAssets) {
+                        params.changeAssets.forEach((p) => {
+                            el[p['k']] = p['v'];
                         });
                     }
                     break;
@@ -1291,13 +1296,8 @@ var nodom;
             }
             this.props['class'] = clazz;
         }
-        hasProp(propName, isExpr) {
-            if (isExpr) {
-                return this.exprProps.hasOwnProperty(propName);
-            }
-            else {
-                return this.props.hasOwnProperty(propName);
-            }
+        hasProp(propName) {
+            return this.props.hasOwnProperty(propName) || this.exprProps.hasOwnProperty(propName);
         }
         getProp(propName, isExpr) {
             if (isExpr) {
@@ -1315,27 +1315,25 @@ var nodom;
                 this.props[propName] = v;
             }
         }
-        delProp(props, isExpr) {
+        delProp(props) {
             if (nodom.Util.isArray(props)) {
-                if (isExpr) {
-                    for (let p of props) {
-                        delete this.exprProps[p];
-                    }
+                for (let p of props) {
+                    delete this.exprProps[p];
                 }
-                else {
-                    for (let p of props) {
-                        delete this.props[p];
-                    }
+                for (let p of props) {
+                    delete this.props[p];
                 }
             }
             else {
-                if (isExpr) {
-                    delete this.exprProps[props];
-                }
-                else {
-                    delete this.props[props];
-                }
+                delete this.exprProps[props];
+                delete this.props[props];
             }
+        }
+        setAsset(assetName, value) {
+            this.assets.set(assetName, value);
+        }
+        delAsset(assetName) {
+            this.assets.delete(assetName);
         }
         query(key) {
             if (this.key === key) {
@@ -1374,6 +1372,7 @@ var nodom;
                 }
                 else {
                     re.changeProps = [];
+                    re.changeAssets = [];
                     re.removeProps = [];
                     nodom.Util.getOwnProps(dst.props).forEach((k) => {
                         if (!this.hasProp(k)) {
@@ -1386,7 +1385,13 @@ var nodom;
                             re.changeProps.push({ k: k, v: this.props[k] });
                         }
                     });
-                    if (re.changeProps.length > 0 || re.removeProps.length > 0) {
+                    for (let kv of this.assets) {
+                        let v1 = dst.assets.get(kv[0]);
+                        if (kv[0] !== v1) {
+                            re.changeAssets.push({ k: kv[0], v: kv[1] });
+                        }
+                    }
+                    if (re.changeProps.length > 0 || re.changeAssets.length > 0 || re.removeProps.length > 0) {
                         change = true;
                         re.type = 'upd';
                     }
@@ -2050,8 +2055,8 @@ var nodom;
                     for (let o in key) {
                         this.data[o] = key[o];
                     }
+                    return;
                 }
-                return;
             }
             let fn;
             let index = key.lastIndexOf('.');
@@ -4143,6 +4148,10 @@ var nodom;
         dom.setProp('name', directive.value);
         let type = dom.getProp('type') || 'text';
         let eventName = dom.tagName === 'input' && ['text', 'checkbox', 'radio'].includes(type) ? 'input' : 'change';
+        if (!dom.hasProp('value') && ['text', 'number', 'date', 'datetime', 'datetime-local', 'month', 'week', 'time', 'email', 'password', 'search', 'tel', 'url', 'color', 'radio'].includes(type)
+            || dom.tagName === 'TEXTAREA') {
+            dom.setProp('value', new nodom.Expression(directive.value), true);
+        }
         dom.addEvent(new nodom.NodomEvent(eventName, function (dom, model, module, e, el) {
             if (!el) {
                 return;
@@ -4150,10 +4159,6 @@ var nodom;
             let type = dom.getProp('type');
             let field = dom.getDirective('field').value;
             let v = el.value;
-            if (['text', 'number', 'date', 'datetime', 'datetime-local', 'month', 'week', 'time', 'email', 'password', 'search', 'tel', 'url', 'color', 'radio'].includes(type)
-                || dom.tagName === 'TEXTAREA') {
-                dom.setProp('value', new nodom.Expression(field), true);
-            }
             if (type === 'checkbox') {
                 if (dom.getProp('yes-value') == v) {
                     v = dom.getProp('no-value');
@@ -4180,7 +4185,10 @@ var nodom;
         if (!model.data) {
             return;
         }
-        const dataValue = model.data[directive.value];
+        let dataValue = model.data[directive.value];
+        if (dataValue !== undefined && dataValue !== null) {
+            dataValue += '';
+        }
         let value = dom.getProp('value');
         if (type === 'radio') {
             if (dataValue + '' === value) {
@@ -4204,12 +4212,19 @@ var nodom;
             }
         }
         else if (tgname === 'select') {
-            if (dataValue !== dom.getProp('value')) {
+            if (!directive.extra || !directive.extra.inited) {
                 setTimeout(() => {
+                    directive.extra = { inited: true };
                     dom.setProp('value', dataValue);
-                    dom.assets.set('value', dataValue);
+                    dom.setAsset('value', dataValue);
                     nodom.Renderer.add(module);
                 }, 0);
+            }
+            else {
+                if (dataValue !== value) {
+                    dom.setProp('value', dataValue);
+                    dom.setAsset('value', dataValue);
+                }
             }
         }
         else {

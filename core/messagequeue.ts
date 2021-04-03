@@ -69,17 +69,16 @@ namespace nodom {
          * @param parentId      父模块id
          */
         public static move(moduleName:string,moduleId:number,parentId:number){
-            let index = this.noOwnerMessages.findIndex(item=>item.parentId===parentId && moduleName === item.toModule);
-            if(index === -1){
-                return;
+            let index;
+            while((index = this.noOwnerMessages.findIndex(item=>item.parentId===parentId && moduleName === item.toModule))!==-1){
+                let msg:Message = this.noOwnerMessages[index];
+                //从noowner数组移除
+                this.noOwnerMessages.splice(index,1);
+                msg.toModule = moduleId;
+                delete msg.parentId;
+                //加入待发队列
+                this.messages.push(msg);
             }
-            let msg:Message = this.noOwnerMessages[index];
-            //从noowner数组移除
-            this.noOwnerMessages.splice(index,1);
-            msg.toModule = moduleId;
-            delete msg.parentId;
-            //加入待发队列
-            this.messages.push(msg);
         }
 
         /**

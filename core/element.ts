@@ -29,6 +29,11 @@ namespace nodom {
         public changeProps:Array<object>;
 
         /**
+         * 改变的asset
+         */
+        public changeAssets:Array<object>;
+
+        /**
          * 移除的属性名数组
          */
         public removeProps:Array<string>;
@@ -183,8 +188,8 @@ namespace nodom {
             }
             
             if (this.tagName !== undefined) { //element
-                this.handleProps(module);
                 this.handleDirectives(module);
+                this.handleProps(module);
             } else { //textContent
                 this.handleTextContent(module);
             }
@@ -289,6 +294,13 @@ namespace nodom {
                 if(params.changeProps){
                     params.changeProps.forEach((p) => {
                         el.setAttribute(p['k'], p['v']);
+                    });
+                }
+
+                //修改直接绑定el上的属性（不是attribute）
+                if(params.changeAssets){
+                    params.changeAssets.forEach((p) => {
+                        el[p['k']] = p['v']; 
                     });
                 }
                 break;
@@ -798,20 +810,14 @@ namespace nodom {
         /**
          * 是否拥有属性
          * @param propName  属性名
-         * @param isExpr    是否是表达式属性 默认false  
          */
-        public hasProp(propName:string,isExpr?:boolean){
-            if(isExpr){
-                return this.exprProps.hasOwnProperty(propName);
-            }else{
-                return this.props.hasOwnProperty(propName);
-            }
+        public hasProp(propName:string){
+            return this.props.hasOwnProperty(propName) || this.exprProps.hasOwnProperty(propName);
         }
 
         /**
          * 获取属性值
          * @param propName  属性名
-         * @param isExpr    是否是表达式属性 默认false  
          */
         public getProp(propName:string,isExpr?:boolean){
             if(isExpr){
@@ -838,27 +844,38 @@ namespace nodom {
         /**
          * 删除属性
          * @param props     属性名或属性名数组 
-         * @param isExpr    是否是表达式属性 默认false  
          */
-        public delProp(props:string|string[],isExpr?:boolean){
+        public delProp(props:string|string[]){
             if(Util.isArray(props)){
-                if(isExpr){
-                    for(let p of <string[]>props){
-                        delete this.exprProps[p];
-                    }
-                }else{
-                    for(let p of <string[]>props){
-                        delete this.props[p];
-                    }
+                for(let p of <string[]>props){
+                    delete this.exprProps[p];
+                }
+                for(let p of <string[]>props){
+                    delete this.props[p];
                 }
             }else{
-                if(isExpr){
-                    delete this.exprProps[<string>props];
-                }else{
-                    delete this.props[<string>props];
-                }
+                delete this.exprProps[<string>props];
+                delete this.props[<string>props];
             }
         }
+
+        /**
+         * 设置asset
+         * @param assetName     asset name
+         * @param value         asset value
+         */
+        public setAsset(assetName:string,value:any){
+            this.assets.set(assetName,value);
+        }
+
+        /**
+         * 删除asset
+         * @param assetName     asset name
+         */
+        public delAsset(assetName:string){
+            this.assets.delete(assetName);
+        }
+
         /**
          * 查找子孙节点
          * @param key 	element key
@@ -880,7 +897,7 @@ namespace nodom {
          * 比较节点
          * @param dst 	待比较节点
          * @returns	{type:类型 text/rep/add/upd,node:节点,parent:父节点, 
-         * 			changeProps:改变属性,[{k:prop1,v:value1},...],removeProps:删除属性,[prop1,prop2,...]}
+         * 			changeProps:改变属性,[{k:prop1,v:value1},...],removeProps:删除属性,[prop1,prop2,...],changeAssets:改变的asset}
          */
         public compare(dst:Element, retArr:Array<ChangedDom>, parentNode?:Element) {
             if (!dst) {
@@ -908,6 +925,7 @@ namespace nodom {
                 } else { //节点类型相同，可能属性不同
                     //检查属性，如果不同则放到changeProps
                     re.changeProps = [];
+                    re.changeAssets = [];
                     //待删除属性
                     re.removeProps = [];
                     
@@ -916,7 +934,7 @@ namespace nodom {
 						if (!this.hasProp(k)) {
                             re.removeProps.push(k);
                         }
-					})
+					});
                     
 					//修改后的属性
 					Util.getOwnProps(this.props).forEach((k)=>{
@@ -925,7 +943,16 @@ namespace nodom {
                             re.changeProps.push({k:k,v:this.props[k]});
                         }
 					});
-                    if (re.changeProps.length > 0 || re.removeProps.length > 0) {
+                    //修改后的asset
+					for(let kv of this.assets){
+                        let v1 = dst.assets.get(kv[0]);
+                        if (kv[0] !== v1) {
+                            re.changeAssets.push({k:kv[0],v:kv[1]});
+                        }
+                    }
+                    
+                    // props assets 改变或删除，加入渲染
+                    if (re.changeProps.length > 0 || re.changeAssets.length>0 || re.removeProps.length > 0) {
                         change = true;
                         re.type = 'upd';
                     }
