@@ -78,17 +78,24 @@ namespace nodom {
         /**
          * 设置属性，可能属性之前不存在，用于在初始化不存在的属性增强model能力
          * 如果只有一个参数且为对象，则更新多个数据项
-         * @param key       键，可以带“.”，如a, a.b.c
-         * @param value     对应值
+         * @param key       键，可以带“.”，如a, a.b.c 或object
+         * @param value     对应值，当key为object时，如果设置该值为true，则表示用该数据替换model数据
          */
         public set(key:string, value:any) {
             if(value === undefined){
                 if(typeof key === 'object'){ //修改所有值
-                    //增加set get方法
-                    this.addSetterGetter(key);
-                    //替换model.data中的值
-                    for(let o in <object>key){
-                        this.data[o] = key[o];
+                    //value为true，表示cleardata，则直接用该数据替换model的数据
+                    if(value === true){
+                        //增加set get方法
+                        this.addSetterGetter(key);
+                        this.data = key;
+                    }else{
+                        Object.getOwnPropertyNames(<object>key).forEach(item=>{
+                            if(item.startsWith('$')){
+                                return;
+                            }
+                            this.set(item,key[item]);
+                        });
                     }
                     return;
                 }

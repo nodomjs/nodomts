@@ -271,6 +271,10 @@ namespace nodom {
          * @return false 渲染失败 true 渲染成功
          */
         public render():boolean{
+            //状态为2，不渲染
+            if(this.state === 2){
+                return true;
+            }
             //容器没就位或state不为active则不渲染，返回渲染失败
             if (this.state !== 3 || !this.virtualDom || !this.getContainer()) {
                 return false;

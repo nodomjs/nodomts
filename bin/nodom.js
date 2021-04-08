@@ -1975,15 +1975,14 @@ var nodom;
                 }
             }
             static move(moduleName, moduleId, parentId) {
-                let index = this.noOwnerMessages.findIndex(item => item.parentId === parentId && moduleName === item.toModule);
-                if (index === -1) {
-                    return;
+                let index;
+                while ((index = this.noOwnerMessages.findIndex(item => item.parentId === parentId && moduleName === item.toModule)) !== -1) {
+                    let msg = this.noOwnerMessages[index];
+                    this.noOwnerMessages.splice(index, 1);
+                    msg.toModule = moduleId;
+                    delete msg.parentId;
+                    this.messages.push(msg);
                 }
-                let msg = this.noOwnerMessages[index];
-                this.noOwnerMessages.splice(index, 1);
-                msg.toModule = moduleId;
-                delete msg.parentId;
-                this.messages.push(msg);
             }
             static handleQueue() {
                 for (let i = 0; i < this.messages.length; i++) {
@@ -2051,9 +2050,17 @@ var nodom;
         set(key, value) {
             if (value === undefined) {
                 if (typeof key === 'object') {
-                    this.addSetterGetter(key);
-                    for (let o in key) {
-                        this.data[o] = key[o];
+                    if (value === true) {
+                        this.addSetterGetter(key);
+                        this.data = key;
+                    }
+                    else {
+                        Object.getOwnPropertyNames(key).forEach(item => {
+                            if (item.startsWith('$')) {
+                                return;
+                            }
+                            this.set(item, key[item]);
+                        });
                     }
                     return;
                 }

@@ -550,7 +550,7 @@ namespace nodom {
          * @param el    dom对应的html element
          */
         public handleAssets(el:HTMLElement){
-            if(!this.tagName && !el){
+            if(!this.tagName || !el){
                 return;
             }
             
