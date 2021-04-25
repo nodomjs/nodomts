@@ -19,6 +19,7 @@ namespace nodom {
             }catch(e){}
             
             let oe = new Element('div');
+            oe.setProp('role','moduleContainer')
             this.handleChildren(oe,div);
             
             // //保证模块只有一个根节点

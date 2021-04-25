@@ -30,18 +30,14 @@
     "url": "https://github.com/nodomjs/nodomts/issues"
   },
   "homepage": "https://github.com/nodomjs/nodomts#readme",
-  "dependencies": {
-    
-  },
-  "devDependencies": {
-    
-  },
+  "dependencies": {},
+  "devDependencies": {},
   "engines": {},
   "contributors": [
     "杨雷 <fieldyang@163.com>"
   ],
   "directories": {
     "examples": "示例代码",
-    "core":"框架源码"
+    "core": "框架源码"
   }
 }
